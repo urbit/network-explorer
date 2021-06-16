@@ -4,6 +4,7 @@
             [clojure.data.json :as json]
             [clojure.string :as str]
             [network-explorer.ob :as ob]
+            [datomic.ion.cast :as cast]
             [datomic.ion.lambda.api-gateway :as apigw]))
 
 (def cfg {:server-type :ion
@@ -259,11 +260,12 @@
 
 (def get-client (memoize (fn [] (d/client cfg))))
 
-(defn get-node [{:keys [data]}]
+(defn get-node [data]
   (let [client (get-client)
         conn (d/connect client {:db-name "network-explorer"})
         db (d/db conn)
-        urbit-id (get-in data ["queryStringParameters" "urbit-id"])]
+        urbit-id (get-in data ["data" "Querystringparameters" "urbit-id"])]
+    (cast/event {:msg "GetNodeEvent" ::json data})
     (if-not (ob/patp? urbit-id)
       {:status 400
        :headers {"Content-Type" "application/json"}

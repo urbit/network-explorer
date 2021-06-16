@@ -260,12 +260,11 @@
 
 (def get-client (memoize (fn [] (d/client cfg))))
 
-(defn get-node [data]
+(defn get-node [{:keys [datomic.ion.edn.api-gateway/data]}]
   (let [client (get-client)
         conn (d/connect client {:db-name "network-explorer"})
         db (d/db conn)
-        urbit-id (get-in data ["data" "Querystringparameters" "urbit-id"])]
-    (cast/event {:msg "GetNodeEvent" ::json data})
+        urbit-id (get-in data [:queryStringParameters :urbit-id])]
     (if-not (ob/patp? urbit-id)
       {:status 400
        :headers {"Content-Type" "application/json"}

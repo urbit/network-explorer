@@ -257,7 +257,7 @@
         pki-txs  (mapcat-indexed pki-line->txs lines)]
     [node-txs pki-txs]))
 
-(def get-client (memoize (d/client cfg)))
+(def get-client (memoize (fn [] (d/client cfg))))
 
 (defn get-node [{:keys [headers body]}]
   (let [client (get-client)

@@ -265,7 +265,7 @@
         db (d/db conn)]
     {:status 200
      :headers {"Content-Type" "application/json"}
-     :body (json/write (d/q urbit-id-query db "~dinleb-rambep"))}))
+     :body (json/write-str (d/q urbit-id-query db "~dinleb-rambep"))}))
 
 (def get-node-lambda-proxy
   (apigw/ionize get-node))

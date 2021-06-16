@@ -259,18 +259,18 @@
 
 (def get-client (memoize (fn [] (d/client cfg))))
 
-(defn get-node [{:keys [queryStringParameters]}]
+(defn get-node [{:keys [data]}]
   (let [client (get-client)
         conn (d/connect client {:db-name "network-explorer"})
         db (d/db conn)
-        urbit-id (get queryStringParameters "urbit-id")]
+        urbit-id (get-in data ["queryStringParameters" "urbit-id"])]
     (if-not (ob/patp? urbit-id)
       {:status 400
        :headers {"Content-Type" "application/json"}
        :body (json/write-str {:error "Invalid urbit-id"})}
       {:status 200
        :headers {"Content-Type" "application/json"}
-       :body (json/write-str (ffirst (d/q urbit-id-query db (get queryStringParameters "urbit-id"))))})))
+       :body (json/write-str (ffirst (d/q urbit-id-query db urbit-id)))})))
 
 (def get-node-lambda-proxy
   (apigw/ionize get-node))

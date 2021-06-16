@@ -12,7 +12,6 @@
           :endpoint "http://entry.datomic-storage.us-west-2.datomic.net:8182/"
           :proxy-port 8182})
 
-(def client (d/client cfg))
 
 ;; (def conn (d/connect client {:db-name "network-explorer"}))
 
@@ -258,8 +257,11 @@
         pki-txs  (mapcat-indexed pki-line->txs lines)]
     [node-txs pki-txs]))
 
+(def get-client (memoize (d/client cfg)))
+
 (defn get-node [{:keys [headers body]}]
-  (let [conn (d/connect client {:db-name "network-explorer"})
+  (let [client (get-client)
+        conn (d/connect client {:db-name "network-explorer"})
         db (d/db conn)]
     {:status 200
      :headers {"Content-Type" "application/json"}

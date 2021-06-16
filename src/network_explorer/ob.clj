@@ -1,6 +1,7 @@
 (ns network-explorer.ob
   (:require [clojure.string :as str])
-  (:import [org.apache.commons.codec.digest MurmurHash3]))
+  (:import [org.apache.commons.codec.digest MurmurHash3]
+           [com.google.common.hash Hashing]))
 
 (def ux_1_0000 (BigInteger. "10000" 16))
 (def ux_ffff_ffff (BigInteger. "ffffffff" 16))
@@ -45,7 +46,8 @@
   (let [lo (.and (biginteger key) ux_ff)
         hi (.divide (.and (biginteger key) ux_ff00) u_256)
         kee (byte-array [lo hi])]
-    (Integer/toUnsignedLong (MurmurHash3/hash32x86 kee 0 len syd))))
+    #_(MurmurHash3/hash32x86 kee 0 len syd)
+    (Integer/toUnsignedLong (.asInt (.hashBytes (Hashing/murmur3_32 syd) kee 0 len)))))
 
 (defn F [j arg]
   (let [raku (map unchecked-int [0xb76d5eed 0xee281300 0x85bcae01 0x4b387af7])]

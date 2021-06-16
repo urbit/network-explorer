@@ -1,0 +1,5 @@
+{:allow []
+ :lambdas {:get-node
+           {:fn network-explorer.main/get-node-lambda-proxy
+            :description "Produce the details for a single node."}}
+ :app-name "datomic-storage"}

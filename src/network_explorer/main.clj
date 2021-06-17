@@ -93,11 +93,29 @@ attr by amount, treating a missing value as 1."
            [?e :pki-event/node ?p]
            [?e :pki-event/type :activate]])
 
-(def urbit-id-query
+
+(def all-urbit-ids-query
   '[:find (pull ?e [:node/urbit-id
                     :node/type
                     [:node/revision :default 0]
                     [:node/continuity :default 0]
+                    [:node/num-owners :default 1]
+                    [:node/ownership-address :default nil]
+                    [:node/management-proxy :default nil]
+                    [:node/transfer-proxy :default nil]
+                    [:node/voting-proxy :default nil]
+                    [:node/spawn-proxy :default nil]
+                    [:node/online :default false]
+                    {:node/sponsor [:node/urbit-id]}
+                    {[:node/_sponsor :as :node/kids :default []] [:node/urbit-id]}])
+    :where [?e :node/urbit-id]])
+
+(def urbit-ids-query
+  '[:find (pull ?e [:node/urbit-id
+                    :node/type
+                    [:node/revision :default 0]
+                    [:node/continuity :default 0]
+                    [:node/num-owners :default 1]
                     [:node/ownership-address :default nil]
                     [:node/management-proxy :default nil]
                     [:node/transfer-proxy :default nil]
@@ -192,22 +210,34 @@ attr by amount, treating a missing value as 1."
 
 (def get-client (memoize (fn [] (d/client cfg))))
 
-(defn get-nodes [urbit-ids db]
-  (merge (first (d/q urbit-id-query db urbit-ids))
-         {:node/num-owners (first (d/q owners-query db urbit-ids))}))
+(defn get-all-nodes [limit offset db]
+  (mapcat identity (d/q {:query all-urbit-ids-query
+                         :args [db]
+                         :limit limit
+                         :offset offset})))
+
+(defn get-nodes [urbit-ids limit offset db]
+  (mapcat identity (d/q {:query urbit-ids-query
+                         :args [db urbit-ids]
+                         :limit limit
+                         :offset offset})))
 
 (defn get-node* [{:keys [datomic.ion.edn.api-gateway/data]}]
   (let [client (get-client)
         conn (d/connect client {:db-name "network-explorer"})
         db (d/db conn)
-        urbit-id (get-in data [:queryStringParameters :urbit-id])]
-    (if-not (ob/patp? urbit-id)
+        urbit-ids (str/split #"," (get-in data [:queryStringParameters :urbit-id]))
+        limit (Integer/parseInt (get (get data :queryStringParameters) :limit "1000"))
+        offset  (Integer/parseInt (get (get data :queryStringParameters) :offset "0"))]
+    (if-not (every? ob/patp? urbit-ids)
       {:status 400
        :headers {"Content-Type" "application/json"}
-       :body (json/write-str {:error "Invalid urbit-id"})}
+       :body (json/write-str {:error "One or more invalid urbit-ids"})}
       {:status 200
        :headers {"Content-Type" "application/json"}
-       :body (json/write-str (get-nodes [urbit-id] db))})))
+       :body (json/write-str (if (empty? urbit-ids)
+                               (get-all-nodes limit offset db)
+                               (get-nodes urbit-ids limit offset db)))})))
 
 (def get-node-lambda-proxy
   (apigw/ionize get-node*))

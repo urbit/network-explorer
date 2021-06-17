@@ -74,7 +74,10 @@
   (clojure.pprint/cl-format nil "~8,'0b" idx))
 
 (defn patp->syls [name]
-  (map (fn [cs] (apply str cs)) (partition 3 (str/replace name #"[\^~-]" ""))))
+  (let [s (str/replace name #"[\^~-]" "")]
+    (if (not= 0 (mod (count s) 3))
+      (throw (Exception. "patp->syls: not a valid patp"))
+      (map (fn [cs] (apply str cs)) (partition 3 s)))))
 
 (defn patp->biginteger [name]
   (let [syls (vec (patp->syls name))

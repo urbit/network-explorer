@@ -217,16 +217,19 @@ attr by amount, treating a missing value as 1."
                          :offset offset})))
 
 (defn get-nodes [urbit-ids limit offset db]
-  (mapcat identity (d/q {:query urbit-ids-query
-                         :args [db urbit-ids]
-                         :limit limit
-                         :offset offset})))
+  (let [res  (d/q {:query urbit-ids-query
+                   :args [db urbit-ids]
+                   :limit limit
+                   :offset offset})]
+    (if (= 1 (count res))
+      (ffirst res)
+      (mapcat identity res))))
 
 (defn get-node* [{:keys [datomic.ion.edn.api-gateway/data]}]
   (let [client (get-client)
         conn (d/connect client {:db-name "network-explorer"})
         db (d/db conn)
-        urbit-ids (str/split #"," (get-in data [:queryStringParameters :urbit-id]))
+        urbit-ids (str/split (get-in data [:queryStringParameters :urbit-id]) #",")
         limit (Integer/parseInt (get (get data :queryStringParameters) :limit "1000"))
         offset  (Integer/parseInt (get (get data :queryStringParameters) :offset "0"))]
     (if-not (every? ob/patp? urbit-ids)
@@ -241,3 +244,5 @@ attr by amount, treating a missing value as 1."
 
 (def get-node-lambda-proxy
   (apigw/ionize get-node*))
+
+;; (def conn (d/connect client {:db-name "network-explorer"}))

@@ -1,4 +1,4 @@
-{:allow []
+{:allow [network-explorer.main/inc-attr]
  :lambdas {:get-node
            {:fn network-explorer.main/get-node-lambda-proxy
             :integration :api-gateway/proxy

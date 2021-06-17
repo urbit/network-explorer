@@ -260,7 +260,18 @@
 
 (def get-client (memoize (fn [] (d/client cfg))))
 
-(defn get-node [{:keys [datomic.ion.edn.api-gateway/data]}]
+(defn get-node [urbit-id db]
+  (merge (ffirst (d/q urbit-id-query db urbit-id))
+         {:node/continuity (ffirst (d/q continuity-query db urbit-id))}
+         {:node/revision (ffirst (d/q revision-query db urbit-id))}
+         {:node/num-owners (ffirst (d/q owners-query db urbit-id))}
+         {:node/ownership-address (ffirst (d/q ownership-query db urbit-id))}
+         {:node/management-proxy (ffirst (d/q management-proxy-query db urbit-id))}
+         {:node/spawn-proxy (ffirst (d/q spawn-proxy-query db urbit-id))}
+         {:node/voting-proxy (ffirst (d/q voting-proxy-query db urbit-id))}
+         {:node/transfer-proxy (ffirst (d/q transfer-proxy-query db urbit-id))}))
+
+(defn get-node* [{:keys [datomic.ion.edn.api-gateway/data]}]
   (let [client (get-client)
         conn (d/connect client {:db-name "network-explorer"})
         db (d/db conn)
@@ -271,7 +282,7 @@
        :body (json/write-str {:error "Invalid urbit-id"})}
       {:status 200
        :headers {"Content-Type" "application/json"}
-       :body (json/write-str (ffirst (d/q urbit-id-query db urbit-id)))})))
+       :body (json/write-str (get-node urbit-id db))})))
 
 (def get-node-lambda-proxy
-  (apigw/ionize get-node))
+  (apigw/ionize get-node*))

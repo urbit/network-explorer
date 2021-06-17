@@ -42,10 +42,10 @@
     :db/cardinality :db.cardinality/one
     :db/doc "The number of owners of the node"}
 
-   {:db/ident :node/ownership-proxy
+   {:db/ident :node/ownership-address
     :db/valueType :db.type/string
     :db/cardinality :db.cardinality/one
-    :db/doc "The ownership proxy address of the node"}
+    :db/doc "The ownership address address of the node"}
 
    {:db/ident :node/spawn-proxy
     :db/valueType :db.type/string

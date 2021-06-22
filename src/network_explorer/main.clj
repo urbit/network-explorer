@@ -92,7 +92,7 @@ attr by amount, treating a missing value as 1."
            [?e :pki-event/node ?p]
            [?e :pki-event/type :activate]])
 
-(def all-pki-events-query
+(def pki-events-query
   '[:find (pull ?e [:pki-event/id
                     {:pki-event/node [:node/urbit-id]}
                     {:pki-event/target-node [:node/urbit-id]}
@@ -101,26 +101,12 @@ attr by amount, treating a missing value as 1."
                     :pki-event/address
                     :pki-event/continuity
                     :pki-event/revision])
-    :in $ ?since [?type ...]
-    :where [?e :pki-event/time ?t]
-           (or [?e :pki-event/node ?p]
-               [?e :pki-event/target-node ?p])
-           [?p :node/type ?type]
-           [(<= ?since ?t)]])
-
-(def pki-events-query
-  '[:find (pull ?e [:pki-event/id
-                    {:pki-event/node [:node/urbit-id]}
-                    {:pki-event/target-node [:node/urbit-id]}
-                    {:pki-event/type [:node/urbit-id]}
-                    :pki-event/time
-                    :pki-event/address
-                    :pki-event/continuity
-                    :pki-event/revision])
-    :in $ ?urbit-id
+    :in $ ?urbit-id ?since
     :where [?p :node/urbit-id ?urbit-id]
            (or [?e :pki-event/node ?p]
-               [?e :pki-event/target-node ?p])])
+               [?e :pki-event/target-node ?p])
+           [?e :pki-event/time ?t]
+           [(<= ?since ?t)]])
 
 (def all-urbit-ids-query-types
   '[:find (pull ?e [:node/urbit-id
@@ -336,25 +322,33 @@ attr by amount, treating a missing value as 1."
     (format-pki-time value)
     value))
 
-(defn get-pki-events [limit offset db]
-  (let [selector [:pki-event/id
-                  {:pki-event/node [:node/urbit-id]}
-                  {:pki-event/target-node [:node/urbit-id]}
-                  :pki-event/type
-                  :pki-event/time
-                  :pki-event/address
-                  :pki-event/continuity
-                  :pki-event/revision]]
-    (->> (d/index-pull db {:index :avet :selector selector :start [:pki-event/id offset]})
-         (take limit))))
+(defn get-pki-events [urbit-id since db]
+  (sort-by :pki-event/id (mapcat identity (d/q pki-events-query db urbit-id since))))
+
+(defn get-all-pki-events [limit offset db]
+ (let [selector [:pki-event/id
+                 {:pki-event/node [:node/urbit-id]}
+                 {:pki-event/target-node [:node/urbit-id]}
+                 :pki-event/type
+                 :pki-event/time
+                 :pki-event/address
+                 :pki-event/continuity
+                 :pki-event/revision]]
+   (->> (d/index-pull db {:index :avet :selector selector :start [:pki-event/id offset]})
+        (take limit))))
 
 
 (defn get-pki-events* [query-params db]
-  (let [limit    (Integer/parseInt (get query-params :limit "1000"))
+  (let [urbit-id (get query-params :urbit-id)
+        since    (parse-pki-time (get query-params :since "~1970.1.1..00.00.00"))
+        limit    (Integer/parseInt (get query-params :limit "1000"))
         offset   (Integer/parseInt (get query-params :offset "0"))]
     {:status 200
      :headers {"Content-Type" "application/json"}
-     :body (json/write-str (get-pki-events limit offset db) :value-fn stringify-date)}))
+     :body (json/write-str (if urbit-id
+                             (get-pki-events urbit-id since db)
+                             (get-all-pki-events limit offset db))
+                           :value-fn stringify-date)}))
 
 (defn root-handler [{:keys [datomic.ion.edn.api-gateway/data]}]
   (let [client       (get-client)

@@ -87,6 +87,7 @@
   [{:db/ident :pki-event/id
     :db/valueType :db.type/long
     :db/cardinality :db.cardinality/one
+    :db/unique :db.unique/identity
     :db/doc "The increasing integer number of the pki event"}
 
    {:db/ident :pki-event/node

@@ -293,7 +293,9 @@ attr by amount, treating a missing value as 1."
   (let [urbit-ids (str/split (get query-params :urbit-id) #",")
         limit (Integer/parseInt (get query-params :limit "1000"))
         offset  (Integer/parseInt (get query-params :offset "0"))
-        types (map keyword (str/split (get query-params :node-types) #","))]
+        types (if (get query-params :node-types)
+                (map keyword (str/split (get query-params :node-types) #","))
+                #{})]
     (if-not (every? ob/patp? urbit-ids)
       {:status 400
        :headers {"Content-Type" "application/json"}

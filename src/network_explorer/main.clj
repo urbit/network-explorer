@@ -323,7 +323,7 @@ attr by amount, treating a missing value as 1."
     value))
 
 (defn get-pki-events [urbit-id since db]
-  (sort-by :pki-event/id (mapcat identity (d/q pki-events-query db urbit-id since))))
+  (sort-by (comp - :pki-event/id) (mapcat identity (d/q pki-events-query db urbit-id since))))
 
 (defn get-all-pki-events [limit offset db]
  (let [selector [:pki-event/id
@@ -334,7 +334,10 @@ attr by amount, treating a missing value as 1."
                  :pki-event/address
                  :pki-event/continuity
                  :pki-event/revision]]
-   (->> (d/index-pull db {:index :avet :selector selector :start [:pki-event/id offset]})
+   (->> (d/index-pull db {:index :avet
+                          :selector selector
+                          :start [:pki-event/id offset]
+                          :reverse true})
         (take limit))))
 
 

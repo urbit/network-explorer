@@ -72,13 +72,6 @@ attr by amount, treating a missing value as 1."
                  [?e :pki-event/time ?t]] $ ?urbit-id) [[?newest]]]
            [?e :pki-event/time ?newest]])
 
-(def owners-query
-  '[:find (count ?e)
-    :in $ [?urbit-id ...]
-    :where [?p :node/urbit-id ?urbit-id]
-           [?e :pki-event/node ?p]
-           [?e :pki-event/type :change-ownership]])
-
 (def spawned-query
   '[:find (pull ?e [*])
     :in $ [?urbit-id ...]
@@ -93,6 +86,53 @@ attr by amount, treating a missing value as 1."
            [?e :pki-event/node ?p]
            [?e :pki-event/type :activate]])
 
+(def all-pki-events-query
+  '[:find (pull ?e [:pki-event/id
+                    {:pki-event/node [:node/urbit-id]}
+                    {:pki-event/target-node [:node/urbit-id]}
+                    :pki-event/type
+                    :pki-event/time
+                    :pki-event/address
+                    :pki-event/continuity
+                    :pki-event/revision])
+    :in $ ?since [?type ...]
+    :where [?e :pki-event/time ?t]
+           (or [?e :pki-event/node ?p]
+               [?e :pki-event/target-node ?p])
+           [?p :node/type ?type]
+           [(<= ?since ?t)]])
+
+(def pki-events-query
+  '[:find (pull ?e [:pki-event/id
+                    {:pki-event/node [:node/urbit-id]}
+                    {:pki-event/target-node [:node/urbit-id]}
+                    {:pki-event/type [:node/urbit-id]}
+                    :pki-event/time
+                    :pki-event/address
+                    :pki-event/continuity
+                    :pki-event/revision])
+    :in $ ?urbit-id
+    :where [?p :node/urbit-id ?urbit-id]
+           (or [?e :pki-event/node ?p]
+               [?e :pki-event/target-node ?p])])
+
+(def all-urbit-ids-query-types
+  '[:find (pull ?e [:node/urbit-id
+                    :node/type
+                    [:node/revision :default 0]
+                    [:node/continuity :default 0]
+                    [:node/num-owners :default 1]
+                    [:node/ownership-address :default nil]
+                    [:node/management-proxy :default nil]
+                    [:node/transfer-proxy :default nil]
+                    [:node/voting-proxy :default nil]
+                    [:node/spawn-proxy :default nil]
+                    [:node/online :default false]
+                    {:node/sponsor [:node/urbit-id]}
+                    {[:node/_sponsor :as :node/kids :default []] [:node/urbit-id]}])
+    :in $ [?type ...]
+    :where [?e :node/urbit-id]
+           [?e :node/type ?type]])
 
 (def all-urbit-ids-query
   '[:find (pull ?e [:node/urbit-id
@@ -109,6 +149,25 @@ attr by amount, treating a missing value as 1."
                     {:node/sponsor [:node/urbit-id]}
                     {[:node/_sponsor :as :node/kids :default []] [:node/urbit-id]}])
     :where [?e :node/urbit-id]])
+
+
+(def urbit-ids-query-types
+  '[:find (pull ?e [:node/urbit-id
+                    :node/type
+                    [:node/revision :default 0]
+                    [:node/continuity :default 0]
+                    [:node/num-owners :default 1]
+                    [:node/ownership-address :default nil]
+                    [:node/management-proxy :default nil]
+                    [:node/transfer-proxy :default nil]
+                    [:node/voting-proxy :default nil]
+                    [:node/spawn-proxy :default nil]
+                    [:node/online :default false]
+                    {:node/sponsor [:node/urbit-id]}
+                    {[:node/_sponsor :as :node/kids :default []] [:node/urbit-id]}])
+    :in $ [?urbit-id ...] [?type ...]
+    :where [?e :node/urbit-id ?urbit-id]
+           [?e :node/type ?type]])
 
 (def urbit-ids-query
   '[:find (pull ?e [:node/urbit-id
@@ -176,7 +235,7 @@ attr by amount, treating a missing value as 1."
                                     :pki-event/address (nth l 3)})
                        {:node/urbit-id (second l)
                         :node/ownership-address (nth l 3)}
-                       `(network-explorer.main/inc-attr ~(second l) :node/num-owners 1)]
+                       `(network-explorer.main/inc-attr [:node/urbit-id ~(second l)] :node/num-owners 1)]
        "activated"    [(merge base {:pki-event/type :activate})]
        "spawned"      [(merge base {:pki-event/type :spawn
                                     :pki-event/target-node {:db/id [:node/urbit-id (nth l 3)]}})]
@@ -210,39 +269,87 @@ attr by amount, treating a missing value as 1."
 
 (def get-client (memoize (fn [] (d/client cfg))))
 
-(defn get-all-nodes [limit offset db]
-  (mapcat identity (d/q {:query all-urbit-ids-query
-                         :args [db]
-                         :limit limit
-                         :offset offset})))
+(defn get-all-nodes [limit offset types db]
+  (let [query (if (empty? types)
+                all-urbit-ids-query
+                all-urbit-ids-query-types)
+        args (if (empty? types) [db] [db types])]
+    (mapcat identity (d/q {:query query
+                           :args args
+                           :limit limit
+                           :offset offset}))))
 
-(defn get-nodes [urbit-ids limit offset db]
-  (let [res  (d/q {:query urbit-ids-query
-                   :args [db urbit-ids]
-                   :limit limit
-                   :offset offset})]
-    (if (= 1 (count res))
-      (ffirst res)
-      (mapcat identity res))))
+(defn get-nodes [urbit-ids limit offset types db]
+  (let [query (if (empty? types)
+                urbit-ids-query
+                urbit-ids-query-types)
+        args (if (empty? types) [db urbit-ids] [db urbit-ids types])]
+    (mapcat identity (d/q {:query query
+                           :args args
+                           :limit limit
+                           :offset offset}))))
 
-(defn get-node* [{:keys [datomic.ion.edn.api-gateway/data]}]
-  (let [client (get-client)
-        conn (d/connect client {:db-name "network-explorer"})
-        db (d/db conn)
-        urbit-ids (str/split (get-in data [:queryStringParameters :urbit-id]) #",")
-        limit (Integer/parseInt (get (get data :queryStringParameters) :limit "1000"))
-        offset  (Integer/parseInt (get (get data :queryStringParameters) :offset "0"))]
+(defn get-nodes* [query-params db]
+  (let [urbit-ids (str/split (get query-params :urbit-id) #",")
+        limit (Integer/parseInt (get query-params :limit "1000"))
+        offset  (Integer/parseInt (get query-params :offset "0"))
+        types (map keyword (str/split (get query-params :node-types) #","))]
     (if-not (every? ob/patp? urbit-ids)
       {:status 400
        :headers {"Content-Type" "application/json"}
        :body (json/write-str {:error "One or more invalid urbit-ids"})}
+      (if-not (every? #{:galaxy :star :planet :moon :comet} types)
+        {:status 400
+         :headers {"Content-Type" "application/json"}
+         :body (json/write-str {:error "One or more invalid node-types"})}
+        {:status 200
+         :headers {"Content-Type" "application/json"}
+         :body (json/write-str (if (empty? urbit-ids)
+                                 (get-all-nodes limit offset types db)
+                                 (get-nodes urbit-ids limit offset types db)))}))))
+
+(defn get-node [urbit-id db]
+  (ffirst (get-nodes [urbit-id] 1 0 [] db)))
+
+(defn get-node* [query-params db]
+  (let [urbit-id (get query-params :urbit-id)]
+    (if-not (ob/patp? urbit-id)
+      {:status 400
+       :headers {"Content-Type" "application/json"}
+       :body (json/write-str {:error "Invalid urbit-id"})}
       {:status 200
        :headers {"Content-Type" "application/json"}
-       :body (json/write-str (if (empty? urbit-ids)
-                               (get-all-nodes limit offset db)
-                               (get-nodes urbit-ids limit offset db)))})))
+       :body (json/write-str (get-node urbit-id db))})))
+
+(defn get-pki-events [types since limit offset db]
+  {:status 200
+   :headers {"Content-Type" "application/json"}
+   :body (->> (d/q all-pki-events-query db since types)
+              (sort-by :pki-event/id)
+              (drop offset)
+              (take limit)
+              json/write-str)})
+
+(defn get-pki-events* [query-params db]
+  (let [limit    (Integer/parseInt (get query-params :limit "1000"))
+        offset   (Integer/parseInt (get query-params :offset "0"))
+        since    (parse-pki-time (get query-params :since "~1970.1.1..00.00.00"))
+        types    (map keyword (str/split (get query-params :node-types "galaxy,star,planet") #","))]
+    (get-pki-events types since limit offset db)))
+
+(defn root-handler [{:keys [datomic.ion.edn.api-gateway/data]}]
+  (let [client       (get-client)
+        conn         (d/connect client {:db-name "network-explorer"})
+        db           (d/db conn)
+        path         (get data :rawPath)
+        query-params (get data :queryStringParameters)]
+    (case path
+      "/get-node"       (get-node* query-params db)
+      "/get-nodes"      (get-nodes* query-params db)
+      "/get-pki-events" (get-pki-events* query-params db)
+      {:status 404})))
 
 (def get-node-lambda-proxy
-  (apigw/ionize get-node*))
+  (apigw/ionize root-handler))
 
 ;; (def conn (d/connect client {:db-name "network-explorer"}))

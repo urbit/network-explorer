@@ -296,7 +296,9 @@ attr by amount, treating a missing value as 1."
                            :offset offset}))))
 
 (defn get-nodes* [query-params db]
-  (let [urbit-ids (str/split (get query-params :urbit-id) #",")
+  (let [urbit-ids (if (get query-params :urbit-id)
+                    (str/split (get query-params :urbit-id) #",")
+                    #{})
         limit (Integer/parseInt (get query-params :limit "1000"))
         offset  (Integer/parseInt (get query-params :offset "0"))
         types (if (get query-params :node-types)

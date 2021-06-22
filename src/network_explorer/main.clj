@@ -334,22 +334,25 @@ attr by amount, treating a missing value as 1."
     (format-pki-time value)
     value))
 
-(defn get-pki-events [types since limit offset db]
-  {:status 200
-   :headers {"Content-Type" "application/json"}
-   :body (json/write-str (->> (d/q all-pki-events-query db since types)
-                              (sort-by :pki-event/id)
-                              (drop offset)
-                              (take limit))
-                         :value-fn stringify-date)})
+(defn get-pki-events [limit offset db]
+  (let [selector [:pki-event/id
+                  {:pki-event/node [:node/urbit-id]}
+                  {:pki-event/target-node [:node/urbit-id]}
+                  :pki-event/type
+                  :pki-event/time
+                  :pki-event/address
+                  :pki-event/continuity
+                  :pki-event/revision]]
+    (->> (d/index-pull db {:index :avet :selector selector :start [:pki-event/id offset]})
+         (take limit))))
 
 
 (defn get-pki-events* [query-params db]
   (let [limit    (Integer/parseInt (get query-params :limit "1000"))
-        offset   (Integer/parseInt (get query-params :offset "0"))
-        since    (parse-pki-time (get query-params :since "~1970.1.1..00.00.00"))
-        types    (map keyword (str/split (get query-params :node-types "galaxy,star,planet") #","))]
-    (get-pki-events types since limit offset db)))
+        offset   (Integer/parseInt (get query-params :offset "0"))]
+    {:status 200
+     :headers {"Content-Type" "application/json"}
+     :body (json/write-str (get-pki-events limit offset db) :value-fn stringify-date)}))
 
 (defn root-handler [{:keys [datomic.ion.edn.api-gateway/data]}]
   (let [client       (get-client)

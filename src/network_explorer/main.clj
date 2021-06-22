@@ -50,6 +50,12 @@
      (.setTimeZone (java.util.TimeZone/getTimeZone "UTC")))
    s))
 
+(defn format-pki-time [inst]
+  (-> (java.text.SimpleDateFormat. "~yyyy.MM.dd..HH.mm.ss")
+      (doto (.setTimeZone (java.util.TimeZone/getTimeZone "UTC")))
+      (.format inst (java.lang.StringBuffer.) (java.text.FieldPosition. 0))
+      .toString))
+
 (defn inc-attr
   "Transaction function that increments the value of entity's card-1
 attr by amount, treating a missing value as 1."
@@ -323,14 +329,20 @@ attr by amount, treating a missing value as 1."
        :headers {"Content-Type" "application/json"}
        :body (json/write-str (get-node urbit-id db))})))
 
+(defn stringify-date [key value]
+  (if (= key :pki-event/time)
+    (format-pki-time value)
+    value))
+
 (defn get-pki-events [types since limit offset db]
   {:status 200
    :headers {"Content-Type" "application/json"}
-   :body (->> (d/q all-pki-events-query db since types)
-              (sort-by :pki-event/id)
-              (drop offset)
-              (take limit)
-              json/write-str)})
+   :body (json/write-str (->> (d/q all-pki-events-query db since types)
+                              (sort-by :pki-event/id)
+                              (drop offset)
+                              (take limit))
+                         {:value-fn stringify-date})})
+
 
 (defn get-pki-events* [query-params db]
   (let [limit    (Integer/parseInt (get query-params :limit "1000"))

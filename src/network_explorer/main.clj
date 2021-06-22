@@ -341,7 +341,7 @@ attr by amount, treating a missing value as 1."
                               (sort-by :pki-event/id)
                               (drop offset)
                               (take limit))
-                         {:value-fn stringify-date})})
+                         :value-fn stringify-date)})
 
 
 (defn get-pki-events* [query-params db]

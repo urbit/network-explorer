@@ -309,7 +309,7 @@ attr by amount, treating a missing value as 1."
                                  (get-nodes urbit-ids limit offset types db)))}))))
 
 (defn get-node [urbit-id db]
-  (ffirst (get-nodes [urbit-id] 1 0 [] db)))
+  (first (get-nodes [urbit-id] 1 0 [] db)))
 
 (defn get-node* [query-params db]
   (let [urbit-id (get query-params :urbit-id)]

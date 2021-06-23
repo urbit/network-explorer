@@ -63,20 +63,6 @@ attr by amount, treating a missing value as 1."
   (let [m (d/pull db {:eid entity :selector [:db/id attr]})]
     [[:db/add (:db/id m) attr (+ (or (attr m) 1) amount)]]))
 
-(def management-proxy-query
-  '[:find (pull ?e [:pki-event/address])
-    :in $ [?urbit-id ...]
-    :where [?p :node/urbit-id ?urbit-id]
-           [?e :pki-event/node ?p]
-           [?e :pki-event/type :change-management-proxy]
-           [(q '[:find (max ?t)
-                 :in $ ?urbit-id
-                 :where
-                 [?p :node/urbit-id ?urbit-id]
-                 [?e :pki-event/node ?p]
-                 [?e :pki-event/type :change-management-proxy]
-                 [?e :pki-event/time ?t]] $ ?urbit-id) [[?newest]]]
-           [?e :pki-event/time ?newest]])
 
 (def spawned-query
   '[:find (pull ?e [*])
@@ -177,11 +163,6 @@ attr by amount, treating a missing value as 1."
                     {[:node/_sponsor :as :node/kids :default []] [:node/urbit-id]}])
     :in $ [?urbit-id ...]
     :where [?e :node/urbit-id ?urbit-id]])
-
-(defn set-lookup-ref [nodes-in-db urbit-id]
-  (if (contains? nodes-in-db urbit-id)
-    {:db/id [:node/urbit-id urbit-id]}
-    {:db/id urbit-id}))
 
 (defn pki-line->nodes [acc l]
   (->> (filter ob/patp? l)

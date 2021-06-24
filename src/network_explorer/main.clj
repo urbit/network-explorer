@@ -186,6 +186,11 @@ attr by amount, treating a missing value as 1."
 (defn node->node-tx [s]
   `(network-explorer.main/add-urbit-id ~s))
 
+(defn node->node-tx-no-sponsor [s]
+  (merge {:node/urbit-id  s
+          :node/point     (ob/patp->biginteger s)
+          :node/type      (ob/clan s)}))
+
 (defn pki-line->txs [idx l]
   (let [base {:pki-event/id   idx
               :pki-event/time (parse-pki-time (first l))
@@ -254,17 +259,20 @@ attr by amount, treating a missing value as 1."
 (def get-client (memoize (fn [] (d/client cfg))))
 
 (defn update-pki-data [_]
-  (let [client    (get-client)
-        conn      (d/connect client {:db-name "network-explorer"})
-        db        (d/db conn)
-        newest-id (ffirst (d/q '[:find (max ?id) :where [_ :pki-event/id ?id]] db))
-        lines     (->> (str/split-lines (get-pki-data))
-                       (map (fn [l] (str/split l #",")))
-                       (drop 1)
-                       reverse
-                       (drop (inc newest-id)))
-        node-txs  (map node->node-tx (reduce pki-line->nodes #{} lines))
-        pki-txs   (map pki-line->txs (range newest-id (+ (inc newest-id) (count lines))) lines)]
+  (let [client     (get-client)
+        conn       (d/connect client {:db-name "network-explorer"})
+        db         (d/db conn)
+        newest-id  (ffirst (d/q '[:find (max ?id) :where [_ :pki-event/id ?id]] db))
+        lines      (->> (str/split-lines (get-pki-data))
+                        (map (fn [l] (str/split l #",")))
+                        (drop 1)
+                        reverse
+                        (drop (inc newest-id)))
+        nodes      (reduce pki-line->nodes #{} lines)
+        no-sponsor (map node->node-tx-no-sponsor nodes)
+        node-txs   (map node->node-tx nodes)
+        pki-txs    (map pki-line->txs (range newest-id (+ (inc newest-id) (count lines))) lines)]
+    (d/transact conn {:tx-data no-sponsor})
     (d/transact conn {:tx-data node-txs})
     (d/transact conn {:tx-data pki-txs})))
 

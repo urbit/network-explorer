@@ -255,7 +255,7 @@ attr by amount, treating a missing value as 1."
 
 (def get-client (memoize (fn [] (d/client cfg))))
 
-(defn update-pki-data []
+(defn update-pki-data [_]
   (let [client    (get-client)
         conn      (d/connect client {:db-name "network-explorer"})
         db        (d/db conn)

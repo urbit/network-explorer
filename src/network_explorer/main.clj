@@ -271,7 +271,7 @@ attr by amount, treating a missing value as 1."
         nodes      (reduce pki-line->nodes #{} lines)
         no-sponsor (map node->node-tx-no-sponsor nodes)
         node-txs   (map node->node-tx nodes)
-        pki-txs    (map pki-line->txs (range newest-id (+ (inc newest-id) (count lines))) lines)]
+        pki-txs    (mapcat pki-line->txs (range newest-id (+ (inc newest-id) (count lines))) lines)]
     (d/transact conn {:tx-data no-sponsor})
     (d/transact conn {:tx-data node-txs})
     (d/transact conn {:tx-data pki-txs})))

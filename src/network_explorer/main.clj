@@ -63,6 +63,23 @@ attr by amount, treating a missing value as 1."
   (let [m (d/pull db {:eid entity :selector [:db/id attr]})]
     [[:db/add (:db/id m) attr (+ (or (attr m) 1) amount)]]))
 
+(defn add-urbit-id
+  "Transaction function that checks whether an urbit-id has a sponsor
+  set, setting it with ob/sein if needed."
+  [db urbit-id]
+  (let [s (ffirst (d/q '[:find ?s
+                         :in $ ?urbit-id
+                         :where [?e :node/urbit-id ?urbit-id]
+                         [?e :node/sponsor ?s]]
+                       db
+                       urbit-id))]
+    [{:node/urbit-id urbit-id
+      :node/point   (ob/patp->biginteger urbit-id)
+      :node/type    (ob/clan urbit-id)
+      :node/sponsor (if s
+                      s
+                      [:node/urbit-id  {:db/id [:node/urbit-id (ob/sein urbit-id)]}])}]))
+
 
 (def spawned-query
   '[:find (pull ?e [*])
@@ -169,11 +186,7 @@ attr by amount, treating a missing value as 1."
        (apply conj acc)))
 
 (defn node->node-tx [s]
-  (merge {:node/urbit-id  s
-          :node/point     (ob/patp->biginteger s)
-          :node/type      (ob/clan s)}
-         (when-not (= :galaxy (ob/clan s))
-           {:node/sponsor {:db/id [:node/urbit-id (ob/sein s)]}})))
+  `(network-explorer.main/add-urbit-id ~s))
 
 (defn pki-line->txs [idx l]
   (let [base {:pki-event/id   idx
@@ -242,6 +255,21 @@ attr by amount, treating a missing value as 1."
 
 (def get-client (memoize (fn [] (d/client cfg))))
 
+(defn update-pki-data []
+  (let [client    (get-client)
+        conn      (d/connect client {:db-name "network-explorer"})
+        db        (d/db conn)
+        newest-id (ffirst (d/q '[:find (max ?id) :where [_ :pki-event/id ?id]] db))
+        lines     (->> (str/split-lines (get-pki-data))
+                       (map (fn [l] (str/split l #",")))
+                       (drop 1)
+                       reverse
+                       (drop (inc newest-id)))
+        node-txs  (map node->node-tx (reduce pki-line->nodes #{} lines))
+        pki-txs   (map pki-line->txs (range newest-id (+ (inc newest-id) (count lines))) lines)]
+    (d/transact conn {:tx-data node-txs})
+    (d/transact conn {:tx-data pki-txs})))
+
 (defn get-all-nodes [limit offset types db]
   (let [query (if (empty? types)
                 all-urbit-ids-query
@@ -304,7 +332,9 @@ attr by amount, treating a missing value as 1."
     value))
 
 (defn get-pki-events [urbit-id since db]
-  (sort-by (comp - :pki-event/id) (mapcat identity (d/q pki-events-query db urbit-id since))))
+  (->> (d/q pki-events-query db urbit-id since)
+       (mapcat identity)
+       (sort-by (comp - :pki-event/id))))
 
 (defn get-all-pki-events [limit offset db]
   (let [selector [:pki-event/id

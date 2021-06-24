@@ -276,7 +276,9 @@ attr by amount, treating a missing value as 1."
                            lines)]
     (d/transact conn {:tx-data no-sponsor})
     (d/transact conn {:tx-data node-txs})
-    (map (fn [txs] (d/transact conn {:tx-data txs})) pki-txs)))
+    (doseq [txs pki-txs]
+      (d/transact conn {:tx-data txs}))
+    (str "Transacted " (count pki-txs) " pki-events")))
 
 (defn get-all-nodes [limit offset types db]
   (let [query (if (empty? types)

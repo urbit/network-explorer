@@ -3,7 +3,7 @@
             [clj-http.client :as http]
             [clojure.data.json :as json]
             [clojure.string :as str]
-            [network-explorer.ob :as ob]
+            [clj-ob.ob :as ob]
             [datomic.ion.cast :as cast]
             [datomic.ion.lambda.api-gateway :as apigw]))
 

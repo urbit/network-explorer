@@ -4,7 +4,7 @@
             [clojure.data.json :as json]
             [clojure.string :as str]
             [clj-ob.ob :as ob]
-            [datomic.ion.dev :as dev]))
+            [datomic.ion.dev :as ion]))
 
 (def cfg {:server-type :ion
           :region "us-west-2" ;; e.g. us-east-1
@@ -384,5 +384,13 @@ attr by amount, treating a missing value as 1."
       "/get-nodes"      (get-nodes* query-params db)
       "/get-pki-events" (get-pki-events* query-params db)
       {:status 404})))
+
+(defn deploy-build! []
+  (let [rev (-> (clojure.java.shell/sh "git" "rev-parse" "HEAD")
+                :out
+                str/trim-newline)]
+    (ion/push {:rev rev})
+    (ion/deploy {:group "datomic-storage"
+                 :rev rev})))
 
 ;; (def conn (d/connect (get-client) {:db-name "network-explorer"}))

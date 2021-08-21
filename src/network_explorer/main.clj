@@ -4,14 +4,12 @@
             [clojure.data.json :as json]
             [clojure.string :as str]
             [clj-ob.ob :as ob]
-            [datomic.ion.cast :as cast]
-            [datomic.ion.lambda.api-gateway :as apigw]))
+            [datomic.ion.dev :as dev]))
 
 (def cfg {:server-type :ion
           :region "us-west-2" ;; e.g. us-east-1
           :system "datomic-storage"
-          :endpoint "http://entry.datomic-storage.us-west-2.datomic.net:8182/"
-          :proxy-port 8182})
+          :endpoint "https://rkl443haxh.execute-api.us-west-2.amazonaws.com"})
 
 
 ;; (def conn (d/connect client {:db-name "network-explorer"}))
@@ -387,7 +385,4 @@ attr by amount, treating a missing value as 1."
       "/get-pki-events" (get-pki-events* query-params db)
       {:status 404})))
 
-(def get-node-lambda-proxy
-  (apigw/ionize root-handler))
-
-;; (def conn (d/connect client {:db-name "network-explorer"}))
+;; (def conn (d/connect (get-client) {:db-name "network-explorer"}))

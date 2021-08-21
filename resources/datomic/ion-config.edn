@@ -1,10 +1,6 @@
 {:allow [network-explorer.main/inc-attr
          network-explorer.main/add-urbit-id]
- :lambdas {:get-node
-           {:fn network-explorer.main/get-node-lambda-proxy
-            :integration :api-gateway/proxy
-            :description "Produce the details for a single node."}
-           :update-pki-data
-           {:fn network-explorer.main/update-pki-data
-            :description "Updates the PKI data"}}
+ :http-direct {:handler-fn network-explorer.main/root-handler}
+ :lambdas {:update-pki-data {:fn network-explorer.main/update-pki-data
+                             :description "Updates the PKI data"}}
  :app-name "datomic-storage"}

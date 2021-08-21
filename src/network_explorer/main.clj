@@ -3,18 +3,18 @@
             [clj-http.client :as http]
             [clojure.data.json :as json]
             [clojure.string :as str]
-            [clj-ob.ob :as ob]
             [datomic.ion.cast :as cast]
-            [datomic.ion.lambda.api-gateway :as apigw]))
+            [ring.middleware.params :as params]
+            [ring.middleware.keyword-params :as kwparams]
+            [clj-ob.ob :as ob]
+            [datomic.ion.dev :as dev]))
 
 (def cfg {:server-type :ion
           :region "us-west-2" ;; e.g. us-east-1
           :system "datomic-storage"
-          :endpoint "http://entry.datomic-storage.us-west-2.datomic.net:8182/"
-          :proxy-port 8182})
+          :endpoint "https://rkl443haxh.execute-api.us-west-2.amazonaws.com"})
 
 
-;; (def conn (d/connect client {:db-name "network-explorer"}))
 
 (defn get-radar-data []
   (-> (http/get "http://35.247.74.19:8080/~radar.json")
@@ -375,19 +375,22 @@ attr by amount, treating a missing value as 1."
                              (get-all-pki-events limit offset db))
                            :value-fn stringify-date)}))
 
-(defn root-handler [{:keys [datomic.ion.edn.api-gateway/data]}]
+(defn app-handler [req]
   (let [client       (get-client)
         conn         (d/connect client {:db-name "network-explorer"})
         db           (d/db conn)
-        path         (get data :rawPath)
-        query-params (get data :queryStringParameters)]
+        path         (get req :uri)
+        query-params (get req :params)]
+    (cast/event {:msg "RootEvent" ::json (pr-str req)})
     (case path
       "/get-node"       (get-node* query-params db)
       "/get-nodes"      (get-nodes* query-params db)
       "/get-pki-events" (get-pki-events* query-params db)
       {:status 404})))
 
-(def get-node-lambda-proxy
-  (apigw/ionize root-handler))
+(def root-handler
+  (-> app-handler
+      kwparams/wrap-keyword-params
+      params/wrap-params))
 
-;; (def conn (d/connect client {:db-name "network-explorer"}))
+;; (def conn (d/connect (get-client) {:db-name "network-explorer"}))

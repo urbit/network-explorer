@@ -2,10 +2,12 @@
  :deps {com.cognitect/anomalies {:mvn/version "0.1.12"}
         com.datomic/client-cloud {:mvn/version "0.8.102"}
         com.datomic/ion {:mvn/version "0.9.50"}
+        com.datomic/ion-dev {:mvn/version "0.9.290"}
         org.clojure/clojure {:mvn/version "1.10.1"}
         org.clojure/data.json {:mvn/version "2.3.1"}
         clj-http/clj-http {:mvn/version "3.12.2"}
         com.google.guava/guava {:mvn/version "28.1-jre"}
+        ring/ring-core {:mvn/version "1.9.4"}
         pkova/clj-ob {:git/url "https://github.com/pkova/clj-ob" :sha "9d6929c3e8793c5dbd023866ff61dd6104d081bc"}}
  :mvn/repos {"datomic-cloud" {:url "s3://datomic-releases-1fc2183a/maven/releases"}}}
 

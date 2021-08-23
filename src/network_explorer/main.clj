@@ -375,7 +375,7 @@ attr by amount, treating a missing value as 1."
                              (get-all-pki-events limit offset db))
                            :value-fn stringify-date)}))
 
-(defn app-handler [req]
+(defn root-handler [req]
   (let [client       (get-client)
         conn         (d/connect client {:db-name "network-explorer"})
         db           (d/db conn)
@@ -388,8 +388,8 @@ attr by amount, treating a missing value as 1."
       "/get-pki-events" (get-pki-events* query-params db)
       {:status 404})))
 
-(def root-handler
-  (-> app-handler
+(def app-handler
+  (-> root-handler
       kwparams/wrap-keyword-params
       params/wrap-params))
 

@@ -21,10 +21,6 @@
       :body
       json/read-str))
 
-
-(defn map-kv [m f]
-  (reduce-kv #(assoc %1 %2 (f %3)) {} m))
-
 (defn radar-data->txs [data]
   (->> data
        (map (fn [[k v]]
@@ -33,7 +29,12 @@
                             :ping/time (java.util.Date. (get e "ping"))
                             :ping/urbit-id {:db/id [:node/urbit-id k]}}) v)))
        (remove empty?)
-       (mapcat identity)))
+       (mapcat identity)
+       (filter (fn [e]
+                 (#{:galaxy :star :planet} (ob/clan (-> e
+                                                        :ping/urbit-id
+                                                        :db/id
+                                                        second)))))))
 
 (defn get-pki-data []
   (:body (http/get "https://azimuth.network/stats/events.txt" {:insecure? true})))
@@ -172,6 +173,17 @@ attr by amount, treating a missing value as 1."
                     {[:node/_sponsor :as :node/kids :default []] [:node/urbit-id]}])
     :in $ [?urbit-id ...]
     :where [?e :node/urbit-id ?urbit-id]])
+
+(def activity-query
+  '[:find (pull ?e [:ping/time
+                    :ping/response
+                    {:ping/urbit-id [:node/urbit-id]}
+                    :ping/result])
+    :in $ ?urbit-id ?since
+    :where [?e :ping/urbit-id ?p]
+           [?p :node/urbit-id ?urbit-id]
+           [?e :ping/time ?t]
+           [(<= ?since ?t)]])
 
 (defn pki-line->nodes [acc l]
   (->> (filter ob/patp? l)
@@ -331,8 +343,10 @@ attr by amount, treating a missing value as 1."
        :body (json/write-str (get-node urbit-id db))})))
 
 (defn stringify-date [key value]
-  (if (= key :pki-event/time)
-    (format-pki-time value)
+  (case key
+    :pki-event/time (format-pki-time value)
+    :ping/time      (format-pki-time value)
+    :ping/response  (format-pki-time value)
     value))
 
 (defn get-pki-events [urbit-id since db]
@@ -381,6 +395,10 @@ attr by amount, treating a missing value as 1."
                       :limit limit
                       :offset offset})))
 
+(defn get-activity [urbit-id since db]
+  (mapcat identity (d/q {:query activity-query
+                         :args [db urbit-id since]})))
+
 (defn get-activity* [query-params db]
   (let [urbit-id (get query-params :urbit-id)
         since    (parse-pki-time (get query-params :since "~1970.1.1..00.00.00"))
@@ -399,7 +417,6 @@ attr by amount, treating a missing value as 1."
         db           (d/db conn)
         path         (get req :uri)
         query-params (get req :params)]
-    (cast/event {:msg "RootEvent" ::json (pr-str req)})
     (case path
       "/get-node"       (get-node* query-params db)
       "/get-nodes"      (get-nodes* query-params db)

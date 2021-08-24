@@ -26,12 +26,14 @@
   (reduce-kv #(assoc %1 %2 (f %3)) {} m))
 
 (defn radar-data->txs [data]
-  (remove empty?
-          (map (fn [[k v]]
-                 (map (fn [e] {:ping/result (get e "result")
-                               :ping/response (java.util.Date. (get e "response"))
-                               :ping/time (java.util.Date. (get e "ping"))
-                               :ping/urbit-id {:db/id [:node/urbit-id k]}}) v)) data)))
+  (->> data
+       (map (fn [[k v]]
+              (map (fn [e] {:ping/result (get e "result")
+                            :ping/response (java.util.Date. (get e "response"))
+                            :ping/time (java.util.Date. (get e "ping"))
+                            :ping/urbit-id {:db/id [:node/urbit-id k]}}) v)))
+       (remove empty?)
+       (mapcat identity)))
 
 (defn get-pki-data []
   (:body (http/get "https://azimuth.network/stats/events.txt" {:insecure? true})))
@@ -367,6 +369,30 @@ attr by amount, treating a missing value as 1."
                              (get-all-pki-events limit offset db))
                            :value-fn stringify-date)}))
 
+(defn get-all-activity [limit offset db]
+  (let [selector [:ping/time
+                  :ping/response
+                  {:ping/urbit-id [:node/urbit-id]}
+                  :ping/result]]
+    (d/index-pull db {:index :avet
+                      :selector selector
+                      :start [:ping/time]
+                      :reverse true
+                      :limit limit
+                      :offset offset})))
+
+(defn get-activity* [query-params db]
+  (let [urbit-id (get query-params :urbit-id)
+        since    (parse-pki-time (get query-params :since "~1970.1.1..00.00.00"))
+        limit    (Integer/parseInt (get query-params :limit "1000"))
+        offset   (Integer/parseInt (get query-params :offset "0"))]
+    {:status 200
+     :headers {"Content-Type" "application/json"}
+     :body (json/write-str (if urbit-id
+                             (get-activity urbit-id since db)
+                             (get-all-activity limit offset db))
+                           :value-fn stringify-date)}))
+
 (defn root-handler [req]
   (let [client       (get-client)
         conn         (d/connect client {:db-name "network-explorer"})
@@ -378,6 +404,7 @@ attr by amount, treating a missing value as 1."
       "/get-node"       (get-node* query-params db)
       "/get-nodes"      (get-nodes* query-params db)
       "/get-pki-events" (get-pki-events* query-params db)
+      "/get-activity"   (get-activity* query-params db)
       {:status 404})))
 
 (defn deploy-build! []

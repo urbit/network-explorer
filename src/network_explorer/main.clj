@@ -4,7 +4,11 @@
             [clojure.data.json :as json]
             [clojure.string :as str]
             [clj-ob.ob :as ob]
-            [datomic.ion.dev :as ion]))
+            [datomic.ion.dev :as ion]
+            [datomic.ion.cast :as cast]
+            [ring.middleware.params :as params]
+            [ring.middleware.keyword-params :as kwparams]
+            [datomic.ion.dev :as dev]))
 
 (def cfg {:server-type :ion
           :region "us-west-2" ;; e.g. us-east-1
@@ -12,33 +16,23 @@
           :endpoint "https://rkl443haxh.execute-api.us-west-2.amazonaws.com"})
 
 
-;; (def conn (d/connect client {:db-name "network-explorer"}))
-
 (defn get-radar-data []
-  (-> (http/get "http://35.247.74.19:8080/~radar.json")
+  (-> (http/get "https://raw.githubusercontent.com/jalehman/urbit-metrics/master/radar.2021-08-20T16%3A41%3A03.900Z.json" {:insecure? true})
       :body
       json/read-str))
+
 
 (defn map-kv [m f]
   (reduce-kv #(assoc %1 %2 (f %3)) {} m))
 
 (defn radar-data->txs [data]
-  (->> (map-kv data first)
-       (map (fn [[k v]]
-              (merge
-               {:node/urbit-id k
-                :node/point    (ob/patp->biginteger k)
-                :node/sponsor  {:db/id [:node/urbit-id (ob/sein k)]}
-                :node/type     (ob/clan k)
-                :node/online   (boolean (get v "response"))}
-               (when (get v "ping")
-                 {:node/ping-time (-> (get v "ping")
-                                      java.time.Instant/ofEpochMilli
-                                      java.util.Date/from)})
-               (when (get v "response")
-                 {:node/response-time (-> (get v "response")
-                                          java.time.Instant/ofEpochMilli
-                                          java.util.Date/from)}))))))
+  (remove empty?
+          (map (fn [[k v]]
+                 (map (fn [e] {:ping/result (get e "result")
+                               :ping/response (java.util.Date. (get e "response"))
+                               :ping/time (java.util.Date. (get e "ping"))
+                               :ping/urbit-id {:db/id [:node/urbit-id k]}}) v)) data)))
+
 (defn get-pki-data []
   (:body (http/get "https://azimuth.network/stats/events.txt" {:insecure? true})))
 
@@ -373,12 +367,13 @@ attr by amount, treating a missing value as 1."
                              (get-all-pki-events limit offset db))
                            :value-fn stringify-date)}))
 
-(defn root-handler [{:keys [datomic.ion.edn.api-gateway/data]}]
+(defn root-handler [req]
   (let [client       (get-client)
         conn         (d/connect client {:db-name "network-explorer"})
         db           (d/db conn)
-        path         (get data :rawPath)
-        query-params (get data :queryStringParameters)]
+        path         (get req :uri)
+        query-params (get req :params)]
+    (cast/event {:msg "RootEvent" ::json (pr-str req)})
     (case path
       "/get-node"       (get-node* query-params db)
       "/get-nodes"      (get-nodes* query-params db)
@@ -392,5 +387,9 @@ attr by amount, treating a missing value as 1."
     (ion/push {:rev rev})
     (ion/deploy {:group "datomic-storage"
                  :rev rev})))
+(def app-handler
+  (-> root-handler
+      kwparams/wrap-keyword-params
+      params/wrap-params))
 
 ;; (def conn (d/connect (get-client) {:db-name "network-explorer"}))

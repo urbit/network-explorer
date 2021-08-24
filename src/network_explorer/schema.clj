@@ -125,3 +125,27 @@
     :db/valueType :db.type/long
     :db/cardinality :db.cardinality/one
     :db/doc "The revision number of the pki event"}])
+
+(def ping-schema
+  [{:db/ident :ping/time
+    :db/valueType :db.type/instant
+    :db/cardinality :db.cardinality/one
+    :db/doc "Timestamp when the ping was sent"}
+   {:db/ident :ping/response
+    :db/valueType :db.type/instant
+    :db/cardinality :db.cardinality/one
+    :db/doc "Timestamp when the ping response was received"}
+   {:db/ident :ping/urbit-id
+    :db/valueType :db.type/ref
+    :db/cardinality :db.cardinality/one
+    :db/doc "The urbit-id that was pinged"}
+   {:db/ident :ping/result
+    :db/valueType :db.type/string
+    :db/cardinality :db.cardinality/one
+    :db/doc "The base hash of the pinged ship"}
+   {:db/ident :ping/time+urbit-id
+    :db/valueType :db.type/tuple
+    :db/tupleAttrs [:ping/time :ping/urbit-id]
+    :db/cardinality :db.cardinality/one
+    :db/unique :db.unique/identity
+    :db/doc "Composite of the ping send time and urbit-id for uniqueness constraint"}])

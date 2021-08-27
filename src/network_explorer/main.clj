@@ -296,7 +296,7 @@ attr by amount, treating a missing value as 1."
         conn   (d/connect client {:db-name "network-explorer"})]
     (pr-str (d/transact conn {:tx-data (radar-data->txs (get-radar-data))}))))
 
-(defn update-pki-data [_]
+(defn update-data [_]
   (let [client     (get-client)
         conn       (d/connect client {:db-name "network-explorer"})
         db         (d/db conn)
@@ -316,6 +316,7 @@ attr by amount, treating a missing value as 1."
     (d/transact conn {:tx-data node-txs})
     (doseq [txs pki-txs]
       (d/transact conn {:tx-data txs}))
+    (d/transact conn {:tx-data (radar-data->txs (get-radar-data))})
     (pr-str pki-txs)))
 
 (defn get-all-nodes [limit offset types db]

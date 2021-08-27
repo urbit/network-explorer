@@ -1,6 +1,6 @@
 (ns network-explorer.main
   (:require [datomic.client.api :as d]
-            [clj-http.client :as http]
+            [hato.client :as http]
             [clojure.data.json :as json]
             [clojure.string :as str]
             [clj-ob.ob :as ob]

@@ -17,18 +17,43 @@
 
 
 (defn get-radar-data []
-  (-> (http/get "https://raw.githubusercontent.com/jalehman/urbit-metrics/master/radar.2021-08-20T16%3A41%3A03.900Z.json" {:insecure? true})
+  (-> (http/get "http://165.232.131.25/~radar.json")
       :body
       json/read-str))
+
+(defn transform-radar-time [n]
+  (-> (java.time.Instant/ofEpochMilli n)
+      (java.time.ZonedDateTime/ofInstant java.time.ZoneOffset/UTC)
+      (.truncatedTo java.time.temporal.ChronoUnit/DAYS)
+      .toInstant
+      java.util.Date/from))
+
+(defn distinct-by
+  "Returns a stateful transducer that removes elements by calling f on each step as a uniqueness key.
+   Returns a lazy sequence when provided with a collection."
+  ([f]
+   (fn [rf]
+     (let [seen (volatile! #{})]
+       (fn
+         ([] (rf))
+         ([result] (rf result))
+         ([result input]
+          (let [v (f input)]
+            (if (contains? @seen v)
+              result
+              (do (vswap! seen conj v)
+                  (rf result input)))))))))
+  ([f xs]
+   (sequence (distinct-by f) xs)))
 
 (defn radar-data->txs [data]
   (->> data
        (map (fn [[k v]]
               (map (fn [e] {:ping/result (get e "result")
-                            :ping/response (java.util.Date. (get e "response"))
-                            :ping/time (java.util.Date. (get e "ping"))
+                            :ping/time (transform-radar-time (get e "response"))
                             :ping/urbit-id {:db/id [:node/urbit-id k]}}) v)))
        (remove empty?)
+       (map (fn [e] (distinct-by :ping/time e)))
        (mapcat identity)
        (filter (fn [e]
                  (#{:galaxy :star :planet} (ob/clan (-> e

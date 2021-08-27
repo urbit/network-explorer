@@ -130,11 +130,11 @@
   [{:db/ident :ping/time
     :db/valueType :db.type/instant
     :db/cardinality :db.cardinality/one
-    :db/doc "Timestamp when the ping was sent"}
+    :db/doc "UTC midnight timestamp of the date when the ping was received"}
    {:db/ident :ping/response
     :db/valueType :db.type/instant
     :db/cardinality :db.cardinality/one
-    :db/doc "Timestamp when the ping response was received"}
+    :db/doc "DEPRECATED"}
    {:db/ident :ping/urbit-id
     :db/valueType :db.type/ref
     :db/cardinality :db.cardinality/one

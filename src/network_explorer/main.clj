@@ -17,7 +17,7 @@
 
 
 (defn get-radar-data []
-  (-> (http/get "http://165.232.131.25/~radar.json")
+  (-> (http/get "http://165.232.131.25/~radar.json" {:timeout 300000 :connect-timeout 300000})
       :body
       json/read-str))
 
@@ -62,7 +62,9 @@
                                                         second)))))))
 
 (defn get-pki-data []
-  (:body (http/get "https://azimuth.network/stats/events.txt" {:insecure? true})))
+  (:body (http/get "https://azimuth.network/stats/events.txt" {:timeout 300000
+                                                               :connect-timeout 300000
+                                                               :http-client {:ssl-context {:insecure? true}}})))
 
 (defn parse-pki-time [s]
   (.parse

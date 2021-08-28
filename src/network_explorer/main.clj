@@ -46,20 +46,42 @@
   ([f xs]
    (sequence (distinct-by f) xs)))
 
+(defn add-composite-index
+  "Only required because lookup refs do not work when transacting an entity with
+  a tuple index that contains a :db.type/ref."
+  [data]
+  (let [client (get-client)
+        conn   (d/connect client {:db-name "network-explorer"})
+        db     (d/db conn)
+        urbit-ids (map (comp second :db/id :ping/urbit-id first) data)
+        urbit-id->eid (into {} (d/q '[:find ?u ?e
+                                      :in $ [?u ...]
+                                      :where [?e :node/urbit-id ?u]] db urbit-ids))]
+
+    (map (fn [es]
+           (map (fn [e]
+                  (assoc e :ping/time+urbit-id
+                         [(:ping/time e) (urbit-id->eid (-> e
+                                                            :ping/urbit-id
+                                                            :db/id
+                                                            second))])) es)) data)))
+
 (defn radar-data->txs [data]
   (->> data
        (map (fn [[k v]]
-              (map (fn [e] {:ping/result (get e "result")
-                            :ping/time (transform-radar-time (get e "response"))
-                            :ping/urbit-id {:db/id [:node/urbit-id k]}}) v)))
+              (map (fn [e]
+                     {:ping/result (get e "result")
+                      :ping/time (transform-radar-time (get e "response"))
+                      :ping/urbit-id {:db/id [:node/urbit-id k]}}) v)))
        (remove empty?)
        (map (fn [e] (distinct-by :ping/time e)))
-       (mapcat identity)
        (filter (fn [e]
-                 (#{:galaxy :star :planet} (ob/clan (-> e
+                 (#{:galaxy :star :planet} (ob/clan (-> (first e)
                                                         :ping/urbit-id
                                                         :db/id
-                                                        second)))))))
+                                                        second)))))
+       add-composite-index
+       (mapcat identity)))
 
 (defn get-pki-data []
   (:body (http/get "https://azimuth.network/stats/events.txt" {:timeout 300000
@@ -311,7 +333,7 @@ attr by amount, treating a missing value as 1."
     (d/transact conn {:tx-data node-txs})
     (doseq [txs pki-txs]
       (d/transact conn {:tx-data txs}))
-    #_(d/transact conn {:tx-data (radar-data->txs (get-radar-data))})
+    (d/transact conn {:tx-data (radar-data->txs (get-radar-data))})
     (pr-str pki-txs)))
 
 (defn get-all-nodes [limit offset types db]

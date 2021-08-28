@@ -15,6 +15,7 @@
           :system "datomic-storage"
           :endpoint "https://rkl443haxh.execute-api.us-west-2.amazonaws.com"})
 
+(def get-client (memoize (fn [] (d/client cfg))))
 
 (defn get-radar-data []
   (-> (http/get "http://165.232.131.25/~radar.json" {:timeout 300000 :connect-timeout 300000})
@@ -311,7 +312,6 @@ attr by amount, treating a missing value as 1."
         pki-txs  (mapcat-indexed pki-line->txs lines)]
     [node-txs pki-txs]))
 
-(def get-client (memoize (fn [] (d/client cfg))))
 
 (defn update-data [_]
   (let [client     (get-client)

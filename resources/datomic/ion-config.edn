@@ -2,5 +2,7 @@
          network-explorer.main/add-urbit-id]
  :http-direct {:handler-fn network-explorer.main/app-handler}
  :lambdas {:update-data {:fn network-explorer.main/update-data
-                         :description "Updates the PKI and radar data"}}
+                         :description "Updates the PKI and radar data"}
+           :radar-test {:fn network-explorer.main/test-radar-data-get
+                        :description "Test fn to see how long radar data fetching takes"}}
  :app-name "datomic-storage"}

@@ -17,7 +17,7 @@
 
 
 (defn get-radar-data []
-  (-> (http/get "http://165.232.131.25/~radar.json" {:timeout 300000 :connect-timeout 300000})
+  (-> (http/get "http://165.232.131.25/~radar.json")
       :body
       json/read-str))
 
@@ -290,6 +290,10 @@ attr by amount, treating a missing value as 1."
     [node-txs pki-txs]))
 
 (def get-client (memoize (fn [] (d/client cfg))))
+
+(defn test-radar-data-get [_]
+  (let [time (with-out-str (time (get-radar-data)))]
+    (cast/event {:msg "RadarGetEvent" ::json time})))
 
 (defn update-data [_]
   (let [client     (get-client)

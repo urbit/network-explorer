@@ -311,7 +311,7 @@ attr by amount, treating a missing value as 1."
     (d/transact conn {:tx-data node-txs})
     (doseq [txs pki-txs]
       (d/transact conn {:tx-data txs}))
-    (d/transact conn {:tx-data (radar-data->txs (get-radar-data))})
+    #_(d/transact conn {:tx-data (radar-data->txs (get-radar-data))})
     (pr-str pki-txs)))
 
 (defn get-all-nodes [limit offset types db]

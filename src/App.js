@@ -3,6 +3,7 @@ import './fonts.css';
 import { Box,
          Row,
          StatelessTextInput,
+         Icon,
          Menu,
          MenuList,
          MenuItem,
@@ -16,13 +17,12 @@ function App() {
   return (
     <div className='App'>
       <Row
-        justifyContent='center'
+        justifyContent='space-between'
         alignItems='center'
         borderBottom='1px solid rgba(0, 0, 0, 0.1)'
       >
         <Box
           p={3}
-          flex='auto'
         >
           <Box>
             <Text color='gray' fontSize={2}>
@@ -49,12 +49,11 @@ function App() {
       <Row
         width='100%'
         height='100%'
-        justifyContent='center'
+        justifyContent='space-between'
         alignItems='center'
       >
         <Box
           p={3}
-          flex='auto'
         >
           <Box>
             <Text cursor='pointer' color='gray' fontSize={2} mr={3}>
@@ -68,18 +67,55 @@ function App() {
         <Box
           p={3}
         >
-          <Box>
-            <Text color='gray' fontSize={2}>
-              Time Range
-            </Text>
-            <Text color='gray' ml={1} fontSize={2}>
-              Nodes
-            </Text>
+          <Box
+            display='flex'
+            alignItems='center'
+          >
             <Menu>
-              <MenuButton>
-                Actions <span aria-hidden>▾</span>
+              <Text
+                flexShrink='0'
+                color='gray'
+                fontWeight={400}
+                fontSize={2}
+              >
+                Time Range
+              </Text>
+              <MenuButton
+                flexShrink='0'
+                border='none'
+                height='auto'
+                width='auto'
+                fontSize={2}
+              >
+                6 months <Icon ml='10px' icon='ChevronSouth' size={12} />
               </MenuButton>
             </Menu>
+            <Menu>
+              <Text
+                flexShrink='0'
+                color='gray'
+                fontWeight={400}
+                fontSize={2}
+                ml='34px'
+              >
+                Nodes
+              </Text>
+              <MenuButton
+                flexShrink='0'
+                border='none'
+                height='auto'
+                width='auto'
+                fontSize={2}
+              >
+                All <Icon ml='10px' icon='ChevronSouth' size={12} />
+              </MenuButton>
+            </Menu>
+            {/* <Text color='gray' fontSize={2}> */}
+            {/*   Time Range */}
+            {/* </Text> */}
+            {/* <Text color='gray' ml={1} fontSize={2}> */}
+            {/*   Nodes */}
+            {/* </Text> */}
           </Box>
         </Box>
       </Row>

@@ -1,3 +1,5 @@
+import { useState, useEffect } from 'react';
+
 import './App.css';
 import './fonts.css';
 import { Box,
@@ -13,9 +15,24 @@ import { Box,
          Button,
          Center } from '@tlon/indigo-react';
 
+import { AzimuthEvent } from './AzimuthEvent';
+
 function App() {
+
+  const [azimuthEvents, setAzimuthEvents] = useState([]);
+
+  useEffect(() => {
+    fetch('https://j6lpjx5nhf.execute-api.us-west-2.amazonaws.com/get-pki-events?limit=100')
+      .then(res => res.json())
+      .then(events => setAzimuthEvents(events));
+  }, []);
+
   return (
-    <div className='App'>
+    <Box className='App'
+         display='flex'
+         flexDirection='column'
+         height='100%'
+    >
       <Row
         justifyContent='space-between'
         alignItems='center'
@@ -48,7 +65,6 @@ function App() {
       </Row>
       <Row
         width='100%'
-        height='100%'
         justifyContent='space-between'
         alignItems='center'
       >
@@ -81,6 +97,7 @@ function App() {
                 Time Range
               </Text>
               <MenuButton
+                style={{cursor: 'pointer'}}
                 flexShrink='0'
                 border='none'
                 height='auto'
@@ -101,6 +118,7 @@ function App() {
                 Nodes
               </Text>
               <MenuButton
+                style={{cursor: 'pointer'}}
                 flexShrink='0'
                 border='none'
                 height='auto'
@@ -110,16 +128,61 @@ function App() {
                 All <Icon ml='10px' icon='ChevronSouth' size={12} />
               </MenuButton>
             </Menu>
-            {/* <Text color='gray' fontSize={2}> */}
-            {/*   Time Range */}
-            {/* </Text> */}
-            {/* <Text color='gray' ml={1} fontSize={2}> */}
-            {/*   Nodes */}
-            {/* </Text> */}
           </Box>
         </Box>
       </Row>
-    </div>
+      <Row
+        backgroundColor='#E9E9E9'
+        display='flex'
+        overflowY='auto'
+        flex='1'
+      >
+        <Col
+          m={2}
+          p={2}
+          backgroundColor='white'
+          borderRadius='8px'
+          width='50%'
+          flex='1'
+          overflowY='auto'
+        >
+          <Row justifyContent='space-between'>
+            <Text fontSize={0}>Global Azimuth Event Stream</Text>
+            <Icon icon='Info' size={16} cursor='pointer' />
+          </Row>
+          <Box>
+            <Row borderBottom='1px solid rgba(0, 0, 0, 0.04)' pb={2} mt={4} justifyContent='space-between'>
+              <Col>
+                <Text fontSize={0} color='gray'>Event Type</Text>
+              </Col>
+              <Col>
+                <Text fontSize={0} color='gray'>Node</Text>
+              </Col>
+              <Col>
+                <Text fontSize={0} color='gray'>Data</Text>
+              </Col>
+              <Col>
+                <Text fontSize={0} color='gray'>Time</Text>
+              </Col>
+            </Row>
+            {azimuthEvents.map(e => <AzimuthEvent {...e}/>)}
+          </Box>
+        </Col>
+        <Col
+          m={2}
+          p={2}
+          backgroundColor='white'
+          borderRadius='8px'
+          width='50%'
+          height='50%'
+        >
+          <Row justifyContent='space-between'>
+            <Text fontSize={0}>Spawn Events</Text>
+            <Icon icon='Info' size={16} cursor='pointer' />
+          </Row>
+        </Col>
+      </Row>
+    </Box>
   );
 }
 

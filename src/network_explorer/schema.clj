@@ -103,8 +103,7 @@
    {:db/ident :pki-event/type
     :db/valueType :db.type/keyword
     :db/cardinality :db.cardinality/one
-    :db/doc "The pki event type, one of :change-networking-keys :change-ownership, :change-spawn-proxy, :change-transfer-proxy :change-management-proxy, :change-voting-proxy, :activate, :invite, :spawn, :escape-requested, :escape-canceled,
-:lost-sponsor or :broke-continuity"}
+    :db/doc "The pki event type, one of :change-networking-keys :change-ownership, :change-spawn-proxy, :change-transfer-proxy :change-management-proxy, :change-voting-proxy, :activate, :invite, :spawn, :escape-requested, :escape-canceled, :escaped, :lost-sponsor or :broke-continuity"}
 
    {:db/ident :pki-event/time
     :db/valueType :db.type/instant

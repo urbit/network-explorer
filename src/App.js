@@ -6,6 +6,9 @@ import { Box,
          Row,
          StatelessTextInput,
          Icon,
+         Table,
+         Tr,
+         Td,
          Menu,
          MenuList,
          MenuItem,
@@ -147,26 +150,26 @@ function App() {
           overflowY='auto'
         >
           <Row justifyContent='space-between'>
-            <Text fontSize={0}>Global Azimuth Event Stream</Text>
+            <Text fontSize={0} fontWeight={500}>Global Azimuth Event Stream</Text>
             <Icon icon='Info' size={16} cursor='pointer' />
           </Row>
-          <Box>
-            <Row borderBottom='1px solid rgba(0, 0, 0, 0.04)' pb={2} mt={4} justifyContent='space-between'>
-              <Col>
+          <Table border='0'>
+            <Tr textAlign='left' pb={2} mt={4}>
+              <th style={{borderBottom: '1px solid rgba(0, 0, 0, 0.04)'}}>
                 <Text fontSize={0} color='gray'>Event Type</Text>
-              </Col>
-              <Col>
+              </th>
+              <th style={{borderBottom: '1px solid rgba(0, 0, 0, 0.04)'}}>
                 <Text fontSize={0} color='gray'>Node</Text>
-              </Col>
-              <Col>
+              </th>
+              <th style={{borderBottom: '1px solid rgba(0, 0, 0, 0.04)'}}>
                 <Text fontSize={0} color='gray'>Data</Text>
-              </Col>
-              <Col>
+              </th>
+              <th style={{borderBottom: '1px solid rgba(0, 0, 0, 0.04)'}}>
                 <Text fontSize={0} color='gray'>Time</Text>
-              </Col>
-            </Row>
+              </th>
+            </Tr>
             {azimuthEvents.map(e => <AzimuthEvent {...e}/>)}
-          </Box>
+          </Table>
         </Col>
         <Col
           m={2}

@@ -1,8 +1,12 @@
 * {
-  font-family: Inter !important
+    font-family: Inter !important;
 }
 
 html, body, #root {
     height: 100%;
     margin: 0;
+}
+
+td {
+    border: 0 !important;
 }

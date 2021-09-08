@@ -96,7 +96,7 @@
    s))
 
 (defn format-pki-time [inst]
-  (-> (java.text.SimpleDateFormat. "~yyyy.MM.dd..HH.mm.ss")
+  (-> (java.text.SimpleDateFormat. "yyyy-MM-dd'T'HH:mm:ss.SSSXXX")
       (doto (.setTimeZone (java.util.TimeZone/getTimeZone "UTC")))
       (.format inst (java.lang.StringBuffer.) (java.text.FieldPosition. 0))
       .toString))

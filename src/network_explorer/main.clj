@@ -457,7 +457,7 @@ attr by amount, treating a missing value as 1."
 
 (defn get-aggregate-pki-events* [query-params db]
   (let [since (java.time.LocalDate/parse (get query-params :since "2019-01-19"))
-        type  (get query-params :type)]
+        type  (keyword (get query-params :type))]
     {:status 200
      :headers {"Content-Type" "application/json"}
      :body (json/write-str (get-aggregate-pki-events type since db) :value-fn stringify-date)}))

@@ -29,6 +29,12 @@
       .toInstant
       java.util.Date/from))
 
+(defn date-range [since until]
+  (map (fn [e]
+         [(-> e (.atStartOfDay java.time.ZoneOffset/UTC) .toInstant java.util.Date/from)
+          (-> e (.plusDays 1) (.atStartOfDay java.time.ZoneOffset/UTC) .toInstant java.util.Date/from)])
+       (seq (.collect (.datesUntil since until) (java.util.stream.Collectors/toList)))))
+
 (defn distinct-by
   "Returns a stateful transducer that removes elements by calling f on each step as a uniqueness key.
    Returns a lazy sequence when provided with a collection."
@@ -235,6 +241,15 @@ attr by amount, treating a missing value as 1."
            [?e :ping/time ?t]
            [(<= ?since ?t)]])
 
+(def aggregate-query
+  '[:find ?s (count ?e)
+    :in $ ?type [[?s ?u] ...]
+    :keys date count
+    :where [?e :pki-event/type ?type]
+           [?e :pki-event/time ?t]
+           [(<= ?s ?t)]
+           [(>= ?u ?t)]])
+
 (defn pki-line->nodes [acc l]
   (->> (filter ob/patp? l)
        (apply conj acc)))
@@ -397,6 +412,7 @@ attr by amount, treating a missing value as 1."
     :pki-event/time (format-pki-time value)
     :ping/time      (format-pki-time value)
     :ping/response  (format-pki-time value)
+    :date           (format-pki-time value)
     value))
 
 (defn get-pki-events [urbit-id since db]
@@ -433,6 +449,19 @@ attr by amount, treating a missing value as 1."
                              (get-all-pki-events limit offset db))
                            :value-fn stringify-date)}))
 
+(defn get-aggregate-pki-events [type since db]
+  (d/q aggregate-query
+       db
+       type
+       (date-range since (.plusDays (java.time.LocalDate/now java.time.ZoneOffset/UTC) 1))))
+
+(defn get-aggregate-pki-events* [query-params db]
+  (let [since (java.time.LocalDate/parse (get query-params :since "2019-01-19"))
+        type  (get query-params :type)]
+    {:status 200
+     :headers {"Content-Type" "application/json"}
+     :body (json/write-str (get-aggregate-pki-events type since db) :value-fn stringify-date)}))
+
 (defn get-all-activity [limit offset db]
   (let [selector [:ping/time
                   :ping/response
@@ -468,10 +497,11 @@ attr by amount, treating a missing value as 1."
         path         (get req :uri)
         query-params (get req :params)]
     (case path
-      "/get-node"       (get-node* query-params db)
-      "/get-nodes"      (get-nodes* query-params db)
-      "/get-pki-events" (get-pki-events* query-params db)
-      "/get-activity"   (get-activity* query-params db)
+      "/get-node"                 (get-node* query-params db)
+      "/get-nodes"                (get-nodes* query-params db)
+      "/get-aggregate-pki-events" (get-aggregate-pki-events* query-params db)
+      "/get-pki-events"           (get-pki-events* query-params db)
+      "/get-activity"             (get-activity* query-params db)
       {:status 404})))
 
 (defn deploy-build! []

@@ -108,23 +108,21 @@ const formatData = data => {
            </>;
   }
 
-  return <Text color='gray' fontSize={0}>{data.address ? data.address.substring(0, 10) + '...' : ''}</Text>;
-}
+  return <Text color='gray' fontSize={0}>
+           {data.address ? data.address.substring(0, 8) + '...' + data.address.slice(-6) : ''}
+         </Text>;
+};
 
 export function AzimuthEvent(props) {
   const {type, time, address, node} = props;
 
-  const sig = sigil({patp: node['urbit-id'],
+  let sig = sigil({patp: node['urbit-id'],
                      renderer: reactRenderer,
                      size: 16,
                      colors: ['white', 'black']});
 
   sig.props.style.display = 'inline';
   sig.props.style.verticalAlign = 'middle';
-
-  if (m[type] === undefined) {
-    console.log(type);
-  }
 
   return (
     <Tr>

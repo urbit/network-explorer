@@ -20,14 +20,58 @@ import { Box,
 
 import { AzimuthEvent } from './AzimuthEvent';
 
+import { ResponsiveContainer,
+         BarChart,
+         ReferenceLine,
+         CartesianGrid,
+         XAxis,
+         YAxis,
+         Tooltip,
+         Legend,
+         Bar
+       } from 'recharts';
+
+
 function App() {
 
   const [azimuthEvents, setAzimuthEvents] = useState([]);
+
+  const [spawnEvents, setSpawnEvents] = useState([]);
+
+  const [transferEvents, setTransferEvents] = useState([]);
+
+  let months = spawnEvents.reduce((acc, e) => acc.add(e.month), new Set());
 
   useEffect(() => {
     fetch('https://j6lpjx5nhf.execute-api.us-west-2.amazonaws.com/get-pki-events?limit=100')
       .then(res => res.json())
       .then(events => setAzimuthEvents(events));
+  }, []);
+
+
+  useEffect(() => {
+    fetch('https://j6lpjx5nhf.execute-api.us-west-2.amazonaws.com/get-aggregate-pki-events?type=spawn&since=2021-03-01')
+      .then(res => res.json())
+      .then(events => setSpawnEvents(events.map(e => {
+        const d = new Date(e.date);
+        const month = d.toLocaleString('default', {month: 'long'});
+        return Object.assign({month: month},
+                             e,
+                             {date: e.date.substring(0, 10)});
+      })));
+  }, []);
+
+
+  useEffect(() => {
+    fetch('https://j6lpjx5nhf.execute-api.us-west-2.amazonaws.com/get-aggregate-pki-events?type=change-ownership&since=2021-03-01')
+      .then(res => res.json())
+      .then(events => setTransferEvents(events.map(e => {
+        const d = new Date(e.date);
+        const month = d.toLocaleString('default', {month: 'long'});
+        return Object.assign({month: month},
+                             e,
+                             {date: e.date.substring(0, 10)});
+      })));
   }, []);
 
   return (
@@ -92,7 +136,6 @@ function App() {
           >
             <Menu>
               <Text
-                flexShrink='0'
                 color='gray'
                 fontWeight={400}
                 fontSize={2}
@@ -101,7 +144,6 @@ function App() {
               </Text>
               <MenuButton
                 style={{cursor: 'pointer'}}
-                flexShrink='0'
                 border='none'
                 height='auto'
                 width='auto'
@@ -112,7 +154,6 @@ function App() {
             </Menu>
             <Menu>
               <Text
-                flexShrink='0'
                 color='gray'
                 fontWeight={400}
                 fontSize={2}
@@ -122,7 +163,6 @@ function App() {
               </Text>
               <MenuButton
                 style={{cursor: 'pointer'}}
-                flexShrink='0'
                 border='none'
                 height='auto'
                 width='auto'
@@ -173,16 +213,82 @@ function App() {
         </Col>
         <Col
           m={2}
-          p={2}
-          backgroundColor='white'
-          borderRadius='8px'
-          width='50%'
-          height='50%'
+          flex='1'
         >
-          <Row justifyContent='space-between'>
-            <Text fontSize={0}>Spawn Events</Text>
-            <Icon icon='Info' size={16} cursor='pointer' />
-          </Row>
+          <Box
+            flex='1'
+            backgroundColor='white'
+            borderRadius='8px'
+            overflow='hidden'
+            display='flex'
+            flexDirection='column'
+          >
+            <Row fontWeight={500} p={2} justifyContent='space-between'>
+              <Text fontSize={0}>Spawn Events</Text>
+              <Icon icon='Info' size={16} cursor='pointer' />
+            </Row>
+            <Box flex='1' m={2}>
+              <ResponsiveContainer>
+                <BarChart
+                  barCategoryGap={0}
+                  data={spawnEvents}>
+                  <XAxis
+                    hide={true}
+                    xAxisId='0'
+                    dataKey='date'
+                  />
+                  <XAxis
+                    xAxisId='1'
+                    dataKey='month'
+                    allowDuplicatedCategory={false}
+                  />
+                  <Tooltip />
+                  <Legend align='left' iconType='circle' />
+                  <Bar name='Spawn Events' dataKey='count' fill='#BF421B' />
+                  {[...months.values()].map(month => {
+                    return <ReferenceLine xAxisId='1' x={month} stroke='rgba(0, 0, 0, 0.2)' />;
+                  })}
+                </BarChart>
+              </ResponsiveContainer >
+            </Box>
+          </Box>
+          <Box
+            mt={2}
+            backgroundColor='white'
+            borderRadius='8px'
+            flex='1'
+            display='flex'
+            flexDirection='column'
+          >
+            <Row fontWeight={500} p={2} justifyContent='space-between'>
+              <Text fontSize={0}>Transfer Events</Text>
+              <Icon icon='Info' size={16} cursor='pointer' />
+            </Row>
+            <Box flex='1' m={2}>
+              <ResponsiveContainer>
+                <BarChart
+                  barCategoryGap={0}
+                  data={transferEvents}>
+                  <XAxis
+                    hide={true}
+                    xAxisId='0'
+                    dataKey='date'
+                  />
+                  <XAxis
+                    xAxisId='1'
+                    dataKey='month'
+                    allowDuplicatedCategory={false}
+                  />
+                  <Tooltip />
+                  <Legend align='left' iconType='circle' />
+                  <Bar name='Transfer Events' dataKey='count' fill='#093C09' />
+                  {[...months.values()].map(month => {
+                    return <ReferenceLine xAxisId='1' x={month} stroke='rgba(0, 0, 0, 0.2)' />;
+                  })}
+                </BarChart>
+              </ResponsiveContainer >
+            </Box>
+          </Box>
         </Col>
       </Row>
     </Box>

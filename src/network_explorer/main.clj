@@ -242,40 +242,24 @@ attr by amount, treating a missing value as 1."
            [(<= ?since ?t)]])
 
 (def aggregate-query
-  '[:find ?s (sum ?weight)
-    :with ?data-point
+  '[:find ?s (count ?e)
     :in $ ?event-type [[?s ?u] ...]
     :keys date count
     :where [?e :pki-event/type ?event-type]
            [?e :pki-event/time ?t]
-           (or-join [?e ?s ?t ?u ?data-point ?weight]
-                    (and
-                     [(<= ?s ?t)]
-                     [(>= ?u ?t)]
-                     [(identity ?e) ?data-point]
-                     [(ground 1) ?weight])
-                    (and
-                     [(identity ?e) ?data-point]
-                     [(ground 0) ?weight]))])
+           [(<= ?s ?t)]
+           [(>= ?u ?t)]])
 
 (def aggregate-query-node-type
-  '[:find ?s (sum ?weight)
-    :with ?data-point
+  '[:find ?s (count ?e)
     :in $ ?node-type ?event-type [[?s ?u] ...]
     :keys date count
     :where [?e :pki-event/type ?event-type]
            [?e :pki-event/node ?p]
            [?p :node/type ?node-type]
            [?e :pki-event/time ?t]
-           (or-join [?e ?s ?t ?u ?data-point ?weight]
-                    (and
-                     [(<= ?s ?t)]
-                     [(>= ?u ?t)]
-                     [(identity ?e) ?data-point]
-                     [(ground 1) ?weight])
-                    (and
-                     [(identity ?e) ?data-point]
-                     [(ground 0) ?weight]))])
+           [(<= ?s ?t)]
+           [(>= ?u ?t)]])
 
 (defn pki-line->nodes [acc l]
   (->> (filter ob/patp? l)
@@ -495,18 +479,30 @@ attr by amount, treating a missing value as 1."
                                (get-all-pki-events limit offset db)))
                            :value-fn stringify-date)}))
 
+(defn add-zero-counts [dr query-res]
+  (loop [d dr
+         q query-res
+         res []]
+    (if-not (seq d)
+      res
+      (if (= (ffirst d) (:date (first q)))
+        (recur (rest d) (rest q) (conj res (first q)))
+        (recur (rest d) q (conj res {:date (ffirst d) :count 0}))))))
+
 (defn get-aggregate-pki-events
   ([event-type since db]
-   (d/q aggregate-query
-        db
-        event-type
-        (date-range since (.plusDays (java.time.LocalDate/now java.time.ZoneOffset/UTC) 1))))
+   (let [dr (date-range since (.plusDays (java.time.LocalDate/now java.time.ZoneOffset/UTC) 1))]
+     (add-zero-counts dr (d/q aggregate-query
+                              db
+                              event-type
+                              dr))))
   ([node-type event-type since db]
-   (d/q aggregate-query-node-type
-        db
-        node-type
-        event-type
-        (date-range since (.plusDays (java.time.LocalDate/now java.time.ZoneOffset/UTC) 1)))))
+   (let [dr (date-range since (.plusDays (java.time.LocalDate/now java.time.ZoneOffset/UTC) 1))]
+     (add-zero-counts dr (d/q aggregate-query-node-type
+                              db
+                              node-type
+                              event-type
+                              (date-range since (.plusDays (java.time.LocalDate/now java.time.ZoneOffset/UTC) 1)))))))
 
 (defn get-aggregate-pki-events* [query-params db]
   (let [since (java.time.LocalDate/parse (get query-params :since "2019-01-19"))

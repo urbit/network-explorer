@@ -420,6 +420,23 @@ attr by amount, treating a missing value as 1."
        (mapcat identity)
        (sort-by (comp - :pki-event/id))))
 
+(defn get-all-pki-events-type [limit offset db type]
+  (let [selector [:pki-event/id
+                  {:pki-event/node [:node/urbit-id :node/type]}
+                  {:pki-event/target-node [:node/urbit-id]}
+                  :pki-event/type
+                  :pki-event/time
+                  :pki-event/address
+                  :pki-event/continuity
+                  :pki-event/revision]]
+    (->> (d/index-pull db {:index :avet
+                           :selector selector
+                           :start [:pki-event/id]
+                           :reverse true})
+         (filter (fn [e] (= type (:node/type (:pki-event/node e)))))
+         (drop offset)
+         (take limit))))
+
 (defn get-all-pki-events [limit offset db]
   (let [selector [:pki-event/id
                   {:pki-event/node [:node/urbit-id]}
@@ -439,6 +456,7 @@ attr by amount, treating a missing value as 1."
 
 (defn get-pki-events* [query-params db]
   (let [urbit-id (get query-params :urbit-id)
+        type     (keyword (get query-params :type))
         since    (parse-pki-time (get query-params :since "~1970.1.1..00.00.00"))
         limit    (Integer/parseInt (get query-params :limit "1000"))
         offset   (Integer/parseInt (get query-params :offset "0"))]
@@ -446,7 +464,9 @@ attr by amount, treating a missing value as 1."
      :headers {"Content-Type" "application/json"}
      :body (json/write-str (if urbit-id
                              (get-pki-events urbit-id since db)
-                             (get-all-pki-events limit offset db))
+                             (if type
+                               (get-all-pki-events-type limit offset db type)
+                               (get-all-pki-events limit offset db)))
                            :value-fn stringify-date)}))
 
 (defn get-aggregate-pki-events [type since db]

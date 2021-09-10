@@ -242,13 +242,40 @@ attr by amount, treating a missing value as 1."
            [(<= ?since ?t)]])
 
 (def aggregate-query
-  '[:find ?s (count ?e)
-    :in $ ?type [[?s ?u] ...]
+  '[:find ?s (sum ?weight)
+    :with ?data-point
+    :in $ ?event-type [[?s ?u] ...]
     :keys date count
-    :where [?e :pki-event/type ?type]
+    :where [?e :pki-event/type ?event-type]
            [?e :pki-event/time ?t]
-           [(<= ?s ?t)]
-           [(>= ?u ?t)]])
+           (or-join [?e ?s ?t ?u ?data-point ?weight]
+                    (and
+                     [(<= ?s ?t)]
+                     [(>= ?u ?t)]
+                     [(identity ?e) ?data-point]
+                     [(ground 1) ?weight])
+                    (and
+                     [(identity ?e) ?data-point]
+                     [(ground 0) ?weight]))])
+
+(def aggregate-query-node-type
+  '[:find ?s (sum ?weight)
+    :with ?data-point
+    :in $ ?node-type ?event-type [[?s ?u] ...]
+    :keys date count
+    :where [?e :pki-event/type ?event-type]
+           [?e :pki-event/node ?p]
+           [?p :node/type ?node-type]
+           [?e :pki-event/time ?t]
+           (or-join [?e ?s ?t ?u ?data-point ?weight]
+                    (and
+                     [(<= ?s ?t)]
+                     [(>= ?u ?t)]
+                     [(identity ?e) ?data-point]
+                     [(ground 1) ?weight])
+                    (and
+                     [(identity ?e) ?data-point]
+                     [(ground 0) ?weight]))])
 
 (defn pki-line->nodes [acc l]
   (->> (filter ob/patp? l)
@@ -420,39 +447,38 @@ attr by amount, treating a missing value as 1."
        (mapcat identity)
        (sort-by (comp - :pki-event/id))))
 
-(defn get-all-pki-events-type [limit offset db type]
-  (let [selector [:pki-event/id
-                  {:pki-event/node [:node/urbit-id :node/type]}
-                  {:pki-event/target-node [:node/urbit-id]}
-                  :pki-event/type
-                  :pki-event/time
-                  :pki-event/address
-                  :pki-event/continuity
-                  :pki-event/revision]]
-    (->> (d/index-pull db {:index :avet
-                           :selector selector
-                           :start [:pki-event/id]
-                           :reverse true})
-         (filter (fn [e] (= type (:node/type (:pki-event/node e)))))
-         (drop offset)
-         (take limit))))
-
-(defn get-all-pki-events [limit offset db]
-  (let [selector [:pki-event/id
-                  {:pki-event/node [:node/urbit-id]}
-                  {:pki-event/target-node [:node/urbit-id]}
-                  :pki-event/type
-                  :pki-event/time
-                  :pki-event/address
-                  :pki-event/continuity
-                  :pki-event/revision]]
-    (d/index-pull db {:index :avet
-                      :selector selector
-                      :start [:pki-event/id]
-                      :reverse true
-                      :limit limit
-                      :offset offset})))
-
+(defn get-all-pki-events
+  ([limit offset db]
+   (let [selector [:pki-event/id
+                   {:pki-event/node [:node/urbit-id]}
+                   {:pki-event/target-node [:node/urbit-id]}
+                   :pki-event/type
+                   :pki-event/time
+                   :pki-event/address
+                   :pki-event/continuity
+                   :pki-event/revision]]
+     (d/index-pull db {:index :avet
+                       :selector selector
+                       :start [:pki-event/id]
+                       :reverse true
+                       :limit limit
+                       :offset offset})))
+  ([limit offset db type]
+   (let [selector [:pki-event/id
+                   {:pki-event/node [:node/urbit-id :node/type]}
+                   {:pki-event/target-node [:node/urbit-id]}
+                   :pki-event/type
+                   :pki-event/time
+                   :pki-event/address
+                   :pki-event/continuity
+                   :pki-event/revision]]
+     (->> (d/index-pull db {:index :avet
+                            :selector selector
+                            :start [:pki-event/id]
+                            :reverse true})
+          (filter (fn [e] (= type (:node/type (:pki-event/node e)))))
+          (drop offset)
+          (take limit)))))
 
 (defn get-pki-events* [query-params db]
   (let [urbit-id (get query-params :urbit-id)
@@ -465,22 +491,33 @@ attr by amount, treating a missing value as 1."
      :body (json/write-str (if urbit-id
                              (get-pki-events urbit-id since db)
                              (if type
-                               (get-all-pki-events-type limit offset db type)
+                               (get-all-pki-events limit offset db type)
                                (get-all-pki-events limit offset db)))
                            :value-fn stringify-date)}))
 
-(defn get-aggregate-pki-events [type since db]
-  (d/q aggregate-query
-       db
-       type
-       (date-range since (.plusDays (java.time.LocalDate/now java.time.ZoneOffset/UTC) 1))))
+(defn get-aggregate-pki-events
+  ([event-type since db]
+   (d/q aggregate-query
+        db
+        event-type
+        (date-range since (.plusDays (java.time.LocalDate/now java.time.ZoneOffset/UTC) 1))))
+  ([node-type event-type since db]
+   (d/q aggregate-query-node-type
+        db
+        node-type
+        event-type
+        (date-range since (.plusDays (java.time.LocalDate/now java.time.ZoneOffset/UTC) 1)))))
 
 (defn get-aggregate-pki-events* [query-params db]
   (let [since (java.time.LocalDate/parse (get query-params :since "2019-01-19"))
-        type  (keyword (get query-params :type))]
+        node-type  (keyword (get query-params :nodeType))
+        event-type (keyword (get query-params :eventType))]
     {:status 200
      :headers {"Content-Type" "application/json"}
-     :body (json/write-str (get-aggregate-pki-events type since db) :value-fn stringify-date)}))
+     :body (json/write-str
+            (if node-type
+              (get-aggregate-pki-events node-type event-type since db)
+              (get-aggregate-pki-events event-type since db)) :value-fn stringify-date)}))
 
 (defn get-all-activity [limit offset db]
   (let [selector [:ping/time

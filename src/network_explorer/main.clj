@@ -465,17 +465,17 @@ attr by amount, treating a missing value as 1."
           (take limit)))))
 
 (defn get-pki-events* [query-params db]
-  (let [urbit-id (get query-params :urbit-id)
-        type     (keyword (get query-params :type))
-        since    (parse-pki-time (get query-params :since "~1970.1.1..00.00.00"))
-        limit    (Integer/parseInt (get query-params :limit "1000"))
-        offset   (Integer/parseInt (get query-params :offset "0"))]
+  (let [urbit-id  (get query-params :urbit-id)
+        node-type (keyword (get query-params :nodeType))
+        since     (parse-pki-time (get query-params :since "~1970.1.1..00.00.00"))
+        limit     (Integer/parseInt (get query-params :limit "1000"))
+        offset    (Integer/parseInt (get query-params :offset "0"))]
     {:status 200
      :headers {"Content-Type" "application/json"}
      :body (json/write-str (if urbit-id
                              (get-pki-events urbit-id since db)
-                             (if type
-                               (get-all-pki-events limit offset db type)
+                             (if node-type
+                               (get-all-pki-events limit offset db node-type)
                                (get-all-pki-events limit offset db)))
                            :value-fn stringify-date)}))
 

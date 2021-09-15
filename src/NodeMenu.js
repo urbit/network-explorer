@@ -1,7 +1,5 @@
 import React from 'react';
 
-import { useState } from 'react';
-
 import { Icon,
          Menu,
          MenuList,
@@ -9,26 +7,20 @@ import { Icon,
          MenuButton,
          Text } from '@tlon/indigo-react';
 
-const m = {
-  'All': undefined,
-  'Planets': 'planet',
-  'Stars': 'star',
-  'Galaxies': 'galaxy'
-};
-
 export function NodeMenu(props) {
 
-  const { fetchPkiEvents, fetchAggregateEvents } = props;
-
-  const [nodesText, setNodesText] = useState('All');
+  const { fetchPkiEvents,
+          fetchAggregateEvents,
+          nodesText,
+          setNodesText } = props;
 
   const onSelect = nodes => {
     if (nodes === nodesText) {
       return;
     }
     setNodesText(nodes);
-    fetchPkiEvents(m[nodes]);
-    fetchAggregateEvents(m[nodes]);
+    fetchPkiEvents(nodes);
+    fetchAggregateEvents(nodes);
   };
 
   return (

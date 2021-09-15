@@ -21,13 +21,52 @@ import { NodeMenu } from './NodeMenu';
 
 const API_BASE_URL = 'https://j6lpjx5nhf.execute-api.us-west-2.amazonaws.com';
 
+const ONE_HOUR = 1000 * 60 * 60;
+const ONE_DAY = ONE_HOUR * 24;
+const ONE_WEEK = ONE_DAY * 7;
+const ONE_MONTH = ONE_DAY * 30;
+const SIX_MONTHS = ONE_MONTH * 6;
+const ONE_YEAR = ONE_MONTH * 12;
 
-const fetchPkiEvents = (stateSetter, nodeType) => {
+const isoStringToDate = isoString => {
+  return (isoString === undefined) ? undefined : isoString.substring(0, 10);
+};
+
+const timeRangeTextToSince = timeRangeText => {
+  const now = new Date();
+  const m = {
+    'Day': now.toISOString().substring(0, 11) + '00:00:00.000Z',
+    'Week': new Date(now - ONE_WEEK).toISOString(),
+    'Month': new Date(now - ONE_MONTH).toISOString(),
+    '6 Months': new Date(now - SIX_MONTHS).toISOString(),
+    'Year': new Date(now - ONE_YEAR).toISOString()
+  };
+
+  return m[timeRangeText];
+
+};
+
+const nodesTextToNodeType = nodesText => {
+  const m = {
+    'All': undefined,
+    'Planets': 'planet',
+    'Stars': 'star',
+    'Galaxies': 'galaxy'
+  };
+
+  return m[nodesText];
+};
+
+const fetchPkiEvents = (stateSetter, nodeType, since) => {
   stateSetter({loading: true});
 
-  const url = nodeType ?
+  let url = nodeType ?
         `${API_BASE_URL}/get-pki-events?limit=1000&nodeType=${nodeType}` :
         `${API_BASE_URL}/get-pki-events?limit=1000`;
+
+  if (since) {
+    url += '&since=' + since;
+  }
 
   fetch(url)
     .then(res => res.json())
@@ -37,9 +76,13 @@ const fetchPkiEvents = (stateSetter, nodeType) => {
 const fetchAggregateEvents = (eventType, stateSetter, since, nodeType) => {
   stateSetter({loading: true, months: new Set()});
 
-  const url = nodeType ?
-        `${API_BASE_URL}/get-aggregate-pki-events?eventType=${eventType}&since=${since}&nodeType=${nodeType}` :
-        `${API_BASE_URL}/get-aggregate-pki-events?eventType=${eventType}&since=${since}`;
+  let url = nodeType ?
+        `${API_BASE_URL}/get-aggregate-pki-events?eventType=${eventType}&nodeType=${nodeType}` :
+        `${API_BASE_URL}/get-aggregate-pki-events?eventType=${eventType}`;
+
+  if (since) {
+    url += '&since=' + since;
+  }
 
   fetch(url)
     .then(res => res.json())
@@ -64,6 +107,10 @@ function App() {
   const [spawnEvents, setSpawnEvents] = useState({loading: true, months: new Set(), events: []});
 
   const [transferEvents, setTransferEvents] = useState({loading: true, months: new Set(), events: []});
+
+  const [nodesText, setNodesText] = useState('All');
+
+  const [timeRangeText, setTimeRangeText] = useState('6 months');
 
   useEffect(() => {
     fetchPkiEvents(setAzimuthEvents);
@@ -131,12 +178,38 @@ function App() {
             display='flex'
             alignItems='center'
           >
-            <TimeRangeMenu />
+            <TimeRangeMenu
+              timeRangeText={timeRangeText}
+              setTimeRangeText={setTimeRangeText}
+              fetchPkiEvents={timeRangeText => fetchPkiEvents(setAzimuthEvents,
+                                                              nodesTextToNodeType(nodesText),
+                                                              timeRangeTextToSince(timeRangeText))}
+              fetchAggregateEvents={timeRangeText => {
+                fetchAggregateEvents('spawn',
+                                     setSpawnEvents,
+                                     isoStringToDate(timeRangeTextToSince(timeRangeText)),
+                                     nodesTextToNodeType(nodesText));
+                fetchAggregateEvents('change-ownership',
+                                     setTransferEvents,
+                                     isoStringToDate(timeRangeTextToSince(timeRangeText)),
+                                     nodesTextToNodeType(nodesText));
+              }}
+            />
             <NodeMenu
-              fetchPkiEvents={nodeType => fetchPkiEvents(setAzimuthEvents, nodeType)}
-              fetchAggregateEvents={nodeType => {
-                fetchAggregateEvents('spawn', setSpawnEvents, '2021-03-01', nodeType);
-                fetchAggregateEvents('change-ownership', setTransferEvents, '2021-03-01', nodeType);
+              nodesText={nodesText}
+              setNodesText={setNodesText}
+              fetchPkiEvents={nodesText => fetchPkiEvents(setAzimuthEvents,
+                                                          nodesTextToNodeType(nodesText),
+                                                          timeRangeTextToSince(timeRangeText))}
+              fetchAggregateEvents={nodesText => {
+                fetchAggregateEvents('spawn',
+                                     setSpawnEvents,
+                                     isoStringToDate(timeRangeTextToSince(timeRangeText)),
+                                     nodesTextToNodeType(nodesText));
+                fetchAggregateEvents('change-ownership',
+                                     setTransferEvents,
+                                     isoStringToDate(timeRangeTextToSince(timeRangeText)),
+                                     nodesTextToNodeType(nodesText));
               }}
             />
           </Box>

@@ -432,7 +432,7 @@ attr by amount, treating a missing value as 1."
        (sort-by (comp - :pki-event/id))))
 
 (defn get-all-pki-events
-  ([limit offset db]
+  ([limit offset since db]
    (let [selector [:pki-event/id
                    {:pki-event/node [:node/urbit-id]}
                    {:pki-event/target-node [:node/urbit-id]}
@@ -441,13 +441,14 @@ attr by amount, treating a missing value as 1."
                    :pki-event/address
                    :pki-event/continuity
                    :pki-event/revision]]
-     (d/index-pull db {:index :avet
-                       :selector selector
-                       :start [:pki-event/id]
-                       :reverse true
-                       :limit limit
-                       :offset offset})))
-  ([limit offset db type]
+     (take-while (fn [e] (.after (:pki-event/time e) since))
+                 (d/index-pull db {:index :avet
+                                   :selector selector
+                                   :start [:pki-event/id]
+                                   :reverse true
+                                   :limit limit
+                                   :offset offset}))))
+  ([limit offset since type db]
    (let [selector [:pki-event/id
                    {:pki-event/node [:node/urbit-id :node/type]}
                    {:pki-event/target-node [:node/urbit-id]}
@@ -456,18 +457,21 @@ attr by amount, treating a missing value as 1."
                    :pki-event/address
                    :pki-event/continuity
                    :pki-event/revision]]
-     (->> (d/index-pull db {:index :avet
-                            :selector selector
-                            :start [:pki-event/id]
-                            :reverse true})
-          (filter (fn [e] (= type (:node/type (:pki-event/node e)))))
-          (drop offset)
-          (take limit)))))
+     (into [] (comp
+               (filter (fn [e] (= type (:node/type (:pki-event/node e)))))
+               (drop offset)
+               (take limit)
+               (take-while (fn [e] (.after (:pki-event/time e) since))))
+           (d/index-pull db {:index :avet
+                             :selector selector
+                             :start [:pki-event/id]
+                             :reverse true})))))
 
 (defn get-pki-events* [query-params db]
   (let [urbit-id  (get query-params :urbit-id)
         node-type (keyword (get query-params :nodeType))
-        since     (parse-pki-time (get query-params :since "~1970.1.1..00.00.00"))
+        since     (.parse (java.text.SimpleDateFormat. "yyyy-MM-dd'T'HH:mm:ss.SSSXXX" )
+                          (get query-params :since "1970-01-01T00:00:00.000Z"))
         limit     (Integer/parseInt (get query-params :limit "1000"))
         offset    (Integer/parseInt (get query-params :offset "0"))]
     {:status 200
@@ -475,8 +479,8 @@ attr by amount, treating a missing value as 1."
      :body (json/write-str (if urbit-id
                              (get-pki-events urbit-id since db)
                              (if node-type
-                               (get-all-pki-events limit offset db node-type)
-                               (get-all-pki-events limit offset db)))
+                               (get-all-pki-events limit offset since node-type db)
+                               (get-all-pki-events limit offset since db)))
                            :value-fn stringify-date)}))
 
 (defn add-zero-counts [dr query-res]

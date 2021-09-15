@@ -2,76 +2,73 @@ import { useState, useEffect } from 'react';
 
 import './App.css';
 import './fonts.css';
+
 import { Box,
          Row,
          StatelessTextInput,
+         LoadingSpinner,
+         Center,
          Icon,
          Table,
          Tr,
-         Td,
-         Menu,
-         MenuList,
-         MenuItem,
-         MenuButton,
          Text,
-         Col,
-         Button,
-         Center } from '@tlon/indigo-react';
+         Col } from '@tlon/indigo-react';
 
 import { AzimuthEvent } from './AzimuthEvent';
+import { AzimuthChart } from './AzimuthChart';
+import { TimeRangeMenu } from './TimeRangeMenu';
+import { NodeMenu } from './NodeMenu';
 
-import { ResponsiveContainer,
-         BarChart,
-         ReferenceLine,
-         CartesianGrid,
-         XAxis,
-         YAxis,
-         Tooltip,
-         Legend,
-         Bar
-       } from 'recharts';
+const API_BASE_URL = 'https://j6lpjx5nhf.execute-api.us-west-2.amazonaws.com';
 
+
+const fetchPkiEvents = (stateSetter, nodeType) => {
+  stateSetter({loading: true});
+
+  const url = nodeType ?
+        `${API_BASE_URL}/get-pki-events?limit=1000&nodeType=${nodeType}` :
+        `${API_BASE_URL}/get-pki-events?limit=1000`;
+
+  fetch(url)
+    .then(res => res.json())
+    .then(events => stateSetter({loading: false, events: events}));
+};
+
+const fetchAggregateEvents = (eventType, stateSetter, since, nodeType) => {
+  stateSetter({loading: true, months: new Set()});
+
+  const url = nodeType ?
+        `${API_BASE_URL}/get-aggregate-pki-events?eventType=${eventType}&since=${since}&nodeType=${nodeType}` :
+        `${API_BASE_URL}/get-aggregate-pki-events?eventType=${eventType}&since=${since}`;
+
+  fetch(url)
+    .then(res => res.json())
+    .then(es => {
+      let months = new Set();
+
+      const events = es.map(e => {
+        const d = new Date(e.date);
+        const month = d.toLocaleString('default', {month: 'long'});
+        months.add(month);
+        return Object.assign({month: month}, e, {date: e.date.substring(0, 10)});
+      });
+
+      stateSetter({loading: false, events: events, months: months});
+    });
+};
 
 function App() {
 
-  const [azimuthEvents, setAzimuthEvents] = useState([]);
+  const [azimuthEvents, setAzimuthEvents] = useState({loading: true, events: []});
 
-  const [spawnEvents, setSpawnEvents] = useState([]);
+  const [spawnEvents, setSpawnEvents] = useState({loading: true, months: new Set(), events: []});
 
-  const [transferEvents, setTransferEvents] = useState([]);
-
-  let months = spawnEvents.reduce((acc, e) => acc.add(e.month), new Set());
+  const [transferEvents, setTransferEvents] = useState({loading: true, months: new Set(), events: []});
 
   useEffect(() => {
-    fetch('https://j6lpjx5nhf.execute-api.us-west-2.amazonaws.com/get-pki-events?limit=100')
-      .then(res => res.json())
-      .then(events => setAzimuthEvents(events));
-  }, []);
-
-
-  useEffect(() => {
-    fetch('https://j6lpjx5nhf.execute-api.us-west-2.amazonaws.com/get-aggregate-pki-events?type=spawn&since=2021-03-01')
-      .then(res => res.json())
-      .then(events => setSpawnEvents(events.map(e => {
-        const d = new Date(e.date);
-        const month = d.toLocaleString('default', {month: 'long'});
-        return Object.assign({month: month},
-                             e,
-                             {date: e.date.substring(0, 10)});
-      })));
-  }, []);
-
-
-  useEffect(() => {
-    fetch('https://j6lpjx5nhf.execute-api.us-west-2.amazonaws.com/get-aggregate-pki-events?type=change-ownership&since=2021-03-01')
-      .then(res => res.json())
-      .then(events => setTransferEvents(events.map(e => {
-        const d = new Date(e.date);
-        const month = d.toLocaleString('default', {month: 'long'});
-        return Object.assign({month: month},
-                             e,
-                             {date: e.date.substring(0, 10)});
-      })));
+    fetchPkiEvents(setAzimuthEvents);
+    fetchAggregateEvents('spawn', setSpawnEvents, '2021-03-01');
+    fetchAggregateEvents('change-ownership', setTransferEvents, '2021-03-01');
   }, []);
 
   return (
@@ -134,43 +131,14 @@ function App() {
             display='flex'
             alignItems='center'
           >
-            <Menu>
-              <Text
-                color='gray'
-                fontWeight={400}
-                fontSize={2}
-              >
-                Time Range
-              </Text>
-              <MenuButton
-                style={{cursor: 'pointer'}}
-                border='none'
-                height='auto'
-                width='auto'
-                fontSize={2}
-              >
-                6 months <Icon ml='10px' icon='ChevronSouth' size={12} />
-              </MenuButton>
-            </Menu>
-            <Menu>
-              <Text
-                color='gray'
-                fontWeight={400}
-                fontSize={2}
-                ml='34px'
-              >
-                Nodes
-              </Text>
-              <MenuButton
-                style={{cursor: 'pointer'}}
-                border='none'
-                height='auto'
-                width='auto'
-                fontSize={2}
-              >
-                All <Icon ml='10px' icon='ChevronSouth' size={12} />
-              </MenuButton>
-            </Menu>
+            <TimeRangeMenu />
+            <NodeMenu
+              fetchPkiEvents={nodeType => fetchPkiEvents(setAzimuthEvents, nodeType)}
+              fetchAggregateEvents={nodeType => {
+                fetchAggregateEvents('spawn', setSpawnEvents, '2021-03-01', nodeType);
+                fetchAggregateEvents('change-ownership', setTransferEvents, '2021-03-01', nodeType);
+              }}
+            />
           </Box>
         </Box>
       </Row>
@@ -193,23 +161,33 @@ function App() {
             <Text fontSize={0} fontWeight={500}>Global Azimuth Event Stream</Text>
             <Icon icon='Info' size={16} cursor='pointer' />
           </Row>
-          <Table border='0'>
-            <Tr textAlign='left' pb={2} mt={4}>
-              <th style={{borderBottom: '1px solid rgba(0, 0, 0, 0.04)'}}>
-                <Text fontSize={0} color='gray'>Event Type</Text>
-              </th>
-              <th style={{borderBottom: '1px solid rgba(0, 0, 0, 0.04)'}}>
-                <Text fontSize={0} color='gray'>Node</Text>
-              </th>
-              <th style={{borderBottom: '1px solid rgba(0, 0, 0, 0.04)'}}>
-                <Text fontSize={0} color='gray'>Data</Text>
-              </th>
-              <th style={{borderBottom: '1px solid rgba(0, 0, 0, 0.04)'}}>
-                <Text fontSize={0} color='gray'>Time</Text>
-              </th>
-            </Tr>
-            {azimuthEvents.map(e => <AzimuthEvent {...e}/>)}
-          </Table>
+          {azimuthEvents.loading ?
+           <Center height='100%'>
+             <LoadingSpinner
+               width='36px'
+               height='36px'
+               foreground='rgba(0, 0, 0, 0.6)'
+               background='rgba(0, 0, 0, 0.2)'
+             />
+           </Center> :
+           <Table border='0'>
+             <Tr textAlign='left' pb={2} mt={4}>
+               <th style={{borderBottom: '1px solid rgba(0, 0, 0, 0.04)'}}>
+                 <Text fontSize={0} color='gray'>Event Type</Text>
+               </th>
+               <th style={{borderBottom: '1px solid rgba(0, 0, 0, 0.04)'}}>
+                 <Text fontSize={0} color='gray'>Node</Text>
+               </th>
+               <th style={{borderBottom: '1px solid rgba(0, 0, 0, 0.04)'}}>
+                 <Text fontSize={0} color='gray'>Data</Text>
+               </th>
+               <th style={{borderBottom: '1px solid rgba(0, 0, 0, 0.04)'}}>
+                 <Text fontSize={0} color='gray'>Time</Text>
+               </th>
+             </Tr>
+             {azimuthEvents.events.map(e => <AzimuthEvent {...e}/>)}
+           </Table>
+          }
         </Col>
         <Col
           m={2}
@@ -228,28 +206,21 @@ function App() {
               <Icon icon='Info' size={16} cursor='pointer' />
             </Row>
             <Box flex='1' m={2}>
-              <ResponsiveContainer>
-                <BarChart
-                  barCategoryGap={0}
-                  data={spawnEvents}>
-                  <XAxis
-                    hide={true}
-                    xAxisId='0'
-                    dataKey='date'
-                  />
-                  <XAxis
-                    xAxisId='1'
-                    dataKey='month'
-                    allowDuplicatedCategory={false}
-                  />
-                  <Tooltip />
-                  <Legend align='left' iconType='circle' />
-                  <Bar name='Spawn Events' dataKey='count' fill='#BF421B' />
-                  {[...months.values()].map(month => {
-                    return <ReferenceLine xAxisId='1' x={month} stroke='rgba(0, 0, 0, 0.2)' />;
-                  })}
-                </BarChart>
-              </ResponsiveContainer >
+              {spawnEvents.loading ?
+               <Center height='100%'>
+                 <LoadingSpinner
+                   width='36px'
+                   height='36px'
+                   foreground='rgba(0, 0, 0, 0.6)'
+                   background='rgba(0, 0, 0, 0.2)'
+                 />
+               </Center> :
+               <AzimuthChart
+                 name='Spawn Events'
+                 fill='#BF421B'
+                 events={spawnEvents.events}
+                 months={spawnEvents.months}
+               />}
             </Box>
           </Box>
           <Box
@@ -265,28 +236,21 @@ function App() {
               <Icon icon='Info' size={16} cursor='pointer' />
             </Row>
             <Box flex='1' m={2}>
-              <ResponsiveContainer>
-                <BarChart
-                  barCategoryGap={0}
-                  data={transferEvents}>
-                  <XAxis
-                    hide={true}
-                    xAxisId='0'
-                    dataKey='date'
-                  />
-                  <XAxis
-                    xAxisId='1'
-                    dataKey='month'
-                    allowDuplicatedCategory={false}
-                  />
-                  <Tooltip />
-                  <Legend align='left' iconType='circle' />
-                  <Bar name='Transfer Events' dataKey='count' fill='#093C09' />
-                  {[...months.values()].map(month => {
-                    return <ReferenceLine xAxisId='1' x={month} stroke='rgba(0, 0, 0, 0.2)' />;
-                  })}
-                </BarChart>
-              </ResponsiveContainer >
+              {transferEvents.loading ?
+               <Center height='100%'>
+                 <LoadingSpinner
+                   width='36px'
+                   height='36px'
+                   foreground='rgba(0, 0, 0, 0.6)'
+                   background='rgba(0, 0, 0, 0.2)'
+                 />
+               </Center> :
+               <AzimuthChart
+                 name='Transfer Events'
+                 fill='#093C09'
+                 events={transferEvents.events}
+                 months={transferEvents.months}
+               />}
             </Box>
           </Box>
         </Col>

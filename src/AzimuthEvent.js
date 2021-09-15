@@ -20,7 +20,7 @@ const m = {
   'spawn': {svg: spawned, text: 'Spawned'},
   'escape-requested': {svg: escapeRequested, text: 'Escape Requested'},
   'escape-canceled': {svg: escapeCanceled, text: 'Escape Canceled'},
-  'escaped': {svg: escapeCanceled, text: 'Escape Accepted'},
+  'escaped': {svg: escapeAccepted, text: 'Escape Accepted'},
   'lost-sponsor': {svg: lostSponsor, text: 'Lost Sponsor'},
   'change-networking-keys': {svg: changedKeys, text: 'Changed Keys'},
   'broke-continuity': {svg: brokeContinuity, text: 'Broke Continuity'},
@@ -114,7 +114,7 @@ const formatData = data => {
 };
 
 export function AzimuthEvent(props) {
-  const {type, time, address, node} = props;
+  const {type, time, node} = props;
 
   let sig = sigil({patp: node['urbit-id'],
                      renderer: reactRenderer,
@@ -127,7 +127,7 @@ export function AzimuthEvent(props) {
   return (
     <Tr>
       <Td>
-        <img src={m[type].svg} style={{verticalAlign: 'middle'}} />
+        <img src={m[type].svg} style={{verticalAlign: 'middle'}} alt='Urbit sigil' />
         <Text ml={2} fontSize={0} verticalAlign='middle'>{m[type].text}</Text>
       </Td>
       <Td>

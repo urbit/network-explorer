@@ -13,7 +13,8 @@ import { Box,
          Text,
          Col } from '@tlon/indigo-react';
 
-import { Header } from './Header';
+import  SearchHeader from './SearchHeader';
+import { MenuHeader } from './MenuHeader';
 import { Node } from './Node';
 import { AzimuthEvents } from './AzimuthEvents';
 import { AzimuthChart } from './AzimuthChart';
@@ -26,6 +27,8 @@ const ONE_WEEK = ONE_DAY * 7;
 const ONE_MONTH = ONE_DAY * 30;
 const SIX_MONTHS = ONE_MONTH * 6;
 const ONE_YEAR = ONE_MONTH * 12;
+
+var lastApiCall;
 
 const isoStringToDate = isoString => {
   return (isoString === undefined) ? undefined : isoString.substring(0, 10);
@@ -60,12 +63,14 @@ const fetchPkiEvents = (stateSetter, nodeType, since) => {
   stateSetter({loading: true});
 
   let url = nodeType ?
-      `${API_BASE_URL}/get-pki-events?limit=1000&nodeType=${nodeType}` :
-      `${API_BASE_URL}/get-pki-events?limit=1000`;
+      `${API_BASE_URL}/get-pki-events?limit=100&nodeType=${nodeType}` :
+      `${API_BASE_URL}/get-pki-events?limit=100`;
 
   if (since) {
     url += '&since=' + since;
   }
+
+  lastApiCall = url;
 
   fetch(url)
     .then(res => res.json())
@@ -90,7 +95,7 @@ const fetchAggregateEvents = (eventType, stateSetter, since, nodeType) => {
 
       const events = es.map(e => {
         const d = new Date(e.date);
-        const month = d.toLocaleString('default', {month: 'long'});
+        const month = d.toLocaleString('default', {month: 'short'});
         months.add(month);
         return Object.assign({month: month}, e, {date: e.date.substring(0, 10)});
       });
@@ -109,7 +114,9 @@ function App() {
 
   const [nodesText, setNodesText] = useState('All');
 
-  const [timeRangeText, setTimeRangeText] = useState('6 months');
+  const [timeRangeText, setTimeRangeText] = useState('6 Months');
+
+  const [offset, setOffset] = useState(0);
 
   useEffect(() => {
     fetchPkiEvents(setAzimuthEvents);
@@ -117,8 +124,8 @@ function App() {
     fetchAggregateEvents('change-ownership', setTransferEvents, '2021-03-01');
   }, []);
 
-  const header =
-        <Header
+  const menuHeader =
+        <MenuHeader
           timeRangeText={timeRangeText}
           setTimeRangeText={setTimeRangeText}
           nodesText={nodesText}
@@ -157,42 +164,12 @@ function App() {
          flexDirection='column'
          height='100%'
     >
-      <Row
-        justifyContent='space-between'
-        alignItems='center'
-        borderBottom='1px solid rgba(0, 0, 0, 0.1)'
-      >
-        <Box
-          p={3}
-        >
-          <Box>
-            <Text color='gray' fontSize={2}>
-              Urbit
-            </Text>
-            <Text ml={1} fontSize={2}>
-              / Network explorer
-            </Text>
-          </Box>
-        </Box>
-        <Box
-          p='12px'
-        >
-          <StatelessTextInput
-            placeholder='Search for a node...'
-            backgroundColor='rgba(0, 0, 0, 0.04)'
-            borderRadius='4px'
-            fontWeight={400}
-            height={40}
-            width={256}
-          />
-        </Box>
-      </Row>
-
       <Router>
         <Switch>
           <Route path="/:point" render={routeProps => {
             return <>
-                     {cloneElement(header, {disabled: true})}
+                     <SearchHeader />
+                     {cloneElement(menuHeader, {disabled: true})}
                      <Row
                        backgroundColor='#E9E9E9'
                        display='flex'
@@ -204,7 +181,8 @@ function App() {
                    </>;
           }} />
           <Route exact path="/">
-            {cloneElement(header, {disabled: false})}
+            <SearchHeader />
+            {cloneElement(menuHeader, {disabled: false})}
             <Row
               backgroundColor='#E9E9E9'
               display='flex'
@@ -220,8 +198,42 @@ function App() {
                 flex='1'
                 overflowY='auto'
               >
+                <Row justifyContent='space-between' alignItems='center'>
+                  <Text fontSize={0} fontWeight={500}>Global Azimuth Event Stream</Text>
+                  <Box>
+                    {offset !== 0 &&
+                     <Icon
+                       icon='TriangleWest'
+                       cursor='pointer'
+                       size={16}
+                       onClick={() => {
+                         setAzimuthEvents({loading: true});
+                         fetch(lastApiCall + '&offset=' + (offset - 100))
+                           .then(res => res.json())
+                           .then(events => {
+                             setAzimuthEvents({loading: false, events: events});
+                             setOffset(offset - 100);
+                           });
+                       }}
+                     />
+                    }
+                    <Icon
+                      icon='TriangleEast'
+                      cursor='pointer'
+                      size={16}
+                      onClick={() => {
+                        setAzimuthEvents({loading: true});
+                        fetch(lastApiCall + '&offset=' + (offset + 100))
+                          .then(res => res.json())
+                          .then(events => {
+                            setAzimuthEvents({loading: false, events: events});
+                            setOffset(offset + 100);
+                          });
+                      }}
+                    />
+                  </Box>
+                </Row>
                 <AzimuthEvents
-                  header='Global Azimuth Event Stream'
                   loading={azimuthEvents.loading}
                   events={azimuthEvents.events} />
               </Col>
@@ -243,7 +255,7 @@ function App() {
                     <Text fontSize={0}>Spawn Events</Text>
                     <Icon icon='Info' size={16} cursor='pointer' />
                   </Row>
-                  <Box flex='1' m={3}>
+                  <Box flex='1' backgroundColor='#F5F5F5'>
                     {spawnEvents.loading ?
                      <Center height='100%'>
                        <LoadingSpinner
@@ -273,7 +285,7 @@ function App() {
                     <Text fontSize={0}>Transfer Events</Text>
                     <Icon icon='Info' size={16} cursor='pointer' />
                   </Row>
-                  <Box flex='1' m={3}>
+                  <Box flex='1' backgroundColor='#F5F5F5'>
                     {transferEvents.loading ?
                      <Center height='100%'>
                        <LoadingSpinner

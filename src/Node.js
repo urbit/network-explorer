@@ -260,8 +260,10 @@ export function Node(props) {
             p={3}
             height='75%'
           >
+            <Row justifyContent='space-between'>
+              <Text fontSize={0} fontWeight={500}>Azimuth Event Stream</Text>
+            </Row>
             <AzimuthEvents
-              header='Azimuth Event Stream'
               loading={azimuthEvents.loading}
               events={azimuthEvents.events} />
           </Box>

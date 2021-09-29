@@ -118,7 +118,7 @@ const formatData = data => {
            </>;
   }
 
-  if (data.type === 'escaped' || data.type === 'escape-requested' || data.type === 'escape-canceled'){
+  if (data.type === 'escaped' || data.type === 'escape-requested'){
     return <>
              <Text color='gray' fontSize={0}>Sponsor</Text>
              <Text ml={1}

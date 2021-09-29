@@ -16,10 +16,6 @@ export function AzimuthEvents(props) {
 
   return (
     <>
-      <Row justifyContent='space-between'>
-        <Text fontSize={0} fontWeight={500}>{header}</Text>
-        <Icon icon='Info' size={16} cursor='pointer' />
-      </Row>
       {loading ?
        <Center height='100%'>
          <LoadingSpinner

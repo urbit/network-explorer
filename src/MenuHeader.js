@@ -9,7 +9,7 @@ import { Box,
 import { TimeRangeMenu } from './TimeRangeMenu';
 import { NodeMenu } from './NodeMenu';
 
-export function Header(props) {
+export function MenuHeader(props) {
   const { disabled,
           timeRangeText,
           setTimeRangeText,

@@ -2,6 +2,7 @@ import React from 'react';
 
 import { ResponsiveContainer,
          BarChart,
+         CartesianGrid,
          ReferenceLine,
          XAxis,
          Tooltip,
@@ -16,6 +17,7 @@ export function AzimuthChart(props) {
       <BarChart
         barCategoryGap={0}
         data={events}>
+        <CartesianGrid strokeDasharray="3 3" />
         <XAxis
           hide={true}
           xAxisId='0'
@@ -24,13 +26,11 @@ export function AzimuthChart(props) {
         <XAxis
           xAxisId='1'
           dataKey='month'
-          allowDuplicatedCategory={false}
+          interval={30}
+          padding={{left: 10}}
         />
         <Tooltip />
         <Bar name={name} dataKey='count' fill={fill}/>
-        {[...months.values()].map(month => {
-          return <ReferenceLine key={month} xAxisId='1' x={month} stroke='rgba(0, 0, 0, 0.2)' />;
-        })}
       </BarChart>
     </ResponsiveContainer >
   );

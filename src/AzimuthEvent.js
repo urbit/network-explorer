@@ -1,7 +1,7 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 
 import { Tr, Td, Text } from '@tlon/indigo-react';
-
 import { sigil, reactRenderer } from '@tlon/sigil-js';
 
 import spawned from './spawned.svg';
@@ -92,6 +92,32 @@ const formatData = data => {
            </>;
   }
 
+  if (data.type === 'spawn') {
+
+    let sig = sigil({patp: data['target-node']['urbit-id'],
+                     renderer: reactRenderer,
+                     size: 16,
+                     colors: ['white', 'black']});
+
+    sig.props.style.display = 'inline';
+    sig.props.style.verticalAlign = 'middle';
+
+    return <>
+             {sig}
+             <Link to={'/' + data['target-node']['urbit-id']} style={{textDecoration:'none'}}>
+               <Text
+                 fontFamily='Source Code Pro !important'
+                 ml={1}
+                 color='gray'
+                 fontSize={0}
+                 verticalAlign='middle'
+               >
+                 {data['target-node']['urbit-id']}
+               </Text>
+             </Link>
+           </>;
+  }
+
   if (data.type === 'escaped' || data.type === 'escape-requested' || data.type === 'escape-canceled'){
     return <>
              <Text color='gray' fontSize={0}>Sponsor</Text>
@@ -99,6 +125,7 @@ const formatData = data => {
                    pl={1}
                    pr={1}
                    fontSize={0}
+                   fontFamily='Source Code Pro !important'
                    color='black'
                    backgroundColor='rgba(0, 0, 0, 0.04)'
                    borderRadius='2px'
@@ -108,7 +135,7 @@ const formatData = data => {
            </>;
   }
 
-  return <Text color='gray' fontSize={0}>
+  return <Text color='gray' fontSize={0} fontFamily='Source Code Pro !important'>
            {data.address ? data.address.substring(0, 8) + '...' + data.address.slice(-6) : ''}
          </Text>;
 };
@@ -127,17 +154,28 @@ export function AzimuthEvent(props) {
   return (
     <Tr>
       <Td>
-        <img src={m[type].svg} style={{verticalAlign: 'middle'}} alt='Urbit sigil' />
+        <img src={m[type].svg} style={{verticalAlign: 'middle'}} alt='Icon for Azimuth Event' />
         <Text ml={2} fontSize={0} verticalAlign='middle'>{m[type].text}</Text>
       </Td>
       <Td>
-        {sig} <Text color='gray' fontSize={0} verticalAlign='middle'>{node['urbit-id']}</Text>
+        {sig}
+        <Link to={'/' + node['urbit-id']} style={{textDecoration:'none'}}>
+          <Text
+            fontFamily='Source Code Pro !important'
+            ml={1}
+            color='gray'
+            fontSize={0}
+            verticalAlign='middle'
+          >
+            {node['urbit-id']}
+          </Text>
+        </Link>
       </Td>
       <Td>
         {formatData(props)}
       </Td>
       <Td>
-        <Text color='gray' fontSize={0}>{formatTimeAgo(time)}</Text>
+        <Text fontFamily='Source Code Pro !important' color='gray' fontSize={0}>{formatTimeAgo(time)}</Text>
       </Td>
     </Tr>
   );

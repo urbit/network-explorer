@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { BrowserRouter as Router, Route, Switch } from 'react-router-dom';
 
 import './App.css';
 import './fonts.css';
@@ -9,12 +10,11 @@ import { Box,
          LoadingSpinner,
          Center,
          Icon,
-         Table,
-         Tr,
          Text,
          Col } from '@tlon/indigo-react';
 
-import { AzimuthEvent } from './AzimuthEvent';
+import { Node } from './Node';
+import { AzimuthEvents } from './AzimuthEvents';
 import { AzimuthChart } from './AzimuthChart';
 import { TimeRangeMenu } from './TimeRangeMenu';
 import { NodeMenu } from './NodeMenu';
@@ -61,8 +61,8 @@ const fetchPkiEvents = (stateSetter, nodeType, since) => {
   stateSetter({loading: true});
 
   let url = nodeType ?
-        `${API_BASE_URL}/get-pki-events?limit=1000&nodeType=${nodeType}` :
-        `${API_BASE_URL}/get-pki-events?limit=1000`;
+      `${API_BASE_URL}/get-pki-events?limit=1000&nodeType=${nodeType}` :
+      `${API_BASE_URL}/get-pki-events?limit=1000`;
 
   if (since) {
     url += '&since=' + since;
@@ -77,8 +77,8 @@ const fetchAggregateEvents = (eventType, stateSetter, since, nodeType) => {
   stateSetter({loading: true, months: new Set()});
 
   let url = nodeType ?
-        `${API_BASE_URL}/get-aggregate-pki-events?eventType=${eventType}&nodeType=${nodeType}` :
-        `${API_BASE_URL}/get-aggregate-pki-events?eventType=${eventType}`;
+      `${API_BASE_URL}/get-aggregate-pki-events?eventType=${eventType}&nodeType=${nodeType}` :
+      `${API_BASE_URL}/get-aggregate-pki-events?eventType=${eventType}`;
 
   if (since) {
     url += '&since=' + since;
@@ -221,112 +221,94 @@ function App() {
         overflowY='auto'
         flex='1'
       >
-        <Col
-          m={2}
-          p={2}
-          backgroundColor='white'
-          borderRadius='8px'
-          width='50%'
-          flex='1'
-          overflowY='auto'
-        >
-          <Row justifyContent='space-between'>
-            <Text fontSize={0} fontWeight={500}>Global Azimuth Event Stream</Text>
-            <Icon icon='Info' size={16} cursor='pointer' />
-          </Row>
-          {azimuthEvents.loading ?
-           <Center height='100%'>
-             <LoadingSpinner
-               width='36px'
-               height='36px'
-               foreground='rgba(0, 0, 0, 0.6)'
-               background='rgba(0, 0, 0, 0.2)'
-             />
-           </Center> :
-           <Table border='0'>
-             <Tr textAlign='left' pb={2} mt={4}>
-               <th style={{borderBottom: '1px solid rgba(0, 0, 0, 0.04)'}}>
-                 <Text fontSize={0} color='gray'>Event Type</Text>
-               </th>
-               <th style={{borderBottom: '1px solid rgba(0, 0, 0, 0.04)'}}>
-                 <Text fontSize={0} color='gray'>Node</Text>
-               </th>
-               <th style={{borderBottom: '1px solid rgba(0, 0, 0, 0.04)'}}>
-                 <Text fontSize={0} color='gray'>Data</Text>
-               </th>
-               <th style={{borderBottom: '1px solid rgba(0, 0, 0, 0.04)'}}>
-                 <Text fontSize={0} color='gray'>Time</Text>
-               </th>
-             </Tr>
-             {azimuthEvents.events.map(e => <AzimuthEvent {...e}/>)}
-           </Table>
-          }
-        </Col>
-        <Col
-          m={2}
-          flex='1'
-        >
-          <Box
-            flex='1'
-            backgroundColor='white'
-            borderRadius='8px'
-            overflow='hidden'
-            display='flex'
-            flexDirection='column'
-          >
-            <Row fontWeight={500} p={2} justifyContent='space-between'>
-              <Text fontSize={0}>Spawn Events</Text>
-              <Icon icon='Info' size={16} cursor='pointer' />
-            </Row>
-            <Box flex='1' m={2}>
-              {spawnEvents.loading ?
-               <Center height='100%'>
-                 <LoadingSpinner
-                   width='36px'
-                   height='36px'
-                   foreground='rgba(0, 0, 0, 0.6)'
-                   background='rgba(0, 0, 0, 0.2)'
-                 />
-               </Center> :
-               <AzimuthChart
-                 name='Spawn Events'
-                 fill='#BF421B'
-                 events={spawnEvents.events}
-                 months={spawnEvents.months}
-               />}
-            </Box>
-          </Box>
-          <Box
-            mt={2}
-            backgroundColor='white'
-            borderRadius='8px'
-            flex='1'
-            display='flex'
-            flexDirection='column'
-          >
-            <Row fontWeight={500} p={2} justifyContent='space-between'>
-              <Text fontSize={0}>Transfer Events</Text>
-              <Icon icon='Info' size={16} cursor='pointer' />
-            </Row>
-            <Box flex='1' m={2}>
-              {transferEvents.loading ?
-               <Center height='100%'>
-                 <LoadingSpinner
-                   width='36px'
-                   height='36px'
-                   foreground='rgba(0, 0, 0, 0.6)'
-                   background='rgba(0, 0, 0, 0.2)'
-                 />
-               </Center> :
-               <AzimuthChart
-                 name='Transfer Events'
-                 fill='#093C09'
-                 events={transferEvents.events}
-                 months={transferEvents.months}
-               />}
-            </Box>
-          </Box>
-        </Col>
+        <Router>
+          <Switch>
+            <Route path="/:point" component={Node} />
+            <Route exact path="/">
+              <Col
+                m={3}
+                p={3}
+                backgroundColor='white'
+                borderRadius='8px'
+                width='50%'
+                flex='1'
+                overflowY='auto'
+              >
+                <AzimuthEvents
+                  header='Global Azimuth Event Stream'
+                  loading={azimuthEvents.loading}
+                  events={azimuthEvents.events} />
+              </Col>
+              <Col
+                mt={3}
+                mb={3}
+                mr={3}
+                flex='1'
+              >
+                <Box
+                  flex='1'
+                  backgroundColor='white'
+                  borderRadius='8px'
+                  overflow='hidden'
+                  display='flex'
+                  flexDirection='column'
+                >
+                  <Row fontWeight={500} p={3} justifyContent='space-between'>
+                    <Text fontSize={0}>Spawn Events</Text>
+                    <Icon icon='Info' size={16} cursor='pointer' />
+                  </Row>
+                  <Box flex='1' m={3}>
+                    {spawnEvents.loading ?
+                     <Center height='100%'>
+                       <LoadingSpinner
+                         width='36px'
+                         height='36px'
+                         foreground='rgba(0, 0, 0, 0.6)'
+                         background='rgba(0, 0, 0, 0.2)'
+                       />
+                     </Center> :
+                     <AzimuthChart
+                       name='Spawn Events'
+                       fill='#BF421B'
+                       events={spawnEvents.events}
+                       months={spawnEvents.months}
+                     />}
+                  </Box>
+                </Box>
+                <Box
+                  mt={3}
+                  backgroundColor='white'
+                  borderRadius='8px'
+                  flex='1'
+                  display='flex'
+                  flexDirection='column'
+                >
+                  <Row fontWeight={500} p={3} justifyContent='space-between'>
+                    <Text fontSize={0}>Transfer Events</Text>
+                    <Icon icon='Info' size={16} cursor='pointer' />
+                  </Row>
+                  <Box flex='1' m={3}>
+                    {transferEvents.loading ?
+                     <Center height='100%'>
+                       <LoadingSpinner
+                         width='36px'
+                         height='36px'
+                         foreground='rgba(0, 0, 0, 0.6)'
+                         background='rgba(0, 0, 0, 0.2)'
+                       />
+                     </Center> :
+                     <AzimuthChart
+                       name='Transfer Events'
+                       fill='#093C09'
+                       events={transferEvents.events}
+                       months={transferEvents.months}
+                     />}
+                  </Box>
+                </Box>
+              </Col>
+            </Route>
+          </Switch>
+        </Router>
       </Row>
     </Box>
   );

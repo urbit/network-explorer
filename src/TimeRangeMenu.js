@@ -20,7 +20,7 @@ export function TimeRangeMenu(props) {
     }
     setTimeRangeText(timeRange);
     fetchPkiEvents(timeRange);
-    fetchPkiEvents(timeRange);
+    fetchAggregateEvents(timeRange);
   };
 
   return (

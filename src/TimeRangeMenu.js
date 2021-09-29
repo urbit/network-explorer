@@ -9,7 +9,8 @@ import { Icon,
 
 export function TimeRangeMenu(props) {
 
-  const { fetchPkiEvents,
+  const { disabled,
+          fetchPkiEvents,
           fetchAggregateEvents,
           timeRangeText,
           setTimeRangeText} = props;
@@ -23,17 +24,21 @@ export function TimeRangeMenu(props) {
     fetchAggregateEvents(timeRange);
   };
 
+  const buttonStyle = disabled ? {} : {cursor: 'pointer'};
+
   return (
     <Menu>
       <Text
-        color='gray'
+        color={disabled ? 'lightGray' : 'gray'}
         fontWeight={400}
         fontSize={2}
       >
         Time Range
       </Text>
       <MenuButton
-        style={{cursor: 'pointer'}}
+        disabled={disabled}
+        style={buttonStyle}
+        backgroundColor='white'
         border='none'
         height='auto'
         width='auto'

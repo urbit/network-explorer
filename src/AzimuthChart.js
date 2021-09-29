@@ -29,7 +29,7 @@ export function AzimuthChart(props) {
         <Tooltip />
         <Bar name={name} dataKey='count' fill={fill}/>
         {[...months.values()].map(month => {
-          return <ReferenceLine xAxisId='1' x={month} stroke='rgba(0, 0, 0, 0.2)' />;
+          return <ReferenceLine key={month} xAxisId='1' x={month} stroke='rgba(0, 0, 0, 0.2)' />;
         })}
       </BarChart>
     </ResponsiveContainer >

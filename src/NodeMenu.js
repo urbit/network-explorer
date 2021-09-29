@@ -9,7 +9,8 @@ import { Icon,
 
 export function NodeMenu(props) {
 
-  const { fetchPkiEvents,
+  const { disabled,
+          fetchPkiEvents,
           fetchAggregateEvents,
           nodesText,
           setNodesText } = props;
@@ -23,10 +24,12 @@ export function NodeMenu(props) {
     fetchAggregateEvents(nodes);
   };
 
+  const buttonStyle = disabled ? {} : {cursor: 'pointer'};
+
   return (
     <Menu>
       <Text
-        color='gray'
+        color={disabled ? 'lightGray' : 'gray'}
         fontWeight={400}
         fontSize={2}
         ml='34px'
@@ -34,7 +37,9 @@ export function NodeMenu(props) {
         Nodes
       </Text>
       <MenuButton
-        style={{cursor: 'pointer'}}
+        disabled={disabled}
+        style={buttonStyle}
+        backgroundColor='white'
         border='none'
         height='auto'
         width='auto'

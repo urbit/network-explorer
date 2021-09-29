@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, cloneElement } from 'react';
 import { BrowserRouter as Router, Route, Switch } from 'react-router-dom';
 
 import './App.css';
@@ -13,11 +13,10 @@ import { Box,
          Text,
          Col } from '@tlon/indigo-react';
 
+import { Header } from './Header';
 import { Node } from './Node';
 import { AzimuthEvents } from './AzimuthEvents';
 import { AzimuthChart } from './AzimuthChart';
-import { TimeRangeMenu } from './TimeRangeMenu';
-import { NodeMenu } from './NodeMenu';
 
 const API_BASE_URL = 'https://j6lpjx5nhf.execute-api.us-west-2.amazonaws.com';
 
@@ -118,6 +117,40 @@ function App() {
     fetchAggregateEvents('change-ownership', setTransferEvents, '2021-03-01');
   }, []);
 
+  const header =
+        <Header
+          timeRangeText={timeRangeText}
+          setTimeRangeText={setTimeRangeText}
+          nodesText={nodesText}
+          setNodesText={setNodesText}
+          fetchTimeRangePkiEvents={timeRangeText => fetchPkiEvents(setAzimuthEvents,
+                                                                   nodesTextToNodeType(nodesText),
+                                                                   timeRangeTextToSince(timeRangeText))}
+          fetchTimeRangeAggregateEvents={timeRangeText => {
+            fetchAggregateEvents('spawn',
+                                 setSpawnEvents,
+                                 isoStringToDate(timeRangeTextToSince(timeRangeText)),
+                                 nodesTextToNodeType(nodesText));
+            fetchAggregateEvents('change-ownership',
+                                 setTransferEvents,
+                                 isoStringToDate(timeRangeTextToSince(timeRangeText)),
+                                 nodesTextToNodeType(nodesText));
+          }}
+          fetchNodePkiEvents={nodesText => fetchPkiEvents(setAzimuthEvents,
+                                                          nodesTextToNodeType(nodesText),
+                                                          timeRangeTextToSince(timeRangeText))}
+          fetchNodeAggregateEvents={nodesText => {
+            fetchAggregateEvents('spawn',
+                                 setSpawnEvents,
+                                 isoStringToDate(timeRangeTextToSince(timeRangeText)),
+                                 nodesTextToNodeType(nodesText));
+            fetchAggregateEvents('change-ownership',
+                                 setTransferEvents,
+                                 isoStringToDate(timeRangeTextToSince(timeRangeText)),
+                                 nodesTextToNodeType(nodesText));
+          }}
+        />;
+
   return (
     <Box className='App'
          display='flex'
@@ -154,77 +187,30 @@ function App() {
           />
         </Box>
       </Row>
-      <Row
-        width='100%'
-        justifyContent='space-between'
-        alignItems='center'
-      >
-        <Box
-          p={3}
-        >
-          <Box>
-            <Text cursor='pointer' color='gray' fontSize={2} mr={3}>
-              Address space
-            </Text>
-            <Text cursor='pointer' ml={3} fontSize={2}>
-              Azimuth activity
-            </Text>
-          </Box>
-        </Box>
-        <Box
-          p={3}
-        >
-          <Box
-            display='flex'
-            alignItems='center'
-          >
-            <TimeRangeMenu
-              timeRangeText={timeRangeText}
-              setTimeRangeText={setTimeRangeText}
-              fetchPkiEvents={timeRangeText => fetchPkiEvents(setAzimuthEvents,
-                                                              nodesTextToNodeType(nodesText),
-                                                              timeRangeTextToSince(timeRangeText))}
-              fetchAggregateEvents={timeRangeText => {
-                fetchAggregateEvents('spawn',
-                                     setSpawnEvents,
-                                     isoStringToDate(timeRangeTextToSince(timeRangeText)),
-                                     nodesTextToNodeType(nodesText));
-                fetchAggregateEvents('change-ownership',
-                                     setTransferEvents,
-                                     isoStringToDate(timeRangeTextToSince(timeRangeText)),
-                                     nodesTextToNodeType(nodesText));
-              }}
-            />
-            <NodeMenu
-              nodesText={nodesText}
-              setNodesText={setNodesText}
-              fetchPkiEvents={nodesText => fetchPkiEvents(setAzimuthEvents,
-                                                          nodesTextToNodeType(nodesText),
-                                                          timeRangeTextToSince(timeRangeText))}
-              fetchAggregateEvents={nodesText => {
-                fetchAggregateEvents('spawn',
-                                     setSpawnEvents,
-                                     isoStringToDate(timeRangeTextToSince(timeRangeText)),
-                                     nodesTextToNodeType(nodesText));
-                fetchAggregateEvents('change-ownership',
-                                     setTransferEvents,
-                                     isoStringToDate(timeRangeTextToSince(timeRangeText)),
-                                     nodesTextToNodeType(nodesText));
-              }}
-            />
-          </Box>
-        </Box>
-      </Row>
-      <Row
-        backgroundColor='#E9E9E9'
-        display='flex'
-        overflowY='auto'
-        flex='1'
-      >
-        <Router>
-          <Switch>
-            <Route path="/:point" component={Node} />
-            <Route exact path="/">
+
+      <Router>
+        <Switch>
+          <Route path="/:point" render={routeProps => {
+            return <>
+                     {cloneElement(header, {disabled: true})}
+                     <Row
+                       backgroundColor='#E9E9E9'
+                       display='flex'
+                       overflowY='auto'
+                       flex='1'
+                     >
+                       <Node {...routeProps} />
+                     </Row>
+                   </>;
+          }} />
+          <Route exact path="/">
+            {cloneElement(header, {disabled: false})}
+            <Row
+              backgroundColor='#E9E9E9'
+              display='flex'
+              overflowY='auto'
+              flex='1'
+            >
               <Col
                 m={3}
                 p={3}
@@ -306,10 +292,10 @@ function App() {
                   </Box>
                 </Box>
               </Col>
-            </Route>
-          </Switch>
-        </Router>
-      </Row>
+            </Row>
+          </Route>
+        </Switch>
+      </Router>
     </Box>
   );
 }

@@ -48,7 +48,8 @@ export function AzimuthEvents(props) {
              </Tr>
            </thead>
            <tbody>
-             {events.length > 0 && events.map(e => <AzimuthEvent key={e.time + e.type + e.address} {...e}/>)}
+             {events.length > 0 && events.map(e =>
+               <AzimuthEvent key={e.node['urbit-id'] + e.time + e.type + e.address} {...e}/>)}
            </tbody>
          </Table>
          {(events.length === 0) &&

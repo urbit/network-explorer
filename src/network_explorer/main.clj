@@ -11,9 +11,9 @@
             [datomic.ion.dev :as dev]))
 
 (def cfg {:server-type :ion
-          :region "us-west-2" ;; e.g. us-east-1
-          :system "datomic-storage"
-          :endpoint "https://rkl443haxh.execute-api.us-west-2.amazonaws.com"})
+          :region "us-east-2" ;; e.g. us-east-1
+          :system "network-explorer"
+          :endpoint "https://80dqm67uab.execute-api.us-east-2.amazonaws.com"})
 
 (def get-client (memoize (fn [] (d/client cfg))))
 

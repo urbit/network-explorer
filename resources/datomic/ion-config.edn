@@ -4,4 +4,4 @@
  ;; :lambdas {:update-data {:fn network-explorer.main/update-data
  ;;                         :description "Updates the PKI and radar data"
  ;;                         :timeout-secs 900}}
- :app-name "datomic-storage"}
+ :app-name "network-explorer"}

@@ -66,31 +66,10 @@
     :db/valueType :db.type/string
     :db/cardinality :db.cardinality/one
     :db/doc "The voting proxy address of the node"}
-
-   {:db/ident :node/online
-    :db/valueType :db.type/boolean
-    :db/cardinality :db.cardinality/one
-    :db/doc "Whether a node is online or not"}
-
-   {:db/ident :node/response-time
-    :db/valueType :db.type/instant
-    :db/cardinality :db.cardinality/one
-    :db/doc "The radar response time of the node"}
-
-   {:db/ident :node/ping-time
-    :db/valueType :db.type/instant
-    :db/cardinality :db.cardinality/one
-    :db/doc "When the node was pinged"}
    ])
 
 (def pki-event-schema
-  [{:db/ident :pki-event/id
-    :db/valueType :db.type/long
-    :db/cardinality :db.cardinality/one
-    :db/unique :db.unique/identity
-    :db/doc "The increasing integer number of the pki event"}
-
-   {:db/ident :pki-event/node
+  [{:db/ident :pki-event/node
     :db/valueType :db.type/ref
     :db/cardinality :db.cardinality/one
     :db/doc "The node that the pki event concerns"}
@@ -123,7 +102,14 @@
    {:db/ident :pki-event/revision
     :db/valueType :db.type/long
     :db/cardinality :db.cardinality/one
-    :db/doc "The revision number of the pki event"}])
+    :db/doc "The revision number of the pki event"}
+
+   {:db/ident :pki-event/node+type+time+address
+    :db/valueType :db.type/tuple
+    :db/tupleAttrs [:pki-event/node :pki-event/type :pki-event/time :pki-event/address]
+    :db/cardinality :db.cardinality/one
+    :db/unique :db.unique/identity
+    :db/doc "Composite tuple index for uniqueness and upsert behavior"}])
 
 (def ping-schema
   [{:db/ident :ping/time

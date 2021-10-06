@@ -345,6 +345,10 @@ attr by amount, treating a missing value as 1."
 
 
 (defn update-data [_]
+  (future (update-data 1))
+  "Started batch import")
+
+(defn update-data* [_]
   (let [client     (get-client)
         conn       (d/connect client {:db-name "network-explorer"})
         db         (d/db conn)

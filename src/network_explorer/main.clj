@@ -91,10 +91,10 @@
        (mapcat identity)))
 
 (defn get-pki-data []
-  (:body (http/get "https://raw.githubusercontent.com/jalehman/urbit-metrics/master/historic-events.csv" {:timeout 300000
+  #_(:body (http/get "https://raw.githubusercontent.com/jalehman/urbit-metrics/master/historic-events.csv" {:timeout 300000
                                                                                                           :connect-timeout 300000
                                                                                                           :http-client {:ssl-context {:insecure? true}}}))
-  #_(:body (http/get "https://azimuth.network/stats/events.txt" {:timeout 300000
+  (:body (http/get "https://azimuth.network/stats/events.txt" {:timeout 300000
                                                                  :connect-timeout 300000
                                                                  :http-client {:ssl-context {:insecure? true}}})))
 
@@ -345,7 +345,10 @@ attr by amount, treating a missing value as 1."
 
 
 (defn update-data [_]
-  (let [client     (get-client)
+  (let [;; pki-event/id is just line index, historic is the index of the last
+        ;; pki event from historic-events.txt
+        historic   203009
+        client     (get-client)
         conn       (d/connect client {:db-name "network-explorer"})
         db         (d/db conn)
         newest-id  (or (ffirst (d/q '[:find (max ?id) :where [_ :pki-event/id ?id]] db)) -1)
@@ -353,15 +356,16 @@ attr by amount, treating a missing value as 1."
                         (map (fn [l] (str/split l #",")))
                         (drop 1)
                         reverse
-                        (drop (inc newest-id)))
+                        (drop (- (inc historic) (inc newest-id))))
         ;; nodes      (reduce pki-line->nodes #{} lines)
         ;; no-sponsor (map node->node-tx-no-sponsor nodes)
         ;; node-txs   (map node->node-tx nodes)
         pki-txs    (mapcat pki-line->txs
                            (range (inc newest-id) (+ (inc newest-id) (count lines)))
-                           lines)]
-    ;; (d/transact conn {:tx-data no-sponsor})
-    ;; (d/transact conn {:tx-data node-txs})
+                           lines)
+        ]
+    #_(d/transact conn {:tx-data no-sponsor})
+    #_(d/transact conn {:tx-data node-txs})
     (doseq [txs pki-txs]
       (d/transact conn {:tx-data txs}))
     #_(d/transact conn {:tx-data (radar-data->txs (get-radar-data))})

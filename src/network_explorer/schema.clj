@@ -69,7 +69,13 @@
    ])
 
 (def pki-event-schema
-  [{:db/ident :pki-event/node
+  [{:db/ident :pki-event/id
+    :db/valueType :db.type/long
+    :db/cardinality :db.cardinality/one
+    :db/unique :db.unique/identity
+    :db/doc "The increasing integer number of the pki event, line index from azimuth.txt"}
+
+   {:db/ident :pki-event/node
     :db/valueType :db.type/ref
     :db/cardinality :db.cardinality/one
     :db/doc "The node that the pki event concerns"}
@@ -102,14 +108,7 @@
    {:db/ident :pki-event/revision
     :db/valueType :db.type/long
     :db/cardinality :db.cardinality/one
-    :db/doc "The revision number of the pki event"}
-
-   {:db/ident :pki-event/node+type+time+address
-    :db/valueType :db.type/tuple
-    :db/tupleAttrs [:pki-event/node :pki-event/type :pki-event/time :pki-event/address]
-    :db/cardinality :db.cardinality/one
-    :db/unique :db.unique/identity
-    :db/doc "Composite tuple index for uniqueness and upsert behavior"}])
+    :db/doc "The revision number of the pki event"}])
 
 (def ping-schema
   [{:db/ident :ping/time

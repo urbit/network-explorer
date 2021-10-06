@@ -91,9 +91,12 @@
        (mapcat identity)))
 
 (defn get-pki-data []
-  (:body (http/get "https://azimuth.network/stats/events.txt" {:timeout 300000
-                                                               :connect-timeout 300000
-                                                               :http-client {:ssl-context {:insecure? true}}})))
+  (:body (http/get "https://raw.githubusercontent.com/jalehman/urbit-metrics/master/historic-events.csv" {:timeout 300000
+                                                                                                          :connect-timeout 300000
+                                                                                                          :http-client {:ssl-context {:insecure? true}}}))
+  #_(:body (http/get "https://azimuth.network/stats/events.txt" {:timeout 300000
+                                                                 :connect-timeout 300000
+                                                                 :http-client {:ssl-context {:insecure? true}}})))
 
 (defn parse-pki-time [s]
   (.parse
@@ -345,7 +348,7 @@ attr by amount, treating a missing value as 1."
   (let [client     (get-client)
         conn       (d/connect client {:db-name "network-explorer"})
         db         (d/db conn)
-        newest-id  (ffirst (d/q '[:find (max ?id) :where [_ :pki-event/id ?id]] db))
+        newest-id  (or (ffirst (d/q '[:find (max ?id) :where [_ :pki-event/id ?id]] db)) -1)
         lines      (->> (str/split-lines (get-pki-data))
                         (map (fn [l] (str/split l #",")))
                         (drop 1)
@@ -362,7 +365,7 @@ attr by amount, treating a missing value as 1."
     (doseq [txs pki-txs]
       (d/transact conn {:tx-data txs}))
     #_(d/transact conn {:tx-data (radar-data->txs (get-radar-data))})
-    (pr-str pki-txs)))
+    (pr-str (count pki-txs))))
 
 (defn get-all-nodes [limit offset types db]
   (let [query (if (empty? types)

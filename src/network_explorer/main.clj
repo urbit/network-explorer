@@ -357,15 +357,14 @@ attr by amount, treating a missing value as 1."
                         (drop 1)
                         reverse
                         (drop (- (inc historic) (inc newest-id))))
-        ;; nodes      (reduce pki-line->nodes #{} lines)
-        ;; no-sponsor (map node->node-tx-no-sponsor nodes)
-        ;; node-txs   (map node->node-tx nodes)
+        nodes      (reduce pki-line->nodes #{} lines)
+        no-sponsor (map node->node-tx-no-sponsor nodes)
+        node-txs   (map node->node-tx nodes)
         pki-txs    (mapcat pki-line->txs
                            (range (inc newest-id) (+ (inc newest-id) (count lines)))
-                           lines)
-        ]
-    #_(d/transact conn {:tx-data no-sponsor})
-    #_(d/transact conn {:tx-data node-txs})
+                           lines)]
+    (d/transact conn {:tx-data no-sponsor})
+    (d/transact conn {:tx-data node-txs})
     (doseq [txs pki-txs]
       (d/transact conn {:tx-data txs}))
     #_(d/transact conn {:tx-data (radar-data->txs (get-radar-data))})

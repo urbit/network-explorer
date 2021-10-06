@@ -356,7 +356,7 @@ attr by amount, treating a missing value as 1."
                         (map (fn [l] (str/split l #",")))
                         (drop 1)
                         reverse
-                        (drop (- (inc historic) (inc newest-id))))
+                        (drop (- (inc newest-id) (inc historic))))
         nodes      (reduce pki-line->nodes #{} lines)
         no-sponsor (map node->node-tx-no-sponsor nodes)
         node-txs   (map node->node-tx nodes)

@@ -277,7 +277,7 @@ export function Node(props) {
             overflowY='auto'
             borderRadius='8px'
             flex='1'
-            minHeight='50%'
+            minHeight='45%'
             mt={3}
             mb={3}
           >

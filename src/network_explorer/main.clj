@@ -30,10 +30,7 @@
       java.util.Date/from))
 
 (defn date-range [since until]
-  (map (fn [e]
-         [(-> e (.atStartOfDay java.time.ZoneOffset/UTC) .toInstant java.util.Date/from)
-          (-> e (.plusDays 1) (.atStartOfDay java.time.ZoneOffset/UTC) .toInstant java.util.Date/from)])
-       (seq (.collect (.datesUntil since until) (java.util.stream.Collectors/toList)))))
+  (map str (seq (.collect (.datesUntil since until) (java.util.stream.Collectors/toList)))))
 
 (defn distinct-by
   "Returns a stateful transducer that removes elements by calling f on each step as a uniqueness key.
@@ -247,24 +244,22 @@ attr by amount, treating a missing value as 1."
            [(<= ?since ?t)]])
 
 (def aggregate-query
-  '[:find ?s (count ?e)
-    :in $ ?event-type [[?s ?u] ...]
-    :keys date count
+  '[:find ?t
+    :in $ ?event-type ?since ?until
     :where [?e :pki-event/type ?event-type]
            [?e :pki-event/time ?t]
-           [(<= ?s ?t)]
-           [(>= ?u ?t)]])
+           [(<= ?since ?t)]
+           [(>= ?until ?t)]])
 
 (def aggregate-query-node-type
-  '[:find ?s (count ?e)
-    :in $ ?node-type ?event-type [[?s ?u] ...]
-    :keys date count
+  '[:find ?t
+    :in $ ?node-type ?event-type ?since ?until
     :where [?e :pki-event/type ?event-type]
            [?e :pki-event/node ?p]
            [?p :node/type ?node-type]
            [?e :pki-event/time ?t]
-           [(<= ?s ?t)]
-           [(>= ?u ?t)]])
+           [(<= ?since ?t)]
+           [(>= ?until ?t)]])
 
 (defn pki-line->nodes [acc l]
   (->> (filter ob/patp? l)
@@ -431,7 +426,6 @@ attr by amount, treating a missing value as 1."
     :pki-event/time (format-pki-time value)
     :ping/time      (format-pki-time value)
     :ping/response  (format-pki-time value)
-    :date           (format-pki-time value)
     value))
 
 (defn get-pki-events [urbit-id since db]
@@ -497,24 +491,40 @@ attr by amount, treating a missing value as 1."
          res []]
     (if-not (seq d)
       res
-      (if (= (ffirst d) (:date (first q)))
+      (if (= (first d) (:date (first q)))
         (recur (rest d) (rest q) (conj res (first q)))
-        (recur (rest d) q (conj res {:date (ffirst d) :count 0}))))))
+        (recur (rest d) q (conj res {:date (first d) :count 0}))))))
 
 (defn get-aggregate-pki-events
   ([event-type since db]
    (let [dr (date-range since (.plusDays (java.time.LocalDate/now java.time.ZoneOffset/UTC) 1))]
-     (add-zero-counts dr (d/q aggregate-query
-                              db
-                              event-type
-                              dr))))
+     (add-zero-counts
+      dr
+      (into []
+            (comp (partition-by
+                   (fn [e] (.toString (.toLocalDate (.atZone (.toInstant (first e)) java.time.ZoneOffset/UTC)))))
+                  (map (fn [e] {:date (.toString (.toLocalDate (.atZone (.toInstant (ffirst e)) java.time.ZoneOffset/UTC)))
+                                :count (count e)})))
+            (sort (d/q aggregate-query
+                       db
+                       event-type
+                       (java.util.Date/from (.toInstant (.atStartOfDay since java.time.ZoneOffset/UTC)))
+                       (java.util.Date.)))))))
   ([node-type event-type since db]
    (let [dr (date-range since (.plusDays (java.time.LocalDate/now java.time.ZoneOffset/UTC) 1))]
-     (add-zero-counts dr (d/q aggregate-query-node-type
-                              db
-                              node-type
-                              event-type
-                              (date-range since (.plusDays (java.time.LocalDate/now java.time.ZoneOffset/UTC) 1)))))))
+     (add-zero-counts
+      dr
+      (into []
+            (comp (partition-by
+                   (fn [e] (.toString (.toLocalDate (.atZone (.toInstant (first e)) java.time.ZoneOffset/UTC)))))
+                  (map (fn [e] {:date (.toString (.toLocalDate (.atZone (.toInstant (ffirst e)) java.time.ZoneOffset/UTC)))
+                                :count (count e)})))
+            (sort (d/q aggregate-query-node-type
+                       db
+                       node-type
+                       event-type
+                       (java.util.Date/from (.toInstant (.atStartOfDay since java.time.ZoneOffset/UTC)))
+                       (java.util.Date.))))))))
 
 (defn get-aggregate-pki-events* [query-params db]
   (let [since (java.time.LocalDate/parse (get query-params :since "2018-11-27"))

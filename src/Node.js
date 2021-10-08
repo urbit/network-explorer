@@ -257,7 +257,7 @@ export function Node(props) {
           backgroundColor='white'
           overflowY='auto'
           borderRadius='8px'
-          minHeight='50%'
+          height='50%'
         >
           <Box
             p={3}
@@ -277,7 +277,6 @@ export function Node(props) {
             overflowY='auto'
             borderRadius='8px'
             flex='1'
-            minHeight='45%'
             mt={3}
             mb={3}
           >

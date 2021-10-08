@@ -47,7 +47,7 @@ export function TimeRangeMenu(props) {
         {timeRangeText} <Icon ml='10px' icon='ChevronSouth' size={12} />
       </MenuButton>
       <MenuList>
-        <MenuItem onSelect={() => onSelect('Day')}>Day</MenuItem>
+        {/* <MenuItem onSelect={() => onSelect('Day')}>Day</MenuItem> */}
         <MenuItem onSelect={() => onSelect('Week')}>Week</MenuItem>
         <MenuItem onSelect={() => onSelect('Month')}>Month</MenuItem>
         <MenuItem onSelect={() => onSelect('6 Months')}>6 Months</MenuItem>

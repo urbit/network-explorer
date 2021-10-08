@@ -6,7 +6,6 @@ import './fonts.css';
 
 import { Box,
          Row,
-         StatelessTextInput,
          LoadingSpinner,
          Center,
          Icon,
@@ -19,7 +18,7 @@ import { Node } from './Node';
 import { AzimuthEvents } from './AzimuthEvents';
 import { AzimuthChart } from './AzimuthChart';
 
-const API_BASE_URL = 'https://j6lpjx5nhf.execute-api.us-west-2.amazonaws.com';
+const API_BASE_URL = 'https://mt2aga2c5l.execute-api.us-east-2.amazonaws.com';
 
 const ONE_HOUR = 1000 * 60 * 60;
 const ONE_DAY = ONE_HOUR * 24;
@@ -175,6 +174,7 @@ function App() {
                        display='flex'
                        overflowY='auto'
                        flex='1'
+                       className='bodyContainer'
                      >
                        <Node {...routeProps} />
                      </Row>
@@ -186,17 +186,17 @@ function App() {
             <Row
               backgroundColor='#E9E9E9'
               display='flex'
-              overflowY='auto'
+              overflowY='scroll'
               flex='1'
+              className='bodyContainer'
             >
               <Col
                 m={3}
                 p={3}
                 backgroundColor='white'
                 borderRadius='8px'
-                width='50%'
                 flex='1'
-                overflowY='auto'
+                overflowY='scroll'
               >
                 <Row justifyContent='space-between' alignItems='center'>
                   <Text fontSize={0} fontWeight={500}>Global Azimuth Event Stream</Text>
@@ -250,6 +250,7 @@ function App() {
                   overflow='hidden'
                   display='flex'
                   flexDirection='column'
+                  className='ml'
                 >
                   <Row fontWeight={500} p={3} justifyContent='space-between'>
                     <Text fontSize={0}>Spawn Events</Text>
@@ -280,6 +281,7 @@ function App() {
                   flex='1'
                   display='flex'
                   flexDirection='column'
+                  className='ml'
                 >
                   <Row fontWeight={500} p={3} justifyContent='space-between'>
                     <Text fontSize={0}>Transfer Events</Text>

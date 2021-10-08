@@ -135,7 +135,7 @@ const formatData = data => {
            </>;
   }
 
-  return <Text color='gray' fontSize={0} fontFamily='Source Code Pro !important'>
+  return <Text title={data.address} color='gray' fontSize={0} fontFamily='Source Code Pro !important'>
            {data.address ? data.address.substring(0, 8) + '...' + data.address.slice(-6) : ''}
          </Text>;
 };
@@ -175,7 +175,13 @@ export function AzimuthEvent(props) {
         {formatData(props)}
       </Td>
       <Td>
-        <Text fontFamily='Source Code Pro !important' color='gray' fontSize={0}>{formatTimeAgo(time)}</Text>
+        <Text
+          title={time}
+          fontFamily='Source Code Pro !important'
+          color='gray'
+          fontSize={0}
+        >
+          {formatTimeAgo(time)}</Text>
       </Td>
     </Tr>
   );

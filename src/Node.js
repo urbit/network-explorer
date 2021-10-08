@@ -14,13 +14,13 @@ import { sigil, reactRenderer } from '@tlon/sigil-js';
 import { clan, sein, patp2dec } from 'urbit-ob';
 
 import { AzimuthEvents } from './AzimuthEvents';
-import { SponsoredPlanets } from './SponsoredPlanets';
+import { SponsoredNodes } from './SponsoredNodes';
 
 const capitalizeFirstLetter = s => {
   return s.charAt(0).toUpperCase() + s.slice(1);
 };
 
-const API_BASE_URL = 'https://j6lpjx5nhf.execute-api.us-west-2.amazonaws.com';
+const API_BASE_URL = 'https://mt2aga2c5l.execute-api.us-east-2.amazonaws.com';
 
 const defaultNodeData = point => {
   return {
@@ -94,12 +94,13 @@ export function Node(props) {
         flex='1'
       >
         <Box
-          flex='1'
           backgroundColor='white'
+          height='50%'
           borderRadius='8px'
           overflow='hidden'
           display='flex'
           flexDirection='column'
+          className='height'
         >
           <Box display='flex' m={3} flex='1'>
             {
@@ -243,18 +244,20 @@ export function Node(props) {
             </Box>
           </Box>
         </Box>
-        <Box flex='1' mb={3} />
       </Col>
       <Col
+        mt={3}
+        mr={3}
+        mb={3}
         flex='1'
+        className='ml mt'
+        overflowY='auto'
       >
         <Box
-          mt={3}
-          mr={3}
           backgroundColor='white'
           overflowY='auto'
           borderRadius='8px'
-          flex='1'
+          height='50%'
         >
           <Box
             p={3}
@@ -268,29 +271,27 @@ export function Node(props) {
               events={azimuthEvents.events} />
           </Box>
         </Box>
-        { (clan(point) !== 'planet' && (node.loading || node.kids.length > 0)) ?
+        { (clan(point) !== 'planet' && (node.loading || node.kids.length > 0)) &&
           <Box
             backgroundColor='white'
             overflowY='auto'
             borderRadius='8px'
             flex='1'
             mt={3}
-            mr={3}
             mb={3}
           >
             <Box
               p={3}
               height='75%'
             >
-              <SponsoredPlanets
-                header='Azimuth Event Stream'
+              <SponsoredNodes
+                header={clan(point) === 'star' ? 'Sponsored Planets' : 'Sponsored Stars'}
                 loading={node.loading}
                 kids={node.kids}
                 sponsor={point}
               />
             </Box>
-          </Box> :
-          <Box flex='1' mb={3} mt={3} />
+          </Box>
         }
       </Col>
     </>

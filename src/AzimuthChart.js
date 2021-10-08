@@ -3,14 +3,13 @@ import React from 'react';
 import { ResponsiveContainer,
          BarChart,
          CartesianGrid,
-         ReferenceLine,
          XAxis,
          Tooltip,
          Bar } from 'recharts';
 
 export function AzimuthChart(props) {
 
-  const { events, months, fill, name } = props;
+  const { events, fill, name } = props;
 
   return(
     <ResponsiveContainer>

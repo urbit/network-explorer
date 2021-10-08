@@ -5,7 +5,7 @@ import { Tr, Td, Text } from '@tlon/indigo-react';
 import { sigil, reactRenderer } from '@tlon/sigil-js';
 
 
-export function SponsoredPlanet(props) {
+export function SponsoredNode(props) {
 
   const { revision, continuity, sponsor } = props;
   const urbitId = props['urbit-id'];

@@ -8,16 +8,16 @@ import { Row,
          Tr,
          Text} from '@tlon/indigo-react';
 
-import { SponsoredPlanet } from './SponsoredPlanet';
+import { SponsoredNode } from './SponsoredNode';
 
-export function SponsoredPlanets(props) {
+export function SponsoredNodes(props) {
 
-  const { loading, kids, sponsor } = props;
+  const { loading, kids, sponsor, header } = props;
 
   return (
     <>
       <Row justifyContent='space-between'>
-        <Text fontSize={0} fontWeight={500}>Sponsored Planets</Text>
+        <Text fontSize={0} fontWeight={500}>{header}</Text>
         <Icon icon='Info' size={16} cursor='pointer' />
       </Row>
       {loading ?
@@ -48,7 +48,7 @@ export function SponsoredPlanets(props) {
              </Tr>
            </thead>
            <tbody>
-             {kids.map(e => <SponsoredPlanet key={e['urbit-id']} sponsor={sponsor} {...e}/>)}
+             {kids.map(e => <SponsoredNode key={e['urbit-id']} sponsor={sponsor} {...e}/>)}
            </tbody>
          </Table>
        </>

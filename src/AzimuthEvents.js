@@ -1,18 +1,16 @@
 import React from 'react';
 
-import { Row,
-         LoadingSpinner,
+import { LoadingSpinner,
          Center,
-         Icon,
          Table,
          Tr,
-         Text} from '@tlon/indigo-react';
+         Text } from '@tlon/indigo-react';
 
 import { AzimuthEvent } from './AzimuthEvent';
 
 export function AzimuthEvents(props) {
 
-  const { header, loading, events } = props;
+  const { loading, events } = props;
 
   return (
     <>

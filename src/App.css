@@ -14,3 +14,27 @@ td {
 input:focus {
     outline: none;
 }
+
+/* Recharts doesn't resize properly without this.
+   Don't know and don't wanna know.*/
+.recharts-wrapper {
+    position: absolute !important;
+}
+
+@media only screen and (max-width: 1150px) {
+    .bodyContainer {
+        flex-direction: column;
+    }
+
+    .height {
+        height: 100% !important;
+    }
+
+    .ml {
+        margin-left: 16px;
+    }
+
+    .mt {
+        margin-top: 0 !important;
+    }
+}

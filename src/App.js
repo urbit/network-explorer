@@ -196,6 +196,7 @@ function App() {
                 backgroundColor='white'
                 borderRadius='8px'
                 flex='1'
+                minHeight='250px'
                 overflowY='scroll'
               >
                 <Row justifyContent='space-between' alignItems='center'>
@@ -250,6 +251,7 @@ function App() {
                   overflow='hidden'
                   display='flex'
                   flexDirection='column'
+                  minHeight='250px'
                   className='ml'
                 >
                   <Row fontWeight={500} p={3} justifyContent='space-between'>
@@ -281,6 +283,7 @@ function App() {
                   flex='1'
                   display='flex'
                   flexDirection='column'
+                  minHeight='250px'
                   className='ml'
                 >
                   <Row fontWeight={500} p={3} justifyContent='space-between'>

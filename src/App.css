@@ -24,6 +24,7 @@ input:focus {
 @media only screen and (max-width: 1150px) {
     .bodyContainer {
         flex-direction: column;
+        min-height: 1000px;
     }
 
     .height {
@@ -36,5 +37,33 @@ input:focus {
 
     .mt {
         margin-top: 0 !important;
+    }
+
+    .mt-3 {
+        margin-top: 16px !important;
+    }
+
+    .headerMargin {
+        margin-left: 8px !important;
+    }
+
+    .headerPadding {
+        padding-right: 0 !important;
+        padding-left: 0 !important;
+    }
+
+    .col {
+        flex-direction: column !important;
+    }
+
+    .fb-50 {
+        flex-basis: 50% !important;
+    }
+}
+
+
+@media only screen and (max-width: 550px) {
+    .hide {
+        display: none;
     }
 }

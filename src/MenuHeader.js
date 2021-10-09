@@ -28,17 +28,19 @@ export function MenuHeader(props) {
       alignItems='center'
     >
       <Box
+        className='headerPadding'
         p={3}
       >
-        <Box>
+        <Box className='headerMargin' ml={3}>
           <Link to='/' style={{textDecoration:'none'}}>
-            <Text cursor='pointer' ml={3} fontSize={2}>
+            <Text cursor='pointer' fontSize={2}>
               Azimuth activity
             </Text>
           </Link>
         </Box>
       </Box>
       <Box
+        className='headerPadding'
         p={3}
       >
         <Box

@@ -32,6 +32,7 @@ export function NodeMenu(props) {
         color={disabled ? 'lightGray' : 'gray'}
         fontWeight={400}
         fontSize={2}
+        className='headerMargin'
         ml='34px'
       >
         Nodes

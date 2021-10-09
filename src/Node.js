@@ -113,51 +113,55 @@ export function Node(props) {
               <Text fontSize={0} color='gray' fontWeight={500}>
                 Node Information
               </Text>
-              <Row mt={3}>
-                <Col flexBasis='25%'>
-                  <Text fontSize={0} color='gray'>
-                    Urbit ID
-                  </Text>
-                  <Text fontSize={0} color='gray' mt={3}>
-                    Node Type
-                  </Text>
-                  <Text fontSize={0} color='gray' mt={3}>
-                    Point Number
-                  </Text>
-                </Col>
-                <Col flexBasis='25%'>
-                  <Text fontFamily='Source Code Pro !important' fontSize={0}>
-                    {point}
-                  </Text>
-                  <Text fontSize={0} mt={3}>
-                    {capitalizeFirstLetter(node['type'])}
-                  </Text>
-                  <Text fontSize={0} mt={3}>
-                    {new Intl.NumberFormat('de-DE').format(patp2dec(point))}
-                  </Text>
-                </Col>
-                <Col flexBasis='25%'>
-                  <Text fontSize={0} color='gray'>
-                    Continuity
-                  </Text>
-                  <Text fontSize={0} color='gray' mt={3}>
-                    Key Revision
-                  </Text>
-                  <Text fontSize={0} color='gray' mt={3}>
-                    Owners
-                  </Text>
-                </Col>
-                <Col flexBasis='25%'>
-                  <Text fontSize={0}>
-                    {node['continuity']}
-                  </Text>
-                  <Text fontSize={0} mt={3}>
-                    {node['revision']}
-                  </Text>
-                  <Text fontSize={0} mt={3}>
-                    {node['num-owners']}
-                  </Text>
-                </Col>
+              <Row className='col' mt={3}>
+                <Row flexBasis='50%'>
+                  <Col flexBasis='50%'>
+                    <Text fontSize={0} color='gray'>
+                      Urbit ID
+                    </Text>
+                    <Text fontSize={0} color='gray' mt={3}>
+                      Node Type
+                    </Text>
+                    <Text fontSize={0} color='gray' mt={3}>
+                      Point Number
+                    </Text>
+                  </Col>
+                  <Col flexBasis='50%'>
+                    <Text fontFamily='Source Code Pro !important' fontSize={0}>
+                      {point}
+                    </Text>
+                    <Text fontSize={0} mt={3}>
+                      {capitalizeFirstLetter(node['type'])}
+                    </Text>
+                    <Text fontSize={0} mt={3}>
+                      {new Intl.NumberFormat('de-DE').format(patp2dec(point))}
+                    </Text>
+                  </Col>
+                </Row>
+                <Row flexBasis='50%' className='mt-3'>
+                  <Col flexBasis='50%'>
+                    <Text fontSize={0} color='gray'>
+                      Continuity
+                    </Text>
+                    <Text fontSize={0} color='gray' mt={3}>
+                      Key Revision
+                    </Text>
+                    <Text fontSize={0} color='gray' mt={3}>
+                      Owners
+                    </Text>
+                  </Col>
+                  <Col flexBasis='50%'>
+                    <Text fontSize={0}>
+                      {node['continuity']}
+                    </Text>
+                    <Text fontSize={0} mt={3}>
+                      {node['revision']}
+                    </Text>
+                    <Text fontSize={0} mt={3}>
+                      {node['num-owners']}
+                    </Text>
+                  </Col>
+                </Row>
               </Row>
               <Row
                 mt={3}
@@ -167,7 +171,7 @@ export function Node(props) {
                 borderBottom='1px solid rgba(0, 0, 0, 0.1)'
                 alignItems='center'
               >
-                <Text fontSize={0} color='gray' fontWeight={500} flexBasis='25%'>
+                <Text fontSize={0} color='gray' fontWeight={500} flexBasis='25%' className='hide'>
                   Sponsor Chain
                 </Text>
                 <Row flexBasis='25%' alignItems='center'>
@@ -207,40 +211,101 @@ export function Node(props) {
                   Proxy Addresses
                 </Text>
               </Row>
-              <Row mt={3}>
-                <Col flexBasis='25%'>
-                  <Text fontSize={0} color='gray'>
+
+              <Col mt={3}>
+                <Row>
+                  <Text fontSize={0} color='gray' flexBasis='25%' className='fb-50'>
                     Ownership Proxy
                   </Text>
-                  <Text fontSize={0} color='gray' mt={3}>
-                    Spawn Proxy
-                  </Text>
-                  <Text fontSize={0} color='gray' mt={3}>
-                    Transfer Proxy
-                  </Text>
-                  {clan(point) === 'galaxy' &&
-                   <Text fontSize={0} color='gray' mt={3}>
-                     Voting Proxy
-                   </Text>
-                  }
-                </Col>
-                <Col flexBasis='25%'>
-                  <Text fontFamily='Source Code Pro !important' fontSize={0}>
+                  <Text
+                    fontFamily='Source Code Pro !important'
+                    fontSize={0}
+                    flexBasis='75%'
+                    className='fb-50'
+                    style={{wordBreak:'break-all'}}
+                  >
                     {node['management-proxy']}
                   </Text>
-                  <Text fontFamily='Source Code Pro !important' fontSize={0} mt={3}>
+                </Row>
+                <Row mt={3}>
+                  <Text fontSize={0} color='gray' flexBasis='25%' className='fb-50'>
+                    Spawn Proxy
+                  </Text>
+                  <Text
+                    fontFamily='Source Code Pro !important'
+                    fontSize={0}
+                    flexBasis='75%'
+                    className='fb-50'
+                    style={{wordBreak:'break-all'}}
+                  >
                     {node['spawn-proxy']}
                   </Text>
-                  <Text fontFamily='Source Code Pro !important' fontSize={0} mt={3}>
+                </Row>
+                <Row mt={3}>
+                  <Text fontSize={0} color='gray' flexBasis='25%' className='fb-50'>
+                    Transfer Proxy
+                  </Text>
+                  <Text
+                    fontFamily='Source Code Pro !important'
+                    fontSize={0}
+                    flexBasis='75%'
+                    className='fb-50'
+                    style={{wordBreak:'break-all'}}
+                  >
                     {node['transfer-proxy']}
                   </Text>
-                  {clan(point) === 'galaxy' &&
-                   <Text fontFamily='Source Code Pro !important' fontSize={0} mt={3}>
+                </Row>
+                {clan(point) === 'galaxy' &&
+                 <Row mt={3}>
+                   <Text fontSize={0} color='gray' flexBasis='25%' className='fb-50'>
+                     Voting Proxy
+                   </Text>
+                   <Text
+                     fontFamily='Source Code Pro !important'
+                     fontSize={0}
+                     flexBasis='75%'
+                     className='fb-50'
+                     style={{wordBreak:'break-all'}}
+                   >
                      {node['voting-proxy']}
                    </Text>
-                  }
-                </Col>
-              </Row>
+                 </Row>
+                }
+              </Col>
+              {/* <Row mt={3}> */}
+              {/*   <Col flexBasis='25%' className='fb-50'> */}
+              {/*     <Text fontSize={0} color='gray'> */}
+              {/*       Ownership Proxy */}
+              {/*     </Text> */}
+              {/*     <Text fontSize={0} color='gray' mt={3}> */}
+              {/*       Spawn Proxy */}
+              {/*     </Text> */}
+              {/*     <Text fontSize={0} color='gray' mt={3}> */}
+              {/*       Transfer Proxy */}
+              {/*     </Text> */}
+              {/*     {clan(point) === 'galaxy' && */}
+              {/*      <Text fontSize={0} color='gray' mt={3}> */}
+              {/*        Voting Proxy */}
+              {/*      </Text> */}
+              {/*     } */}
+              {/*   </Col> */}
+              {/*   <Col flexBasis='25%' className='fb-50'> */}
+              {/*     <Text fontFamily='Source Code Pro !important' fontSize={0}> */}
+              {/*       {node['management-proxy']} */}
+              {/*     </Text> */}
+              {/*     <Text fontFamily='Source Code Pro !important' fontSize={0} mt={3}> */}
+              {/*       {node['spawn-proxy']} */}
+              {/*     </Text> */}
+              {/*     <Text fontFamily='Source Code Pro !important' fontSize={0} mt={3}> */}
+              {/*       {node['transfer-proxy']} */}
+              {/*     </Text> */}
+              {/*     {clan(point) === 'galaxy' && */}
+              {/*      <Text fontFamily='Source Code Pro !important' fontSize={0} mt={3}> */}
+              {/*        {node['voting-proxy']} */}
+              {/*      </Text> */}
+              {/*     } */}
+              {/*   </Col> */}
+              {/* </Row> */}
             </Box>
           </Box>
         </Box>

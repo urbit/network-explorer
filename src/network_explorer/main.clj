@@ -495,36 +495,43 @@ attr by amount, treating a missing value as 1."
         (recur (rest d) (rest q) (conj res (first q)))
         (recur (rest d) q (conj res {:date (first d) :count 0}))))))
 
+(defn run-aggregate-query [since f]
+  (let [dr (date-range since (.plusDays (java.time.LocalDate/now java.time.ZoneOffset/UTC) 1))]
+    (add-zero-counts
+     dr
+     (into []
+           (comp (partition-by
+                  (fn [e] (-> (first e)
+                              .toInstant
+                              (.atZone java.time.ZoneOffset/UTC)
+                              .toLocalDate
+                              .toString)))
+                 (map (fn [e] {:date (-> (ffirst e)
+                                         .toInstant
+                                         (.atZone java.time.ZoneOffset/UTC)
+                                         .toLocalDate
+                                         .toString)
+                               :count (count e)})))
+           (sort (f))))))
+
 (defn get-aggregate-pki-events
   ([event-type since db]
-   (let [dr (date-range since (.plusDays (java.time.LocalDate/now java.time.ZoneOffset/UTC) 1))]
-     (add-zero-counts
-      dr
-      (into []
-            (comp (partition-by
-                   (fn [e] (.toString (.toLocalDate (.atZone (.toInstant (first e)) java.time.ZoneOffset/UTC)))))
-                  (map (fn [e] {:date (.toString (.toLocalDate (.atZone (.toInstant (ffirst e)) java.time.ZoneOffset/UTC)))
-                                :count (count e)})))
-            (sort (d/q aggregate-query
-                       db
-                       event-type
-                       (java.util.Date/from (.toInstant (.atStartOfDay since java.time.ZoneOffset/UTC)))
-                       (java.util.Date.)))))))
+   (run-aggregate-query
+    since
+    #(d/q aggregate-query
+          db
+          event-type
+          (java.util.Date/from (.toInstant (.atStartOfDay since java.time.ZoneOffset/UTC)))
+          (java.util.Date.))))
   ([node-type event-type since db]
-   (let [dr (date-range since (.plusDays (java.time.LocalDate/now java.time.ZoneOffset/UTC) 1))]
-     (add-zero-counts
-      dr
-      (into []
-            (comp (partition-by
-                   (fn [e] (.toString (.toLocalDate (.atZone (.toInstant (first e)) java.time.ZoneOffset/UTC)))))
-                  (map (fn [e] {:date (.toString (.toLocalDate (.atZone (.toInstant (ffirst e)) java.time.ZoneOffset/UTC)))
-                                :count (count e)})))
-            (sort (d/q aggregate-query-node-type
-                       db
-                       node-type
-                       event-type
-                       (java.util.Date/from (.toInstant (.atStartOfDay since java.time.ZoneOffset/UTC)))
-                       (java.util.Date.))))))))
+   (run-aggregate-query
+    since
+    #(d/q aggregate-query-node-type
+          db
+          node-type
+          event-type
+          (java.util.Date/from (.toInstant (.atStartOfDay since java.time.ZoneOffset/UTC)))
+          (java.util.Date.)))))
 
 (defn get-aggregate-pki-events* [query-params db]
   (let [since (java.time.LocalDate/parse (get query-params :since "2018-11-27"))

@@ -171,7 +171,6 @@ attr by amount, treating a missing value as 1."
                     [:node/transfer-proxy :default nil]
                     [:node/voting-proxy :default nil]
                     [:node/spawn-proxy :default nil]
-                    [:node/online :default false]
                     {:node/sponsor [:node/urbit-id]}
                     {[:node/_sponsor :as :node/kids :default []] [:node/urbit-id]}])
     :in $ [?type ...]
@@ -189,7 +188,6 @@ attr by amount, treating a missing value as 1."
                     [:node/transfer-proxy :default nil]
                     [:node/voting-proxy :default nil]
                     [:node/spawn-proxy :default nil]
-                    [:node/online :default false]
                     {:node/sponsor [:node/urbit-id {:node/sponsor [:node/urbit-id]}]}
                     {[:node/_sponsor :as :node/kids :default []] [:node/urbit-id]}])
     :where [?e :node/urbit-id]])
@@ -206,7 +204,6 @@ attr by amount, treating a missing value as 1."
                     [:node/transfer-proxy :default nil]
                     [:node/voting-proxy :default nil]
                     [:node/spawn-proxy :default nil]
-                    [:node/online :default false]
                     {:node/sponsor [:node/urbit-id]}
                     {[:node/_sponsor :as :node/kids :default []]
                      [:node/urbit-id :node/continuity :node/revision :node/num-owners]}])
@@ -225,7 +222,6 @@ attr by amount, treating a missing value as 1."
                     [:node/transfer-proxy :default nil]
                     [:node/voting-proxy :default nil]
                     [:node/spawn-proxy :default nil]
-                    [:node/online :default false]
                     {:node/sponsor [:node/urbit-id {:node/sponsor [:node/urbit-id]}]}
                     {[:node/_sponsor :as :node/kids :default []]
                      [:node/urbit-id :node/continuity :node/revision :node/num-owners]}])

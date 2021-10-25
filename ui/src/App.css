@@ -1,0 +1,69 @@
+* {
+    font-family: Inter !important;
+}
+
+html, body, #root {
+    height: 100%;
+    margin: 0;
+}
+
+td {
+    border: 0 !important;
+}
+
+input:focus {
+    outline: none;
+}
+
+/* Recharts doesn't resize properly without this.
+   Don't know and don't wanna know.*/
+.recharts-wrapper {
+    position: absolute !important;
+}
+
+@media only screen and (max-width: 1150px) {
+    .bodyContainer {
+        flex-direction: column;
+        min-height: 1000px;
+    }
+
+    .height {
+        height: 100% !important;
+    }
+
+    .ml {
+        margin-left: 16px;
+    }
+
+    .mt {
+        margin-top: 0 !important;
+    }
+
+    .mt-3 {
+        margin-top: 16px !important;
+    }
+
+    .headerMargin {
+        margin-left: 8px !important;
+    }
+
+    .headerPadding {
+        padding-right: 0 !important;
+        padding-left: 0 !important;
+    }
+
+    .col {
+        flex-direction: column !important;
+    }
+
+    .fb-50 {
+        flex-basis: 50% !important;
+    }
+}
+
+
+@media only screen and (max-width: 550px) {
+    .hide {
+        display: none;
+    }
+}

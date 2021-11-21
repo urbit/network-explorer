@@ -488,7 +488,8 @@ attr by amount, treating a missing value as 1."
                            (range (inc newest-id) (+ (inc newest-id) (count lines)))
                            lines)]
     (d/transact conn {:tx-data no-sponsor})
-    (d/transact conn {:tx-data node-txs})
+    (doseq [txs (partition 30000 30000 nil node-txs)]
+      (d/transact conn {:tx-data txs}))
     (doseq [txs pki-txs]
       (d/transact conn {:tx-data txs}))
     #_(d/transact conn {:tx-data (radar-data->txs (get-radar-data))})

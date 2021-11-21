@@ -133,3 +133,31 @@
     :db/cardinality :db.cardinality/one
     :db/unique :db.unique/identity
     :db/doc "Composite of the ping send time and urbit-id for uniqueness constraint"}])
+
+(def lsr-schema
+  [{:db/ident :lsr/address
+    :db/valueType :db.type/string
+    :db/cardinality :db.cardinality/one
+    :db/doc "The address that is allowed to withdraw the star from lockup at deposit time, does not mutate on transferBatch"}
+   {:db/ident :lsr/star
+    :db/valueType :db.type/ref
+    :db/cardinality :db.cardinality/one
+    :db/doc "The star that is locked up, points to a node"}
+   {:db/ident :lsr/deposited-at
+    :db/valueType :db.type/instant
+    :db/cardinality :db.cardinality/one
+    :db/doc "Timestamp of when the star was deposited to the lockup contract"}
+   {:db/ident :lsr/unlocked-at
+    :db/valueType :db.type/instant
+    :db/cardinality :db.cardinality/one
+    :db/doc "Timestamp of when the star was unlocked from the lockup contract"}
+   {:db/ident :lsr/withdrawn-at
+    :db/valueType :db.type/instant
+    :db/cardinality :db.cardinality/one
+    :db/doc "Timestamp of when the star was withdrawn from the lockup contract"}
+   {:db/ident :ping/star+deposited-at
+    :db/valueType :db.type/tuple
+    :db/tupleAttrs [:lsr/star :lsr/deposited-at]
+    :db/cardinality :db.cardinality/one
+    :db/unique :db.unique/identity
+    :db/doc "Composite of the star and deposit timestamp for uniqueness constraint"}])

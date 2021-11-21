@@ -3,5 +3,9 @@
  :http-direct {:handler-fn network-explorer.main/app-handler}
  :lambdas {:update-data {:fn network-explorer.main/update-data
                          :description "Updates the PKI and radar data"
-                         :timeout-secs 900}}
+                         :timeout-secs 900}
+           :update-data-2 {:fn network-explorer.main/update-data-2
+                           :description "Temporary lambda for reimporting historical data"
+                           :timeout-secs 900}}
+
  :app-name "network-explorer"}

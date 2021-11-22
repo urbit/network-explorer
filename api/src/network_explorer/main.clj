@@ -218,19 +218,12 @@
        add-composite-index
        (mapcat identity)))
 
-(defn get-pki-data-2 []
+(defn get-pki-data []
   (:body (http/get "https://gaze-exports.s3.us-east-2.amazonaws.com/events.txt"
                    {:timeout 300000
                     :connect-timeout 300000
                     :http-client {:ssl-context {:insecure? true}}})))
 
-(defn get-pki-data []
-  #_(:body (http/get "https://raw.githubusercontent.com/jalehman/urbit-metrics/master/historic-events.csv" {:timeout 300000
-                                                                                                          :connect-timeout 300000
-                                                                                                          :http-client {:ssl-context {:insecure? true}}}))
-  (:body (http/get "https://azimuth.network/stats/events.txt" {:timeout 300000
-                                                                 :connect-timeout 300000
-                                                                 :http-client {:ssl-context {:insecure? true}}})))
 
 (defn parse-pki-time [s]
   (.parse
@@ -471,40 +464,12 @@ attr by amount, treating a missing value as 1."
         pki-txs  (mapcat-indexed pki-line->txs lines)]
     [node-txs pki-txs]))
 
-(defn update-data-2 [_]
+(defn update-data [_]
   (let [;; pki-event/id is just line index, historic is the index of the last
         ;; pki event from https://gaze-exports.s3.us-east-2.amazonaws.com/events-2018-2019-2020.txt
         historic   274811
         client     (get-client)
         conn       (d/connect client {:db-name "network-explorer-2"})
-        db         (d/db conn)
-        newest-id  (or (ffirst (d/q '[:find (max ?id) :where [_ :pki-event/id ?id]] db)) -1)
-        lines      (->> (str/split-lines (get-pki-data-2))
-                        (map (fn [l] (str/split l #",")))
-                        (drop 1)
-                        reverse
-                        (drop (- (inc newest-id) (inc historic))))
-        nodes      (reduce pki-line->nodes #{} lines)
-        no-sponsor (map node->node-tx-no-sponsor nodes)
-        node-txs   (map node->node-tx nodes)
-        pki-txs    (mapcat pki-line->txs
-                           (range (inc newest-id) (+ (inc newest-id) (count lines)))
-                           lines)]
-    (d/transact conn {:tx-data no-sponsor})
-    (doseq [txs (partition 30000 30000 nil node-txs)]
-      (d/transact conn {:tx-data txs}))
-    (doseq [txs pki-txs]
-      (d/transact conn {:tx-data txs}))
-    #_(d/transact conn {:tx-data (radar-data->txs (get-radar-data))})
-    (pr-str (count pki-txs))))
-
-
-(defn update-data [_]
-  (let [;; pki-event/id is just line index, historic is the index of the last
-        ;; pki event from historic-events.txt
-        historic   203009
-        client     (get-client)
-        conn       (d/connect client {:db-name "network-explorer"})
         db         (d/db conn)
         newest-id  (or (ffirst (d/q '[:find (max ?id) :where [_ :pki-event/id ?id]] db)) -1)
         lines      (->> (str/split-lines (get-pki-data))
@@ -519,7 +484,8 @@ attr by amount, treating a missing value as 1."
                            (range (inc newest-id) (+ (inc newest-id) (count lines)))
                            lines)]
     (d/transact conn {:tx-data no-sponsor})
-    (d/transact conn {:tx-data node-txs})
+    (doseq [txs (partition 30000 30000 nil node-txs)]
+      (d/transact conn {:tx-data txs}))
     (doseq [txs pki-txs]
       (d/transact conn {:tx-data txs}))
     #_(d/transact conn {:tx-data (radar-data->txs (get-radar-data))})
@@ -734,7 +700,7 @@ attr by amount, treating a missing value as 1."
 
 (defn root-handler [req]
   (let [client       (get-client)
-        conn         (d/connect client {:db-name "network-explorer"})
+        conn         (d/connect client {:db-name "network-explorer-2"})
         db           (d/db conn)
         path         (get req :uri)
         query-params (get req :params)]
@@ -758,4 +724,4 @@ attr by amount, treating a missing value as 1."
       kwparams/wrap-keyword-params
       params/wrap-params))
 
-;; (def conn (d/connect (get-client) {:db-name "network-explorer"}))
+;; (def conn (d/connect (get-client) {:db-name "network-explorer-2"}))

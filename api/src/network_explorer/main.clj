@@ -219,7 +219,7 @@
        (mapcat identity)))
 
 (defn get-pki-data-2 []
-  (:body (http/get "https://gaze-exports.s3.us-east-2.amazonaws.com/events-2018-2019-2020.txt"
+  (:body (http/get "https://gaze-exports.s3.us-east-2.amazonaws.com/events.txt"
                    {:timeout 300000
                     :connect-timeout 300000
                     :http-client {:ssl-context {:insecure? true}}})))
@@ -472,7 +472,10 @@ attr by amount, treating a missing value as 1."
     [node-txs pki-txs]))
 
 (defn update-data-2 [_]
-  (let [client     (get-client)
+  (let [;; pki-event/id is just line index, historic is the index of the last
+        ;; pki event from https://gaze-exports.s3.us-east-2.amazonaws.com/events-2018-2019-2020.txt
+        historic   274811
+        client     (get-client)
         conn       (d/connect client {:db-name "network-explorer-2"})
         db         (d/db conn)
         newest-id  (or (ffirst (d/q '[:find (max ?id) :where [_ :pki-event/id ?id]] db)) -1)
@@ -480,7 +483,7 @@ attr by amount, treating a missing value as 1."
                         (map (fn [l] (str/split l #",")))
                         (drop 1)
                         reverse
-                        (drop (- (inc newest-id))))
+                        (drop (- (inc newest-id) (inc historic))))
         nodes      (reduce pki-line->nodes #{} lines)
         no-sponsor (map node->node-tx-no-sponsor nodes)
         node-txs   (map node->node-tx nodes)

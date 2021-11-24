@@ -823,17 +823,20 @@ attr by amount, treating a missing value as 1."
                                    #(d/q activated-query db)))
         (get-locked-aggregate db)))
   ([since until node-type db]
-   (map merge
-        (running-total :set-networking-keys (run-aggregate-query
+   (let [locked (if (= :star node-type) (get-locked-aggregate db) (repeat {}))
+         set-keys (running-total :set-networking-keys (run-aggregate-query
+                                              (java.time.LocalDate/parse "2018-11-27")
+                                              #(d/q set-networking-keys-query-node-type db node-type)))]
+     (concat (map merge
+                  set-keys
+                  (running-total :spawned (run-aggregate-query
+                                           (java.time.LocalDate/parse "2018-11-27")
+                                           #(d/q spawned-query-node-type db node-type)))
+                  (running-total :activated (run-aggregate-query
                                              (java.time.LocalDate/parse "2018-11-27")
-                                             #(d/q set-networking-keys-query-node-type db node-type)))
-        (running-total :spawned (run-aggregate-query
-                                 (java.time.LocalDate/parse "2018-11-27")
-                                 #(d/q spawned-query-node-type db node-type)))
-        (running-total :activated (run-aggregate-query
-                                   (java.time.LocalDate/parse "2018-11-27")
-                                   #(d/q activated-query-node-type db node-type)))
-        (if (= :star node-type) (get-locked-aggregate db) (repeat {})))))
+                                             #(d/q activated-query-node-type db node-type)))
+                  locked)
+             (when (= :star node-type) (drop (count set-keys) locked))))))
 
 (defn get-aggregate-status* [query-params db]
   (let [since (java.time.LocalDate/parse (get query-params :since "2018-11-27"))

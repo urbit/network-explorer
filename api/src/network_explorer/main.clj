@@ -161,7 +161,7 @@
       java.util.Date/from))
 
 (defn date-range [since until]
-  (map str (seq (.collect (.datesUntil since until) (java.util.stream.Collectors/toList)))))
+  (seq (.collect (.datesUntil since until) (java.util.stream.Collectors/toList))))
 
 (defn distinct-by
   "Returns a stateful transducer that removes elements by calling f on each step as a uniqueness key.
@@ -622,7 +622,7 @@ attr by amount, treating a missing value as 1."
         (recur (rest d) q (conj res {:date (first d) :count 0}))))))
 
 (defn run-aggregate-query [since f]
-  (let [dr (date-range since (.plusDays (java.time.LocalDate/now java.time.ZoneOffset/UTC) 1))]
+  (let [dr (map str (date-range since (.plusDays (java.time.LocalDate/now java.time.ZoneOffset/UTC) 1)))]
     (add-zero-counts
      dr
      (into []
@@ -697,6 +697,96 @@ attr by amount, treating a missing value as 1."
                              (get-activity urbit-id since db)
                              (get-all-activity limit offset db))
                            :value-fn stringify-date)}))
+(def unlockable-query
+  '[:find (count ?l) ?until
+    :keys count date
+    :in $ [?until ...]
+    :where [?l :lsr/star ?e]
+           [?l :lsr/unlocked-at ?u]
+           [?l :lsr/deposited-at ?d]
+           [(> ?u ?until)]
+           [(> ?until ?d)]
+           [?l :lsr/withdrawn-at ?w]
+           [(> ?w ?until)]
+           #_(or-join [?l ?until]
+             [(missing? $ ?l :lsr/withdrawn-at)]
+             (and [?l :lsr/withdrawn-at ?w]
+                  [(> ?w ?until)]))])
+
+(def locked-query
+  '[:find (count ?e) ?until
+    :keys locked date
+    :in $ [?until ...]
+    :where [?l :lsr/star ?e]
+           [?l :lsr/unlocked-at ?u]
+           [?l :lsr/deposited-at ?d]
+           [(> ?until ?u)]
+           [(> ?until ?d)]])
+
+(def activated-query
+  '[:find (count ?a) ?until
+    :keys activated date
+    :in $ [?until ...]
+    :where [?a :pki-event/type :activate]
+           [?a :pki-event/time ?t]
+           [(> ?until ?t)]])
+
+(def activated-query-node-type
+  '[:find (count ?e) ?until
+    :keys activated date
+    :in $ ?node-type [?until ...]
+    :where [?e :node/type ?node-type]
+           [?p :pki-event/node ?e]
+           [?p :pki-event/type :activate]
+           [?p :pki-event/time ?t]
+           [(> ?until ?t)]])
+
+
+(def spawned-query
+  '[:find (count ?s) ?until
+    :keys spawned date
+    :in $ [?until ...]
+    :where [?s :pki-event/type :spawn]
+           [?s :pki-event/time ?t]
+           [(> ?until ?t)]])
+
+(def spawned-query-node-type
+  '[:find (count ?s) ?until
+    :keys spawned date
+    :in $ ?node-type [?until ...]
+    :where [?e :node/type ?node-type]
+           [?p :pki-event/node ?e]
+           [?s :pki-event/type :spawn]
+           [?s :pki-event/time ?t]
+           [(> ?until ?t)]])
+
+(defn get-aggregate-status
+  ([since until db]
+   (let [dr (map (fn [e] (java.util.Date/from (.toInstant (.atStartOfDay e java.time.ZoneOffset/UTC))))
+                 (date-range since until))]
+     (map merge
+          (d/q locked-query db dr)
+          (d/q spawned-query db dr)
+          (d/q activated-query db dr))))
+  ([since until node-type db]
+   (let [dr (map (fn [e] (java.util.Date/from (.toInstant (.atStartOfDay e java.time.ZoneOffset/UTC))))
+                 (date-range since until))]
+     (map merge
+          (d/q spawned-query-node-type db node-type dr)
+          (d/q activated-query-node-type db node-type dr)
+          (if (= :star node-type) (d/q locked-query db dr) (repeat {}))))))
+
+(defn get-aggregate-status* [query-params db]
+  (let [since (java.time.LocalDate/parse (get query-params :since "2018-11-27"))
+        until (java.time.LocalDate/parse (get query-params :until))
+        node-type  (keyword (get query-params :nodeType))]
+    {:status 200
+     :headers {"Content-Type" "application/json"}
+     :body (json/write-str
+            (if node-type
+              (get-aggregate-status since until node-type db)
+              (get-aggregate-status since until db))
+            :value-fn stringify-date)}))
 
 (defn root-handler [req]
   (let [client       (get-client)
@@ -710,6 +800,7 @@ attr by amount, treating a missing value as 1."
       "/get-aggregate-pki-events" (get-aggregate-pki-events* query-params db)
       "/get-pki-events"           (get-pki-events* query-params db)
       "/get-activity"             (get-activity* query-params db)
+      "/get-aggregate-status"     (get-aggregate-status* query-params db)
       {:status 404})))
 
 (defn deploy-build! []

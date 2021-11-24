@@ -837,7 +837,7 @@ attr by amount, treating a missing value as 1."
 
 (defn get-aggregate-status* [query-params db]
   (let [since (java.time.LocalDate/parse (get query-params :since "2018-11-27"))
-        until (java.time.LocalDate/parse (get query-params :until))
+        until (java.time.LocalDate/parse (get query-params :until "2025-01-01"))
         node-type  (keyword (get query-params :nodeType))]
     {:status 200
      :headers {"Content-Type" "application/json"}

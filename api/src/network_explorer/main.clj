@@ -716,11 +716,11 @@ attr by amount, treating a missing value as 1."
 (def locked-query
   '[:find (count ?e) ?until
     :keys locked date
-    :in $ [?until ...]
+    :in $ ?until
     :where [?l :lsr/star ?e]
            [?l :lsr/unlocked-at ?u]
            [?l :lsr/deposited-at ?d]
-           [(> ?until ?u)]
+           [(> ?u ?until)]
            [(> ?until ?d)]])
 
 (def activated-query
@@ -764,7 +764,9 @@ attr by amount, treating a missing value as 1."
   ([since until db]
    (let [dr (map (fn [e] (java.util.Date/from (.toInstant (.atStartOfDay e java.time.ZoneOffset/UTC))))
                  (date-range since until))]
-     (map merge
+
+     (map (fn [e] (d/q locked-query db e)) dr)
+     #_(map merge
           (d/q locked-query db dr)
           (d/q spawned-query db dr)
           (d/q activated-query db dr))))

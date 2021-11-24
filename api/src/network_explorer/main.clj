@@ -259,21 +259,6 @@ attr by amount, treating a missing value as 1."
       :node/type    (ob/clan urbit-id)
       :node/sponsor (if s s [:node/urbit-id (ob/sein urbit-id)])}]))
 
-
-(def spawned-query
-  '[:find (pull ?e [*])
-    :in $ [?urbit-id ...]
-    :where [?p :node/urbit-id ?urbit-id]
-           [?e :pki-event/target-node ?p]
-           [?e :pki-event/type :spawn]])
-
-(def activated-query
-  '[:find (pull ?e [*])
-    :in $ [?urbit-id ...]
-    :where [?p :node/urbit-id ?urbit-id]
-           [?e :pki-event/node ?p]
-           [?e :pki-event/type :activate]])
-
 (def pki-events-query
   '[:find (pull ?e [:pki-event/id
                     {:pki-event/node [:node/urbit-id]}
@@ -716,7 +701,7 @@ attr by amount, treating a missing value as 1."
 (def locked-query
   '[:find (count ?e) ?until
     :keys locked date
-    :in $ ?until
+    :in $ [?until ...]
     :where [?l :lsr/star ?e]
            [?l :lsr/unlocked-at ?u]
            [?l :lsr/deposited-at ?d]
@@ -724,12 +709,10 @@ attr by amount, treating a missing value as 1."
            [(> ?until ?d)]])
 
 (def activated-query
-  '[:find (count ?a) ?until
-    :keys activated date
-    :in $ [?until ...]
+  '[:find ?t
+    :in $
     :where [?a :pki-event/type :activate]
-           [?a :pki-event/time ?t]
-           [(> ?until ?t)]])
+           [?a :pki-event/time ?t]])
 
 (def activated-query-node-type
   '[:find (count ?e) ?until
@@ -743,12 +726,17 @@ attr by amount, treating a missing value as 1."
 
 
 (def spawned-query
-  '[:find (count ?s) ?until
-    :keys spawned date
-    :in $ [?until ...]
+  '[:find ?t
+    :in $
     :where [?s :pki-event/type :spawn]
-           [?s :pki-event/time ?t]
-           [(> ?until ?t)]])
+           [?s :pki-event/time ?t]])
+
+(def set-networking-keys-query
+  '[:find ?t
+    :in $
+    :where [?s :pki-event/revision 1]
+           [?s :pki-event/type :change-networking-keys]
+           [?s :pki-event/time ?t]])
 
 (def spawned-query-node-type
   '[:find (count ?s) ?until
@@ -760,16 +748,29 @@ attr by amount, treating a missing value as 1."
            [?s :pki-event/time ?t]
            [(> ?until ?t)]])
 
+
+(defn running-total [key agg]
+  (loop [sum 0
+         in agg
+         out []]
+    (if-not (seq in)
+      out
+      (recur (+ sum (:count (first in)))
+             (rest in)
+             (conj out {:date (:date (first in)) key (+ (:count (first in)) sum)})))))
+
 (defn get-aggregate-status
   ([since until db]
-   (let [dr (map (fn [e] (java.util.Date/from (.toInstant (.atStartOfDay e java.time.ZoneOffset/UTC))))
-                 (date-range since until))]
-
-     (map (fn [e] (d/q locked-query db e)) dr)
-     #_(map merge
-          (d/q locked-query db dr)
-          (d/q spawned-query db dr)
-          (d/q activated-query db dr))))
+   (map merge
+        (running-total :set-networking-keys (run-aggregate-query
+                                             (java.time.LocalDate/parse "2018-11-27")
+                                             #(d/q set-networking-keys-query db)))
+        (running-total :spawned (run-aggregate-query
+                                 (java.time.LocalDate/parse "2018-11-27")
+                                 #(d/q spawned-query db)))
+        (running-total :activated (run-aggregate-query
+                                   (java.time.LocalDate/parse "2018-11-27")
+                                   #(d/q activated-query db)))))
   ([since until node-type db]
    (let [dr (map (fn [e] (java.util.Date/from (.toInstant (.atStartOfDay e java.time.ZoneOffset/UTC))))
                  (date-range since until))]

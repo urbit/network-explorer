@@ -714,22 +714,28 @@ attr by amount, treating a missing value as 1."
     :where [?a :pki-event/type :activate]
            [?a :pki-event/time ?t]])
 
+
 (def activated-query-node-type
-  '[:find (count ?e) ?until
-    :keys activated date
-    :in $ ?node-type [?until ...]
+  '[:find ?t
+    :in $ ?node-type
     :where [?e :node/type ?node-type]
            [?p :pki-event/node ?e]
-           [?p :pki-event/type :activate]
-           [?p :pki-event/time ?t]
-           [(> ?until ?t)]])
-
+           [?s :pki-event/type :activate]
+           [?s :pki-event/time ?t]])
 
 (def spawned-query
   '[:find ?t
     :in $
     :where [?s :pki-event/type :spawn]
            [?s :pki-event/time ?t]])
+
+(def spawned-query-node-type
+  '[:find ?t
+    :in $ ?node-type
+    :where [?e :node/type ?node-type]
+    [?p :pki-event/node ?e]
+    [?s :pki-event/type :spawn]
+    [?s :pki-event/time ?t]])
 
 (def set-networking-keys-query
   '[:find ?t
@@ -738,15 +744,14 @@ attr by amount, treating a missing value as 1."
            [?s :pki-event/type :change-networking-keys]
            [?s :pki-event/time ?t]])
 
-(def spawned-query-node-type
-  '[:find (count ?s) ?until
-    :keys spawned date
-    :in $ ?node-type [?until ...]
-    :where [?e :node/type ?node-type]
-           [?p :pki-event/node ?e]
-           [?s :pki-event/type :spawn]
-           [?s :pki-event/time ?t]
-           [(> ?until ?t)]])
+(def set-networking-keys-query-node-type
+  '[:find ?t
+    :in $ ?node-type
+    :where [?s :pki-event/revision 1]
+           [?s :pki-event/node ?e]
+           [?e :node/type ?node-type]
+           [?s :pki-event/type :change-networking-keys]
+           [?s :pki-event/time ?t]])
 
 
 (defn running-total [key agg]
@@ -759,6 +764,51 @@ attr by amount, treating a missing value as 1."
              (rest in)
              (conj out {:date (:date (first in)) key (+ (:count (first in)) sum)})))))
 
+(defn get-locked-aggregate [db]
+  (let [datoms (d/q '[:find ?d ?u
+                  :where [?e :lsr/unlocked-at ?u]
+                         [?e :lsr/deposited-at ?d]
+                         [(> ?u ?d)]] db)
+        ds (sort (map first datoms))
+        us (sort (map second datoms))
+        dr (map str (date-range (java.time.LocalDate/parse "2018-11-27")
+                                (.plusDays (.toLocalDate (.atZone (.toInstant (last us)) java.time.ZoneOffset/UTC)) 1)))
+        deposits  (add-zero-counts
+                   dr
+                   (into []
+                         (comp (partition-by
+                                (fn [e] (-> e
+                                            .toInstant
+                                            (.atZone java.time.ZoneOffset/UTC)
+                                            .toLocalDate
+                                            .toString)))
+                               (map (fn [e] {:date (-> (first e)
+                                                       .toInstant
+                                                       (.atZone java.time.ZoneOffset/UTC)
+                                                       .toLocalDate
+                                                       .toString)
+                                             :count (count e)})))
+                         ds))
+        unlocks  (add-zero-counts
+                  dr
+                  (into []
+                        (comp (partition-by
+                               (fn [e] (-> e
+                                           .toInstant
+                                           (.atZone java.time.ZoneOffset/UTC)
+                                           .toLocalDate
+                                           .toString)))
+                              (map (fn [e] {:date (-> (first e)
+                                                      .toInstant
+                                                      (.atZone java.time.ZoneOffset/UTC)
+                                                      .toLocalDate
+                                                      .toString)
+                                            :count (count e)})))
+                        us))
+
+        ]
+    (running-total :locked (map (fn [d u] {:date (:date d) :count (- (:count d) (:count u))}) deposits unlocks))))
+
 (defn get-aggregate-status
   ([since until db]
    (map merge
@@ -770,14 +820,20 @@ attr by amount, treating a missing value as 1."
                                  #(d/q spawned-query db)))
         (running-total :activated (run-aggregate-query
                                    (java.time.LocalDate/parse "2018-11-27")
-                                   #(d/q activated-query db)))))
+                                   #(d/q activated-query db)))
+        (get-locked-aggregate db)))
   ([since until node-type db]
-   (let [dr (map (fn [e] (java.util.Date/from (.toInstant (.atStartOfDay e java.time.ZoneOffset/UTC))))
-                 (date-range since until))]
-     (map merge
-          (d/q spawned-query-node-type db node-type dr)
-          (d/q activated-query-node-type db node-type dr)
-          (if (= :star node-type) (d/q locked-query db dr) (repeat {}))))))
+   (map merge
+        (running-total :set-networking-keys (run-aggregate-query
+                                             (java.time.LocalDate/parse "2018-11-27")
+                                             #(d/q set-networking-keys-query-node-type db node-type)))
+        (running-total :spawned (run-aggregate-query
+                                 (java.time.LocalDate/parse "2018-11-27")
+                                 #(d/q spawned-query-node-type db node-type)))
+        (running-total :activated (run-aggregate-query
+                                   (java.time.LocalDate/parse "2018-11-27")
+                                   #(d/q activated-query-node-type db node-type)))
+        (if (= :star node-type) (get-locked-aggregate db) (repeat {})))))
 
 (defn get-aggregate-status* [query-params db]
   (let [since (java.time.LocalDate/parse (get query-params :since "2018-11-27"))

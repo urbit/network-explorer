@@ -8,7 +8,8 @@
             [datomic.ion.cast :as cast]
             [ring.middleware.params :as params]
             [ring.middleware.keyword-params :as kwparams]
-            [datomic.ion.dev :as dev]))
+            [datomic.ion.dev :as dev]
+            [clojure.core.memoize :as memo]))
 
 (def cfg {:server-type :ion
           :region "us-east-2" ;; e.g. us-east-1
@@ -810,7 +811,7 @@ attr by amount, treating a missing value as 1."
     (running-total :locked (map (fn [d u] {:date (:date d) :count (- (:count d) (:count u))}) deposits unlocks))))
 
 (defn get-aggregate-status
-  ([since until db]
+  ([db]
    (map merge
         (running-total :set-networking-keys (run-aggregate-query
                                              (java.time.LocalDate/parse "2018-11-27")
@@ -822,7 +823,7 @@ attr by amount, treating a missing value as 1."
                                    (java.time.LocalDate/parse "2018-11-27")
                                    #(d/q activated-query db)))
         (get-locked-aggregate db)))
-  ([since until node-type db]
+  ([node-type db]
    (let [locked (if (= :star node-type) (get-locked-aggregate db) (repeat {}))
          set-keys (running-total :set-networking-keys (run-aggregate-query
                                               (java.time.LocalDate/parse "2018-11-27")
@@ -838,16 +839,17 @@ attr by amount, treating a missing value as 1."
                   locked)
              (when (= :star node-type) (drop (count set-keys) locked))))))
 
+(def get-aggregate-status-memoized
+  (memo/fifo get-aggregate-status :fifo/threshold 3))
+
 (defn get-aggregate-status* [query-params db]
-  (let [since (java.time.LocalDate/parse (get query-params :since "2018-11-27"))
-        until (java.time.LocalDate/parse (get query-params :until "2025-01-01"))
-        node-type  (keyword (get query-params :nodeType))]
+  (let [node-type  (keyword (get query-params :nodeType))]
     {:status 200
      :headers {"Content-Type" "application/json"}
      :body (json/write-str
             (if node-type
-              (get-aggregate-status since until node-type db)
-              (get-aggregate-status since until db))
+              (get-aggregate-status-memoized node-type db)
+              (get-aggregate-status-memoized db))
             :value-fn stringify-date)}))
 
 (defn root-handler [req]

@@ -8,6 +8,7 @@
         hato/hato {:mvn/version "0.8.2"}
         com.google.guava/guava {:mvn/version "28.1-jre"}
         ring/ring-core {:mvn/version "1.9.4"}
+        org.clojure/core.memoize {:mvn/version "1.0.250"}
         pkova/clj-ob {:git/url "https://github.com/pkova/clj-ob" :sha "9d6929c3e8793c5dbd023866ff61dd6104d081bc"}}
  :mvn/repos {"datomic-cloud" {:url "s3://datomic-releases-1fc2183a/maven/releases"}}}
 

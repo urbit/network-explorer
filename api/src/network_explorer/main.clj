@@ -721,8 +721,8 @@ attr by amount, treating a missing value as 1."
     :in $ ?node-type
     :where [?e :node/type ?node-type]
            [?p :pki-event/node ?e]
-           [?s :pki-event/type :activate]
-           [?s :pki-event/time ?t]])
+           [?p :pki-event/type :activate]
+           [?p :pki-event/time ?t]])
 
 (def spawned-query
   '[:find ?t
@@ -734,9 +734,9 @@ attr by amount, treating a missing value as 1."
   '[:find ?t
     :in $ ?node-type
     :where [?e :node/type ?node-type]
-    [?p :pki-event/node ?e]
-    [?s :pki-event/type :spawn]
-    [?s :pki-event/time ?t]])
+           [?p :pki-event/target-node ?e]
+           [?p :pki-event/type :spawn]
+           [?p :pki-event/time ?t]])
 
 (def set-networking-keys-query
   '[:find ?t

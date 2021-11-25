@@ -839,8 +839,6 @@ attr by amount, treating a missing value as 1."
                   locked)
              (when (= :star node-type) (drop (count set-keys) locked))))))
 
-(def get-aggregate-status-memoized
-  (memo/fifo get-aggregate-status :fifo/threshold 3))
 
 (defn get-aggregate-status* [query-params db]
   (let [node-type  (keyword (get query-params :nodeType))]
@@ -848,9 +846,12 @@ attr by amount, treating a missing value as 1."
      :headers {"Content-Type" "application/json"}
      :body (json/write-str
             (if node-type
-              (get-aggregate-status-memoized node-type db)
-              (get-aggregate-status-memoized db))
+              (get-aggregate-status node-type db)
+              (get-aggregate-status db))
             :value-fn stringify-date)}))
+
+(def get-aggregate-status*-memoized
+  (memo/fifo get-aggregate-status* :fifo/threshold 4))
 
 (defn root-handler [req]
   (let [client       (get-client)
@@ -864,7 +865,7 @@ attr by amount, treating a missing value as 1."
       "/get-aggregate-pki-events" (get-aggregate-pki-events* query-params db)
       "/get-pki-events"           (get-pki-events* query-params db)
       "/get-activity"             (get-activity* query-params db)
-      "/get-aggregate-status"     (get-aggregate-status* query-params db)
+      "/get-aggregate-status"     (get-aggregate-status*-memoized query-params db)
       {:status 404})))
 
 (defn deploy-build! []

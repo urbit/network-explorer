@@ -847,14 +847,17 @@ attr by amount, treating a missing value as 1."
   (memo/fifo get-aggregate-status :fifo/threshold 4))
 
 (defn get-aggregate-status* [query-params db]
-  (let [node-type  (keyword (get query-params :nodeType))
-        latest-tx  (ffirst (d/q '[:find (max 1 ?tx) :where [_ :pki-event/time ?tx]] db))]
+  (let [node-type (keyword (get query-params :nodeType))
+        since     (java.time.LocalDate/parse (get query-params :since "2018-11-27"))
+        latest-tx (ffirst (d/q '[:find (max 1 ?tx) :where [_ :pki-event/time ?tx]] db))]
     {:status 200
      :headers {"Content-Type" "application/json"}
      :body (json/write-str
-            (if node-type
-              (get-aggregate-status-memoized node-type latest-tx)
-              (get-aggregate-status-memoized latest-tx))
+            (drop-while
+             (fn [e] (.isBefore (java.time.LocalDate/parse (:date e)) since))
+             (if node-type
+               (get-aggregate-status-memoized node-type latest-tx)
+               (get-aggregate-status-memoized latest-tx)))
             :value-fn stringify-date)}))
 
 (defn root-handler [req]

@@ -848,7 +848,7 @@ attr by amount, treating a missing value as 1."
 
 (defn get-aggregate-status* [query-params db]
   (let [node-type  (keyword (get query-params :nodeType))
-        latest-tx  (ffirst (d/q '[:find (max 1 ?tx) :where [?tx :db/txInstant]] db))]
+        latest-tx  (ffirst (d/q '[:find (max 1 ?tx) :where [_ :pki-event/time ?tx]] db))]
     {:status 200
      :headers {"Content-Type" "application/json"}
      :body (json/write-str

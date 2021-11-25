@@ -811,47 +811,51 @@ attr by amount, treating a missing value as 1."
     (running-total :locked (map (fn [d u] {:date (:date d) :count (- (:count d) (:count u))}) deposits unlocks))))
 
 (defn get-aggregate-status
-  ([db]
-   (map merge
-        (running-total :set-networking-keys (run-aggregate-query
-                                             (java.time.LocalDate/parse "2018-11-27")
-                                             #(d/q set-networking-keys-query db)))
-        (running-total :spawned (run-aggregate-query
-                                 (java.time.LocalDate/parse "2018-11-27")
-                                 #(d/q spawned-query db)))
-        (running-total :activated (run-aggregate-query
+  ([latest-tx]
+   (let [conn (d/connect (get-client) {:db-name "network-explorer-2"})
+         db   (d/db conn)]
+     (map merge
+          (running-total :set-networking-keys (run-aggregate-query
+                                               (java.time.LocalDate/parse "2018-11-27")
+                                               #(d/q set-networking-keys-query db)))
+          (running-total :spawned (run-aggregate-query
                                    (java.time.LocalDate/parse "2018-11-27")
-                                   #(d/q activated-query db)))
-        (get-locked-aggregate db)))
-  ([node-type db]
-   (let [locked (if (= :star node-type) (get-locked-aggregate db) (repeat {}))
-         set-keys (running-total :set-networking-keys (run-aggregate-query
-                                              (java.time.LocalDate/parse "2018-11-27")
-                                              #(d/q set-networking-keys-query-node-type db node-type)))]
-     (concat (map merge
-                  set-keys
-                  (running-total :spawned (run-aggregate-query
-                                           (java.time.LocalDate/parse "2018-11-27")
-                                           #(d/q spawned-query-node-type db node-type)))
-                  (running-total :activated (run-aggregate-query
+                                   #(d/q spawned-query db)))
+          (running-total :activated (run-aggregate-query
+                                     (java.time.LocalDate/parse "2018-11-27")
+                                     #(d/q activated-query db)))
+          (get-locked-aggregate db))))
+  ([node-type latest-tx]
+   (let [conn (d/connect (get-client) {:db-name "network-explorer-2"})
+         db   (d/db conn)]
+     (let [locked (if (= :star node-type) (get-locked-aggregate db) (repeat {}))
+           set-keys (running-total :set-networking-keys (run-aggregate-query
+                                                         (java.time.LocalDate/parse "2018-11-27")
+                                                         #(d/q set-networking-keys-query-node-type db node-type)))]
+       (concat (map merge
+                    set-keys
+                    (running-total :spawned (run-aggregate-query
                                              (java.time.LocalDate/parse "2018-11-27")
-                                             #(d/q activated-query-node-type db node-type)))
-                  locked)
-             (when (= :star node-type) (drop (count set-keys) locked))))))
+                                             #(d/q spawned-query-node-type db node-type)))
+                    (running-total :activated (run-aggregate-query
+                                               (java.time.LocalDate/parse "2018-11-27")
+                                               #(d/q activated-query-node-type db node-type)))
+                    locked)
+               (when (= :star node-type) (drop (count set-keys) locked)))))))
 
+(def get-aggregate-status-memoized
+  (memo/fifo get-aggregate-status :fifo/threshold 4))
 
 (defn get-aggregate-status* [query-params db]
-  (let [node-type  (keyword (get query-params :nodeType))]
+  (let [node-type  (keyword (get query-params :nodeType))
+        latest-tx  (ffirst (d/q '[:find (max 1 ?tx) :where [?tx :db/txInstant]] db))]
     {:status 200
      :headers {"Content-Type" "application/json"}
      :body (json/write-str
             (if node-type
-              (get-aggregate-status node-type db)
-              (get-aggregate-status db))
+              (get-aggregate-status-memoized node-type latest-tx)
+              (get-aggregate-status-memoized latest-tx))
             :value-fn stringify-date)}))
-
-(def get-aggregate-status*-memoized
-  (memo/fifo get-aggregate-status* :fifo/threshold 4))
 
 (defn root-handler [req]
   (let [client       (get-client)
@@ -865,7 +869,7 @@ attr by amount, treating a missing value as 1."
       "/get-aggregate-pki-events" (get-aggregate-pki-events* query-params db)
       "/get-pki-events"           (get-pki-events* query-params db)
       "/get-activity"             (get-activity* query-params db)
-      "/get-aggregate-status"     (get-aggregate-status*-memoized query-params db)
+      "/get-aggregate-status"     (get-aggregate-status* query-params db)
       {:status 404})))
 
 (defn deploy-build! []

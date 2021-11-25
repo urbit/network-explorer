@@ -849,15 +849,18 @@ attr by amount, treating a missing value as 1."
 (defn get-aggregate-status* [query-params db]
   (let [node-type (keyword (get query-params :nodeType))
         since     (java.time.LocalDate/parse (get query-params :since "2018-11-27"))
+        until     (java.time.LocalDate/parse (get query-params :until "3000-01-01"))
         latest-tx (ffirst (d/q '[:find (max 1 ?tx) :where [_ :pki-event/time ?tx]] db))]
     {:status 200
      :headers {"Content-Type" "application/json"}
      :body (json/write-str
-            (drop-while
-             (fn [e] (.isBefore (java.time.LocalDate/parse (:date e)) since))
-             (if node-type
-               (get-aggregate-status-memoized node-type latest-tx)
-               (get-aggregate-status-memoized latest-tx)))
+            (take-while
+             (fn [e] (.isBefore (java.time.LocalDate/parse (:date e)) until))
+             (drop-while
+              (fn [e] (.isBefore (java.time.LocalDate/parse (:date e)) since))
+              (if node-type
+                (get-aggregate-status-memoized node-type latest-tx)
+                (get-aggregate-status-memoized latest-tx))))
             :value-fn stringify-date)}))
 
 (defn root-handler [req]

@@ -1,7 +1,7 @@
 (ns network-explorer.main
   (:require [datomic.client.api :as d]
             [hato.client :as http]
-            [jsonista.core :as json]
+            [clojure.data.json :as json]
             [clojure.string :as str]
             [clj-ob.ob :as ob]
             [datomic.ion.dev :as ion]
@@ -141,7 +141,7 @@
                                             :sort "asc"
                                             :apikey "GGVBET75PP24QF7G1PSFAIIU1B24MC8BJM"}})
                   :body
-                  json/read-value
+                  json/read-str
                   (get "result"))
           block (get (last res) "blockNumber")]
       (Thread/sleep 1000)
@@ -152,7 +152,7 @@
 (defn get-radar-data []
   (-> (http/get "http://165.232.131.25/~radar.json" {:timeout 300000 :connect-timeout 300000})
       :body
-      json/read-value))
+      json/read-str))
 
 (defn transform-radar-time [n]
   (-> (java.time.Instant/ofEpochMilli n)
@@ -509,14 +509,14 @@ attr by amount, treating a missing value as 1."
     (if-not (every? ob/patp? urbit-ids)
       {:status 400
        :headers {"Content-Type" "application/json"}
-       :body (json/write-value-as-string {:error "One or more invalid urbit-ids"})}
+       :body (json/write-str {:error "One or more invalid urbit-ids"})}
       (if-not (every? #{:galaxy :star :planet :moon :comet} types)
         {:status 400
          :headers {"Content-Type" "application/json"}
-         :body (json/write-value-as-string {:error "One or more invalid node-types"})}
+         :body (json/write-str {:error "One or more invalid node-types"})}
         {:status 200
          :headers {"Content-Type" "application/json"}
-         :body (json/write-value-as-string (if (empty? urbit-ids)
+         :body (json/write-str (if (empty? urbit-ids)
                                  (get-all-nodes limit offset types db)
                                  (get-nodes urbit-ids limit offset types db)))}))))
 
@@ -528,10 +528,10 @@ attr by amount, treating a missing value as 1."
     (if-not (ob/patp? urbit-id)
       {:status 400
        :headers {"Content-Type" "application/json"}
-       :body (json/write-value-as-string {:error "Invalid urbit-id"})}
+       :body (json/write-str {:error "Invalid urbit-id"})}
       {:status 200
        :headers {"Content-Type" "application/json"}
-       :body (json/write-value-as-string (get-node urbit-id db))})))
+       :body (json/write-str (get-node urbit-id db))})))
 
 (defn stringify-date [key value]
   (case key
@@ -590,11 +590,12 @@ attr by amount, treating a missing value as 1."
         offset    (Integer/parseInt (get query-params :offset "0"))]
     {:status 200
      :headers {"Content-Type" "application/json"}
-     :body (json/write-value-as-string (if urbit-id
+     :body (json/write-str (if urbit-id
                              (get-pki-events urbit-id since db)
                              (if node-type
                                (get-all-pki-events limit offset since node-type db)
-                               (get-all-pki-events limit offset since db))))}))
+                               (get-all-pki-events limit offset since db)))
+                           :value-fn stringify-date)}))
 
 (defn add-zero-counts [dr query-res]
   (loop [d dr
@@ -650,10 +651,10 @@ attr by amount, treating a missing value as 1."
         event-type (keyword (get query-params :eventType))]
     {:status 200
      :headers {"Content-Type" "application/json"}
-     :body (json/write-value-as-string
+     :body (json/write-str
             (if node-type
               (get-aggregate-pki-events node-type event-type since db)
-              (get-aggregate-pki-events event-type since db)))}))
+              (get-aggregate-pki-events event-type since db)) :value-fn stringify-date)}))
 
 (defn get-all-activity [limit offset db]
   (let [selector [:ping/time
@@ -678,9 +679,10 @@ attr by amount, treating a missing value as 1."
         offset   (Integer/parseInt (get query-params :offset "0"))]
     {:status 200
      :headers {"Content-Type" "application/json"}
-     :body (json/write-value-as-string (if urbit-id
+     :body (json/write-str (if urbit-id
                              (get-activity urbit-id since db)
-                             (get-all-activity limit offset db)))}))
+                             (get-all-activity limit offset db))
+                           :value-fn stringify-date)}))
 (def unlockable-query
   '[:find (count ?l) ?until
     :keys count date
@@ -849,10 +851,11 @@ attr by amount, treating a missing value as 1."
         latest-tx  (ffirst (d/q '[:find (max 1 ?tx) :where [?tx :db/txInstant]] db))]
     {:status 200
      :headers {"Content-Type" "application/json"}
-     :body (json/write-value-as-string
+     :body (json/write-str
             (if node-type
               (get-aggregate-status-memoized node-type latest-tx)
-              (get-aggregate-status-memoized latest-tx)))}))
+              (get-aggregate-status-memoized latest-tx))
+            :value-fn stringify-date)}))
 
 (defn root-handler [req]
   (let [client       (get-client)

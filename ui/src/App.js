@@ -17,6 +17,8 @@ import { MenuHeader } from './MenuHeader';
 import { Node } from './Node';
 import { AzimuthEvents } from './AzimuthEvents';
 import { AzimuthChart } from './AzimuthChart';
+import { StatusChart } from './StatusChart';
+import { StatusTable } from './StatusTable';
 
 const API_BASE_URL = 'https://mt2aga2c5l.execute-api.us-east-2.amazonaws.com';
 
@@ -76,8 +78,35 @@ const fetchPkiEvents = (stateSetter, nodeType, since) => {
     .then(events => stateSetter({loading: false, events: events}));
 };
 
+const fetchAggregateStatus = (stateSetter, since, until, nodeType) => {
+  stateSetter({loading: true});
+
+  let url = nodeType ?
+      `${API_BASE_URL}/get-aggregate-status?nodeType=${nodeType}` :
+      `${API_BASE_URL}/get-aggregate-status?`;
+
+  if (since) {
+    url += '&since=' + since;
+  }
+
+  if (until) {
+    url += '&until=' + until;
+  }
+
+  fetch(url)
+    .then(res => res.json())
+    .then(es => {
+      const events = es.map(e => {
+        const d = new Date(e.date);
+        return Object.assign(e, {date: e.date.substring(0, 10)});
+      });
+
+      stateSetter({loading: false, events: events });
+    });
+};
+
 const fetchAggregateEvents = (eventType, stateSetter, since, nodeType) => {
-  stateSetter({loading: true, months: new Set()});
+  stateSetter({loading: true});
 
   let url = nodeType ?
       `${API_BASE_URL}/get-aggregate-pki-events?eventType=${eventType}&nodeType=${nodeType}` :
@@ -90,16 +119,14 @@ const fetchAggregateEvents = (eventType, stateSetter, since, nodeType) => {
   fetch(url)
     .then(res => res.json())
     .then(es => {
-      let months = new Set();
 
       const events = es.map(e => {
         const d = new Date(e.date);
         const month = d.toLocaleString('default', {month: 'short'});
-        months.add(month);
         return Object.assign({month: month}, e, {date: e.date.substring(0, 10)});
       });
 
-      stateSetter({loading: false, events: events, months: months});
+      stateSetter({loading: false, events: events });
     });
 };
 
@@ -107,20 +134,22 @@ function App() {
 
   const [azimuthEvents, setAzimuthEvents] = useState({loading: true, events: []});
 
-  const [spawnEvents, setSpawnEvents] = useState({loading: true, months: new Set(), events: []});
+  const [aggregateStatus, setAggregateStatus] = useState({loading: true, events: []});
 
-  const [transferEvents, setTransferEvents] = useState({loading: true, months: new Set(), events: []});
+  const [transferEvents, setTransferEvents] = useState({loading: true, events: []});
 
   const [nodesText, setNodesText] = useState('All');
 
-  const [timeRangeText, setTimeRangeText] = useState('6 Months');
+  const [timeRangeText, setTimeRangeText] = useState('Year');
 
   const [offset, setOffset] = useState(0);
 
   useEffect(() => {
+    const since = isoStringToDate(timeRangeTextToSince('Year'));
+    const until = isoStringToDate(new Date(new Date().getTime() + ONE_DAY).toISOString());
+
     fetchPkiEvents(setAzimuthEvents);
-    fetchAggregateEvents('spawn', setSpawnEvents, '2021-03-01');
-    fetchAggregateEvents('change-ownership', setTransferEvents, '2021-03-01');
+    fetchAggregateStatus(setAggregateStatus, since, until);
   }, []);
 
   const menuHeader =
@@ -133,26 +162,26 @@ function App() {
                                                                    nodesTextToNodeType(nodesText),
                                                                    timeRangeTextToSince(timeRangeText))}
           fetchTimeRangeAggregateEvents={timeRangeText => {
-            fetchAggregateEvents('spawn',
-                                 setSpawnEvents,
+            const until = (timeRangeText === 'All' && nodesText === 'Stars')
+                  ? undefined :
+                  isoStringToDate(new Date(new Date().getTime() + ONE_DAY).toISOString());
+
+            fetchAggregateStatus(setAggregateStatus,
                                  isoStringToDate(timeRangeTextToSince(timeRangeText)),
-                                 nodesTextToNodeType(nodesText));
-            fetchAggregateEvents('change-ownership',
-                                 setTransferEvents,
-                                 isoStringToDate(timeRangeTextToSince(timeRangeText)),
+                                 until,
                                  nodesTextToNodeType(nodesText));
           }}
           fetchNodePkiEvents={nodesText => fetchPkiEvents(setAzimuthEvents,
                                                           nodesTextToNodeType(nodesText),
                                                           timeRangeTextToSince(timeRangeText))}
           fetchNodeAggregateEvents={nodesText => {
-            fetchAggregateEvents('spawn',
-                                 setSpawnEvents,
+            const until = (timeRangeText === 'All' && nodesText === 'Stars')
+                  ? undefined :
+                  isoStringToDate(new Date(new Date().getTime() + ONE_DAY).toISOString());
+
+            fetchAggregateStatus(setAggregateStatus,
                                  isoStringToDate(timeRangeTextToSince(timeRangeText)),
-                                 nodesTextToNodeType(nodesText));
-            fetchAggregateEvents('change-ownership',
-                                 setTransferEvents,
-                                 isoStringToDate(timeRangeTextToSince(timeRangeText)),
+                                 until,
                                  nodesTextToNodeType(nodesText));
           }}
         />;
@@ -255,11 +284,11 @@ function App() {
                   className='ml'
                 >
                   <Row fontWeight={500} p={3} justifyContent='space-between'>
-                    <Text fontSize={0}>Spawn Events</Text>
+                    <Text fontSize={0}>Address Space Composition</Text>
                     <Icon icon='Info' size={16} cursor='pointer' />
                   </Row>
-                  <Box flex='1' backgroundColor='#F5F5F5'>
-                    {spawnEvents.loading ?
+                  <Box flex='1'>
+                    {aggregateStatus.loading ?
                      <Center height='100%'>
                        <LoadingSpinner
                          width='36px'
@@ -268,44 +297,17 @@ function App() {
                          background='rgba(0, 0, 0, 0.2)'
                        />
                      </Center> :
-                     <AzimuthChart
-                       name='Spawn Events'
-                       fill='#BF421B'
-                       events={spawnEvents.events}
-                       months={spawnEvents.months}
-                     />}
-                  </Box>
-                </Box>
-                <Box
-                  mt={3}
-                  backgroundColor='white'
-                  borderRadius='8px'
-                  flex='1'
-                  display='flex'
-                  flexDirection='column'
-                  minHeight='250px'
-                  className='ml'
-                >
-                  <Row fontWeight={500} p={3} justifyContent='space-between'>
-                    <Text fontSize={0}>Transfer Events</Text>
-                    <Icon icon='Info' size={16} cursor='pointer' />
-                  </Row>
-                  <Box flex='1' backgroundColor='#F5F5F5'>
-                    {transferEvents.loading ?
-                     <Center height='100%'>
-                       <LoadingSpinner
-                         width='36px'
-                         height='36px'
-                         foreground='rgba(0, 0, 0, 0.6)'
-                         background='rgba(0, 0, 0, 0.2)'
+                     <>
+                       <StatusChart
+                         events={aggregateStatus.events}
+                         timeRangeText={timeRangeText}
                        />
-                     </Center> :
-                     <AzimuthChart
-                       name='Transfer Events'
-                       fill='#093C09'
-                       events={transferEvents.events}
-                       months={transferEvents.months}
-                     />}
+                       <StatusTable
+                         first={aggregateStatus.events[0]}
+                         last={aggregateStatus.events[aggregateStatus.events.length - 1]}
+                       />
+                     </>
+                  }
                   </Box>
                 </Box>
               </Col>

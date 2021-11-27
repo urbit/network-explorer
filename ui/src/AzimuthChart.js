@@ -9,7 +9,7 @@ import { ResponsiveContainer,
 
 export function AzimuthChart(props) {
 
-  const { events, fill, name } = props;
+  const { events, fill, name, timeRangeText } = props;
 
   return(
     <ResponsiveContainer>
@@ -18,15 +18,15 @@ export function AzimuthChart(props) {
         data={events}>
         <CartesianGrid strokeDasharray="3 3" />
         <XAxis
-          hide={true}
           xAxisId='0'
           dataKey='date'
-        />
-        <XAxis
-          xAxisId='1'
-          dataKey='month'
-          interval={30}
-          padding={{left: 10}}
+          minTickGap={50}
+          tickFormatter={e => {
+            if (timeRangeText === 'Year' || timeRangeText === 'All') {
+              return (new Date(e)).toLocaleString('default', {month: 'short', 'year': '2-digit'});
+            }
+            return (new Date(e)).toLocaleString('default', {month: 'short'});
+          }}
         />
         <Tooltip />
         <Bar name={name} dataKey='count' fill={fill}/>

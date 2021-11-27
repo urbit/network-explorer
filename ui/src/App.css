@@ -15,6 +15,10 @@ input:focus {
     outline: none;
 }
 
+.recharts-responsive-container {
+    background-color: #F5F5F5
+}
+
 /* Recharts doesn't resize properly without this.
    Don't know and don't wanna know.*/
 .recharts-wrapper {

@@ -8,12 +8,9 @@ import { Table,
 
 export function StatusTable(props) {
 
-  const {last, first} = props;
+  const {last, first, nodesText} = props;
 
-  const hasLockedData = first.locked !== undefined;
-
-  const lastLocked = last.locked || 0;
-  const firstLocked = first.locked || 0;
+  const showUnlockedData = nodesText === 'Stars';
 
   return (
     <Table ml={3} mt={2} border='0' width='100%' flex='1'>
@@ -81,7 +78,7 @@ export function StatusTable(props) {
         </Tr>
       </thead>
       <tbody>
-        { hasLockedData &&
+        { showUnlockedData &&
           <Tr>
             <Td>
               <svg style={{verticalAlign: 'middle'}}
@@ -92,26 +89,26 @@ export function StatusTable(props) {
                    xmlns='http://www.w3.org/2000/svg'>
                 <circle cx='8' cy='8' r='8' fill='#2C2C57' />
               </svg>
-              <Text color='#2C2C57' fontSize={0} ml={1}>Locked</Text>
+              <Text color='#2C2C57' fontSize={0} ml={1}>Unlocked</Text>
             </Td>
             <Td>
               <Text fontSize={0}>
-                {(100 * (lastLocked / (lastLocked + last.spawned + last.activated + last['set-networking-keys']))).toFixed(2)}
+                {(100 * (last.unlocked / (last.unlocked + last.spawned + last.activated + last['set-networking-keys']))).toFixed(2)}
               </Text>
             </Td>
             <Td>
               <Text fontSize={0}>
-                {lastLocked}
+                {last.unlocked}
               </Text>
             </Td>
             <Td>
               <Text fontSize={0}>
-                {((100 * ((lastLocked / firstLocked) - 1)).toFixed(2))}
+                {((100 * ((last.unlocked / first.unlocked) - 1)).toFixed(2))}
               </Text>
             </Td>
             <Td>
               <Text fontSize={0}>
-                {lastLocked - firstLocked}
+                {last.unlocked - first.unlocked}
               </Text>
             </Td>
           </Tr>}
@@ -129,7 +126,7 @@ export function StatusTable(props) {
           </Td>
           <Td>
             <Text fontSize={0}>
-              {(100 * (last.spawned / (lastLocked + last.spawned + last.activated + last['set-networking-keys']))).toFixed(2)}
+              {(100 * (last.spawned / (last.unlocked + last.spawned + last.activated + last['set-networking-keys']))).toFixed(2)}
             </Text>
           </Td>
           <Td>
@@ -162,7 +159,7 @@ export function StatusTable(props) {
           </Td>
           <Td>
             <Text fontSize={0}>
-              {(100 * (last.activated / (lastLocked + last.spawned + last.activated + last['set-networking-keys']))).toFixed(2)}
+              {(100 * (last.activated / (last.unlocked + last.spawned + last.activated + last['set-networking-keys']))).toFixed(2)}
             </Text>
           </Td>
           <Td>
@@ -195,7 +192,7 @@ export function StatusTable(props) {
           </Td>
           <Td>
             <Text fontSize={0}>
-              {(100 * (last['set-networking-keys'] / (lastLocked + last.spawned + last.activated + last['set-networking-keys']))).toFixed(2)}
+              {(100 * (last['set-networking-keys'] / (last.unlocked + last.spawned + last.activated + last['set-networking-keys']))).toFixed(2)}
             </Text>
           </Td>
           <Td>

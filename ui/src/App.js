@@ -98,7 +98,7 @@ const fetchAggregateStatus = (stateSetter, since, until, nodeType) => {
     .then(es => {
       const events = es.map(e => {
         const d = new Date(e.date);
-        return Object.assign(e, {date: e.date.substring(0, 10)});
+        return Object.assign(e, {date: e.date.substring(0, 10), unlocked: 65536 - e.locked});
       });
 
       stateSetter({loading: false, events: events });
@@ -301,10 +301,12 @@ function App() {
                        <StatusChart
                          events={aggregateStatus.events}
                          timeRangeText={timeRangeText}
+                         nodesText={nodesText}
                        />
                        <StatusTable
                          first={aggregateStatus.events[0]}
                          last={aggregateStatus.events[aggregateStatus.events.length - 1]}
+                         nodesText={nodesText}
                        />
                      </>
                   }

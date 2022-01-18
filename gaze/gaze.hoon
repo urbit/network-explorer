@@ -178,8 +178,7 @@
 ++  bec  byk.bowl(r da+now.bowl)
 ++  setup-cards
   ^-  (list card)
-  :~  wait-export
-      setup-eth-watcher
+  :~  setup-eth-watcher
       ::  we punt on subscribing to the eth-watcher for a little while.
       ::  this way we get a %history diff containing all past events,
       ::  instead of so many individual %log diffs that we bail meme.

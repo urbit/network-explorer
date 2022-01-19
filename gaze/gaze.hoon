@@ -168,7 +168,26 @@
       [~ this]
     ==
   ::
-  ++  on-peek   on-peek:def
+  ::  +on-peek: accept gall scry
+  ::
+  ::    %/days/txt:   per day, digest stats
+  ::    %/months/txt: per month, digest stats
+  ::    %/raw/txt:    all observed events
+  ::
+  ++  on-peek  ::TODO
+    |=  pax=path
+    ^-  (unit (unit cage))
+    ?+  pax  ~
+      [%x %days ~]
+        :^  ~  ~  %txt
+        !>((export-days days))
+      [%x %months ~]
+        :^  ~  ~  %txt
+        !>((export-months days))
+      [%x %raw ~]
+        ``txt+!>(export-raw)
+    ==
+  ::
   ++  on-watch  on-watch:def
   ++  on-leave  on-leave:def
   ++  on-fail   on-fail:def
@@ -436,26 +455,6 @@
   %+  foal:space:userlib
     /(scot %p our.bowl)/base/(scot %da now.bowl)/gaze-exports/[nom]/txt
   [%txt !>(dat)]
-::
-::  +peek-x: accept gall scry
-::
-::    %/days/txt:   per day, digest stats
-::    %/months/txt: per month, digest stats
-::    %/raw/txt:    all observed events
-::
-++  peek-x  ::TODO
-  |=  pax=path
-  ^-  (unit (unit (pair mark *)))
-  ?~  pax  ~
-  ?:  =(%days i.pax)
-    :^  ~  ~  %txt
-    (export-days days)
-  ?:  =(%months i.pax)
-    :^  ~  ~  %txt
-    (export-months days)
-  ?:  =(%raw i.pax)
-    ``txt+export-raw
-  ~
 ::
 ::  +export-months: generate a csv of stats per month
 ::

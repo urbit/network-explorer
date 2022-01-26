@@ -197,14 +197,15 @@
 ++  bec  byk.bowl(r da+now.bowl)
 ++  setup-cards
   ^-  (list card)
-  :~  setup-eth-watcher
-      ::  we punt on subscribing to the eth-watcher for a little while.
-      ::  this way we get a %history diff containing all past events,
-      ::  instead of so many individual %log diffs that we bail meme.
-      ::  (to repro, replace this with `watch-eth-watcher`)
-      ::
-      await-eth-watcher
-  ==
+  [setup-azimuth ~]
+  ::  :~  setup-eth-watcher
+  ::      ::  we punt on subscribing to the eth-watcher for a little while.
+  ::      ::  this way we get a %history diff containing all past events,
+  ::      ::  instead of so many individual %log diffs that we bail meme.
+  ::      ::  (to repro, replace this with `watch-eth-watcher`)
+  ::      ::
+  ::      await-eth-watcher
+  ::  ==
 ::
 ++  wait
   |=  [=wire =@dr]
@@ -212,6 +213,11 @@
   [%pass wire %arvo %b %wait (add now.bowl dr)]
 ::
 ++  wait-export  (wait /export refresh-rate)
+::
+++  setup-azimuth
+  |=  [=wire =task:agent:gall]
+  ^-  card
+  [%pass wire %agent [our.bowl %azimuth] %watch /]
 ::
 ++  to-eth-watcher
   |=  [=wire =task:agent:gall]

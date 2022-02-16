@@ -63,7 +63,7 @@
     %-  %-  slog
         [leaf+"ship: loading azimuth snapshot ({<points>} points)"]~
     ::
-    =:  net.state   %default
+    =:  net.state   %mainnet
         nas.state   nas.snap
         own.state   owners.snap
         spo.state   sponsors.snap
@@ -433,7 +433,7 @@
   ?.  |(?=(%tx +<.tag) ?=(%point +<.tag))  ~
   %-  some
   ^-  card
-  [%give %fact ~[/event] %naive-diffs !>(+.tag)]
+  [%give %fact ~[/event] %naive-diffs !>(tag)]
 ::
 ++  start
   ^-  (list card)
@@ -442,7 +442,7 @@
     :+  %watch  /[dap.bowl]
     ^-  config:eth-watcher
     :*  url.state  =(%czar (clan:title our.bowl))  refresh  ~h30
-        (max launch.net ?:(=(net.state %default) +(last-snap) 0))
+        13.359.829
         ~[azimuth.net]
         ~[naive.net]
         (topics whos.state)

@@ -7,18 +7,18 @@
 ::    - receive timestamps, process events
 ::
 /-  eth-watcher
-/+  *ethereum, *azimuth, default-agent, verb
+/+  *ethereum, *azimuth, default-agent, verb, naive
 ::
 =>  |%
     +$  state-0
       $:  %0
-          ::  qued: event logs waiting on block timestamp, oldest first
-          ::  time: timstamps of block numbers
+          ::  qued: tagged-diffs waiting on block timestamp, oldest first
+          ::  time: timestamps of block numbers
           ::  seen: events sorted by timestamp, newest first
           ::  days: stats by day, newest first
           ::
           running=(unit @ta)
-          qued=loglist
+          qued=(list tagged-diff)
           time=(map @ud @da)
           seen=(list [wen=@da wat=event])
           days=(list [day=@da sat=stats])
@@ -46,6 +46,8 @@
       ==
     ::
     +$  card  card:agent:gall
+    ::
+    +$  tagged-diff  [=id:block:jael =diff:naive]
     ::
     ++  node-url  'http://eth-mainnet.urbit.org:8545'
     ++  refresh-rate  ~h1
@@ -128,12 +130,13 @@
     ::
         %fact
       ?+  wire  (on-agent:def wire sign)
-          [%watcher ~]
-        ?.  ?=(%eth-watcher-diff p.cage.sign)
-          (on-agent:def wire sign)
+          [%watch-azimuth ~]
+        ?.  ?=(%naive-diffs p.cage.sign)
+          [~ this]
+          ::  (on-agent:def wire sign)
         =^  cards  state
-          %-  handle-eth-watcher-diff:do
-          !<(diff:eth-watcher q.cage.sign)
+          %-  handle-azimuth-tagged-diff:do
+          !<(tagged-diff q.cage.sign)
         [cards this]
       ::
           [%timestamps @ ~]
@@ -215,9 +218,8 @@
 ++  wait-export  (wait /export refresh-rate)
 ::
 ++  setup-azimuth
-  |=  [=wire =task:agent:gall]
   ^-  card
-  [%pass wire %agent [our.bowl %azimuth] %watch /]
+  [%pass /watch-azimuth %agent [our.bowl %azimuth] %watch /event]
 ::
 ++  to-eth-watcher
   |=  [=wire =task:agent:gall]
@@ -266,25 +268,11 @@
   ^-  card
   [%pass wire %agent [our.bowl %spider] %watch sub-path]
 ::
-::  +handle-eth-watcher-diff: process new logs, clear state on rollback
-::
-::    processes logs for which we know the timestamp
-::    adds timestamp-less logs to queue
-::
-++  handle-eth-watcher-diff
-  |=  =diff:eth-watcher
+++  handle-azimuth-tagged-diff
+  |=  tag=tagged-diff
   ^-  (quip card _state)
-  =^  logs  state
-    ^-  [loglist _state]
-    ?-  -.diff
-      %history  ~&  [%got-history (lent loglist.diff)]
-                [loglist.diff state(qued ~, seen ~)]
-      %logs     ~&  %got-log
-                [loglist.diff state]
-      %disavow  ~&  %disavow-unimplemented
-                [~ state]
-    ==
-  (process-logs logs)
+  ?.  ?=(%point -.diff.tag)  [~ state]
+  (process-tagged-diff tag)
 ::
 ::  +request-timestamps: request block timestamps for the logs as necessary
 ::
@@ -309,8 +297,8 @@
       %-  ~(gas in *(set @ud))
       ^-  (list @ud)
       %+  turn  qued
-      |=  log=event-log:rpc
-      block-number:(need mined.log)
+      |=  log=tagged-diff
+      number.id.log
   ==
 ::
 ::  +save-timestamps: store timestamps into state
@@ -320,34 +308,72 @@
   ^-  (quip card _state)
   =.  time     (~(gas by time) timestamps)
   =.  running   ~
-  (process-logs ~)
-::
-::  +process-logs: handle new incoming logs
-::
-++  process-logs
-  |=  new=loglist  ::  oldest first
-  ^-  (quip card _state)
-  =.  qued  (weld qued new)
-  ?~  qued  [~ state]
   =-  %_  request-timestamps
         qued  (flop rest)  ::  oldest first
         seen  (weld logs seen)  ::  newest first
-        days  (count-events (flop logs))  ::  oldest first
+        ::  days  (count-events (flop new))  ::  oldest first
       ==
-  %+  roll  `loglist`qued
-  |=  [log=event-log:rpc [rest=loglist logs=(list [wen=@da wat=event])]]
+  %+  roll  `(list tagged-diff)`qued
+  |=  [log=tagged-diff [rest=(list tagged-diff) logs=(list [wen=@da wat=event])]]
   ::  to ensure logs are processed in sane order,
   ::  stop processing as soon as we skipped one
   ::
   ?^  rest  [[log rest] logs]
   =/  tim=(unit @da)
     %-  ~(get by time)
-    block-number:(need mined.log)
+    number.id.log
   ?~  tim  [[log rest] logs]
   :-  rest
-  =+  ven=(event-log-to-event log)
+  =+  ven=(tagged-diff-to-event log)
   ?~  ven  logs
   [[u.tim u.ven] logs]
+::
+::  +process-tagged-diff: handle new incoming tagged-diff
+::
+++  process-tagged-diff
+  |=  new=tagged-diff  ::  oldest first
+  ^-  (quip card _state)
+  =.  qued  (snoc qued new)
+  ?~  qued  [~ state]
+  =-  %_  request-timestamps
+        qued  (flop rest)  ::  oldest first
+        seen  (weld logs seen)  ::  newest first
+        ::  days  (count-events (flop new))  ::  oldest first
+      ==
+  %+  roll  `(list tagged-diff)`qued
+  |=  [log=tagged-diff [rest=(list tagged-diff) logs=(list [wen=@da wat=event])]]
+  ::  to ensure logs are processed in sane order,
+  ::  stop processing as soon as we skipped one
+  ::
+  ?^  rest  [[log rest] logs]
+  =/  tim=(unit @da)
+    %-  ~(get by time)
+    number.id.log
+  ?~  tim  [[log rest] logs]
+  :-  rest
+  =+  ven=(tagged-diff-to-event log)
+  ?~  ven  logs
+  [[u.tim u.ven] logs]
+::
+++  tagged-diff-to-event
+  |=  tag=tagged-diff
+  ^-  (unit event)
+  ?.  ?=(%point -.diff.tag)  ~
+  =/  who=ship  ship.diff.tag
+  ?:  ?=(%dominion -.+.+.diff.tag)  ~
+  %-  some
+  ^-  event
+  ?-  -.+.+.diff.tag
+    %rift  [%azimuth who %continuity rift.diff.tag]
+    %keys  [%azimuth who %keys life.keys.diff.tag auth.keys.diff.tag]
+    %sponsor  [%azimuth who %sponsor ?~(sponsor.diff.tag %.n %.y) ?~(sponsor.diff.tag ~zod u.sponsor.diff.tag)]
+    %escape  [%azimuth who %escape to.diff.tag]
+    %owner  [%azimuth who %owner address.diff.tag]
+    %spawn-proxy  [%azimuth who %spawn-proxy address.diff.tag]
+    %management-proxy  [%azimuth who %management-proxy address.diff.tag]
+    %voting-proxy  [%azimuth who %voting-proxy address.diff.tag]
+    %transfer-proxy  [%azimuth who %transfer-proxy address.diff.tag]
+  ==
 ::
 ::  +event-log-to-event: turn raw log into gaze noun
 ::

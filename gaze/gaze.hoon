@@ -375,6 +375,9 @@
     %management-proxy  [%azimuth who %management-proxy address.diff.tag]
     %voting-proxy  [%azimuth who %voting-proxy address.diff.tag]
     %transfer-proxy  [%azimuth who %transfer-proxy address.diff.tag]
+    %activated  [%azimuth who %activated who]
+    %spawned  [%azimuth who %spawned who.diff.tag]
+
   ==
 ::
 ::  +event-log-to-event: turn raw log into gaze noun

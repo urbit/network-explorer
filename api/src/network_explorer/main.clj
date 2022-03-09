@@ -323,8 +323,8 @@ attr by amount, treating a missing value as 1."
 (defn update-data [_]
   (let [;; pki-event/id is just line index, historic is the index of the last
         ;; pki event from the previous events.txt file, currently
-        ;; https://gaze-exports.s3.us-east-2.amazonaws.com/events-2021-L1.txt
-        historic   295971
+        ;; https://gaze-exports.s3.us-east-2.amazonaws.com/events-2022-L2.txt
+        historic   323272
         client     (get-client)
         conn       (d/connect client {:db-name "network-explorer-2"})
         db         (d/db conn)

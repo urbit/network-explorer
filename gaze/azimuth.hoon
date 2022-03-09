@@ -442,7 +442,7 @@
     :+  %watch  /[dap.bowl]
     ^-  config:eth-watcher
     :*  url.state  =(%czar (clan:title our.bowl))  refresh  ~h30
-        13.359.829
+        14.339.153
         ~[azimuth.net]
         ~[naive.net]
         (topics whos.state)

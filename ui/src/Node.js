@@ -207,15 +207,28 @@ export function Node(props) {
                 </Row>
               </Row>
               <Row mt={3}>
+                <Text fontSize={0} color='gray' flexBasis='25%' className='fb-50'>
+                  Ownership Address
+                </Text>
+                <Text
+                  fontFamily='Source Code Pro !important'
+                  fontSize={0}
+                  flexBasis='75%'
+                  className='fb-50'
+                  style={{wordBreak:'break-all'}}
+                >
+                  {node['ownership-address']}
+                </Text>
+              </Row>
+              <Row mt={3}>
                 <Text fontSize={0} color='gray' fontWeight={500}>
                   Proxy Addresses
                 </Text>
               </Row>
-
               <Col mt={3}>
                 <Row>
                   <Text fontSize={0} color='gray' flexBasis='25%' className='fb-50'>
-                    Ownership Proxy
+                    Management Proxy
                   </Text>
                   <Text
                     fontFamily='Source Code Pro !important'

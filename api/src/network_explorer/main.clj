@@ -694,15 +694,18 @@ attr by amount, treating a missing value as 1."
      (let [locked (if (= :star node-type) (get-locked-aggregate db) (repeat {}))
            set-keys (running-total :set-networking-keys (run-aggregate-query
                                                          (java.time.LocalDate/parse "2018-11-27")
-                                                         #(d/q set-networking-keys-query-node-type db node-type)))]
+                                                         (fn [] (map (fn [y] [(second y)]) (d/q set-networking-keys-query-node-type db node-type)))
+                                                         ))]
        (concat (map merge
                     set-keys
                     (running-total :spawned (run-aggregate-query
                                              (java.time.LocalDate/parse "2018-11-27")
-                                             #(d/q spawned-query-node-type db node-type)))
+                                             (fn [] (map (fn [y] [(second y)]) (d/q spawned-query-node-type db node-type)))
+                                             ))
                     (running-total :activated (run-aggregate-query
                                                (java.time.LocalDate/parse "2018-11-27")
-                                               #(d/q activated-query-node-type db node-type)))
+                                               (fn [] (map (fn [y] [(second y)]) (d/q activated-query-node-type db node-type)))
+                                               ))
                     locked)
                (when (= :star node-type) (drop (count set-keys) locked)))))))
 

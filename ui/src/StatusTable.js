@@ -126,7 +126,7 @@ export function StatusTable(props) {
           </Td>
           <Td>
             <Text fontSize={0}>
-              {(100 * (last.spawned / (last.unlocked + last.spawned + last.activated + last['set-networking-keys']))).toFixed(2)}
+              {(100 * (last.spawned / ((last.unlocked || 0) + last.spawned + last.activated + last['set-networking-keys']))).toFixed(2)}
             </Text>
           </Td>
           <Td>
@@ -159,7 +159,7 @@ export function StatusTable(props) {
           </Td>
           <Td>
             <Text fontSize={0}>
-              {(100 * (last.activated / (last.unlocked + last.spawned + last.activated + last['set-networking-keys']))).toFixed(2)}
+              {(100 * (last.activated / ((last.unlocked || 0) + last.spawned + last.activated + last['set-networking-keys']))).toFixed(2)}
             </Text>
           </Td>
           <Td>
@@ -192,7 +192,7 @@ export function StatusTable(props) {
           </Td>
           <Td>
             <Text fontSize={0}>
-              {(100 * (last['set-networking-keys'] / (last.unlocked + last.spawned + last.activated + last['set-networking-keys']))).toFixed(2)}
+              {(100 * (last['set-networking-keys'] / ((last.unlocked || 0) + last.spawned + last.activated + last['set-networking-keys']))).toFixed(2)}
             </Text>
           </Td>
           <Td>

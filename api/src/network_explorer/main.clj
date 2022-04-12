@@ -90,7 +90,7 @@
        (mapcat identity)))
 
 (defn get-pki-data []
-  (:body (http/get "https://gaze-exports.s3.us-east-2.amazonaws.com/events.txt"
+  (:body (http/get "https://gaze-exports.s3.us-east-2.amazonaws.com/events2.txt"
                    {:timeout 300000
                     :connect-timeout 300000
                     :http-client {:ssl-context {:insecure? true}}})))

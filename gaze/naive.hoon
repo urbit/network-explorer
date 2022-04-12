@@ -446,12 +446,12 @@
   |=  [=state log=event-log]
   ^-  [effects ^state]
   =*  log-name  i.topics.log
-  ?:  =(log-name activated:log-names)
+  ?:  =(log-name activated:log-names)  ::`state
     ?>  ?=([@ *] t.topics.log)
     =*  ship=@  i.t.topics.log
     :_  state
     [%point ship %activated ~]~
-  ?:  =(log-name spawned:log-names)
+  ?:  =(log-name spawned:log-names)  ::`state
     ?>  ?=([@ *] t.topics.log)
     =*  parent=@  i.t.topics.log
     ?>  ?=([@ ~] t.t.topics.log)
@@ -821,7 +821,9 @@
         address.owner.own           address.owner.own.u.parent-point
         address.transfer-proxy.own  to
       ==
-    `[effects state(points (put:orm points.state ship new-point))]
+    ::
+    =/  new-point-effects  ~[[%point parent %spawned ship] [%point ship %activated ~]]
+    `[(welp effects new-point-effects) state(points (put:orm points.state ship new-point))]
   ::
   ++  process-configure-keys
     |=  [=point crypt=@ auth=@ suite=@ breach=?]

@@ -364,8 +364,6 @@
   %-  some
   ^-  event
   ?-  -.+.+.diff.tag
-    %activated [%azimuth who %activated who.diff.tag]
-    %spawned [%azimuth who %spawned who.diff.tag]
     %rift  [%azimuth who %continuity rift.diff.tag]
     %keys  [%azimuth who %keys life.keys.diff.tag auth.keys.diff.tag]
     %sponsor  [%azimuth who %sponsor ?~(sponsor.diff.tag %.n %.y) ?~(sponsor.diff.tag ~zod u.sponsor.diff.tag)]
@@ -377,7 +375,6 @@
     %transfer-proxy  [%azimuth who %transfer-proxy address.diff.tag]
     %activated  [%azimuth who %activated who]
     %spawned  [%azimuth who %spawned who.diff.tag]
-
   ==
 ::
 ::  +event-log-to-event: turn raw log into gaze noun

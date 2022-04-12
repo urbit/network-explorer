@@ -63,7 +63,7 @@
     %-  %-  slog
         [leaf+"ship: loading azimuth snapshot ({<points>} points)"]~
     ::
-    =:  net.state   %mainnet
+    =:  net.state   %default
         nas.state   nas.snap
         own.state   owners.snap
         spo.state   sponsors.snap
@@ -187,6 +187,22 @@
             spo.state  sponsors.snap
           ==
         `this
+      ::
+         [%batch bl=@]
+         =/  last  (last-block-id:dice logs.state)
+         =+  net=(get-network:dice net.state)
+         :_  this
+         =/  args
+         :+  %watch  /[dap.bowl]
+         ^-  config:eth-watcher
+         :*  url.state  =(%czar (clan:title our.bowl))  refresh  ~h30
+             +(number.last)
+             [~ bl.q.vase]
+             ~[azimuth.net]
+             ~[naive.net]
+             (topics whos.state)
+         ==
+         [%pass /wa %agent [our.bowl %eth-watcher] %poke %eth-watcher-poke !>(args)]~
       ==
     ::
     ?.  ?=(%azimuth-poke mark)
@@ -430,7 +446,8 @@
   %+  murn  effects
   |=  tag=tagged-diff
   ^-  (unit card)
-  ?.  |(?=(%tx +<.tag) ?=(%point +<.tag))  ~
+  ::  ?.  |(?=([%point ship %spawned *] +.tag) ?=([%point ship %activated *] +.tag))  ~
+  ?.  ?=(%point +<.tag)  ~
   %-  some
   ^-  card
   [%give %fact ~[/event] %naive-diffs !>(tag)]
@@ -442,7 +459,10 @@
     :+  %watch  /[dap.bowl]
     ^-  config:eth-watcher
     :*  url.state  =(%czar (clan:title our.bowl))  refresh  ~h30
-        14.339.153
+        ::  14.428.458
+        ::  (max launch.net ?:(=(net.state %default) +(last-snap) 0))
+        +(last-snap)
+        ~
         ~[azimuth.net]
         ~[naive.net]
         (topics whos.state)

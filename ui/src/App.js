@@ -132,24 +132,31 @@ const fetchAggregateEvents = (eventType, stateSetter, since, nodeType) => {
 
 function App() {
 
+  const params = new URLSearchParams(window.location.search);
+
+  const nodeMap = {all: 'All', planet: 'Planets', star: 'Stars', galaxy: 'Galaxies'};
+  const timeRangeMap = {all: 'All', year: 'Year', sixMonths: '6 Months', month: 'Month', week: 'Week'};
+
   const [azimuthEvents, setAzimuthEvents] = useState({loading: true, events: []});
 
   const [aggregateStatus, setAggregateStatus] = useState({loading: true, events: []});
 
   const [transferEvents, setTransferEvents] = useState({loading: true, events: []});
 
-  const [nodesText, setNodesText] = useState('All');
+  const [nodesText, setNodesText] = useState(nodeMap[params.get('nodes')] || 'All');
 
-  const [timeRangeText, setTimeRangeText] = useState('Year');
+  const [timeRangeText, setTimeRangeText] = useState(timeRangeMap[params.get('timeRange')] || 'Year');
 
   const [offset, setOffset] = useState(0);
 
   useEffect(() => {
-    const since = isoStringToDate(timeRangeTextToSince('Year'));
-    const until = isoStringToDate(new Date(new Date().getTime() + ONE_DAY).toISOString());
+    const since = isoStringToDate(timeRangeTextToSince(timeRangeText));
+    const until = (timeRangeText === 'All' && nodesText === 'Stars')
+          ? undefined :
+          isoStringToDate(new Date(new Date().getTime() + ONE_DAY).toISOString());
 
-    fetchPkiEvents(setAzimuthEvents);
-    fetchAggregateStatus(setAggregateStatus, since, until);
+    fetchPkiEvents(setAzimuthEvents, nodesTextToNodeType(nodesText), timeRangeTextToSince(timeRangeText));
+    fetchAggregateStatus(setAggregateStatus, since, until, nodesTextToNodeType(nodesText));
   }, []);
 
   const menuHeader =

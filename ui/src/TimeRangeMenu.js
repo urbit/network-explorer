@@ -13,12 +13,16 @@ export function TimeRangeMenu(props) {
           fetchPkiEvents,
           fetchAggregateEvents,
           timeRangeText,
-          setTimeRangeText} = props;
+          setTimeRangeText,
+          setUrlParam} = props;
 
   const onSelect = timeRange => {
     if (timeRange === timeRangeText) {
       return;
     }
+    const timeRangeMap = {'All': 'all', 'Year': 'year', '6 Months': 'sixMonths', 'Month': 'month', 'Week': 'week'};
+    setUrlParam('timeRange', timeRangeMap[timeRange]);
+
     setTimeRangeText(timeRange);
     fetchPkiEvents(timeRange);
     fetchAggregateEvents(timeRange);

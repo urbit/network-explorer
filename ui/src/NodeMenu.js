@@ -13,12 +13,17 @@ export function NodeMenu(props) {
           fetchPkiEvents,
           fetchAggregateEvents,
           nodesText,
-          setNodesText } = props;
+          setNodesText,
+          setUrlParam} = props;
 
   const onSelect = nodes => {
     if (nodes === nodesText) {
       return;
     }
+
+    const nodeMap = {'All': 'all', 'Planets': 'planet', 'Stars': 'star', 'Galaxies': 'galaxy'};
+    setUrlParam('nodes', nodeMap[nodes]);
+
     setNodesText(nodes);
     fetchPkiEvents(nodes);
     fetchAggregateEvents(nodes);

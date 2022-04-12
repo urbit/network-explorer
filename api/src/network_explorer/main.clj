@@ -587,14 +587,14 @@ attr by amount, treating a missing value as 1."
            [(> ?until ?d)]])
 
 (def activated-query
-  '[:find ?t
+  '[:find ?a ?t
     :in $
     :where [?a :pki-event/type :activate]
            [?a :pki-event/time ?t]])
 
 
 (def activated-query-node-type
-  '[:find ?t
+  '[:find ?p ?t
     :in $ ?node-type
     :where [?e :node/type ?node-type]
            [?p :pki-event/node ?e]
@@ -602,13 +602,13 @@ attr by amount, treating a missing value as 1."
            [?p :pki-event/time ?t]])
 
 (def spawned-query
-  '[:find ?t
+  '[:find ?s ?t
     :in $
     :where [?s :pki-event/type :spawn]
            [?s :pki-event/time ?t]])
 
 (def spawned-query-node-type
-  '[:find ?t
+  '[:find ?p ?t
     :in $ ?node-type
     :where [?e :node/type ?node-type]
            [?p :pki-event/target-node ?e]
@@ -616,14 +616,14 @@ attr by amount, treating a missing value as 1."
            [?p :pki-event/time ?t]])
 
 (def set-networking-keys-query
-  '[:find ?t
+  '[:find ?s ?t
     :in $
     :where [?s :pki-event/revision 1]
            [?s :pki-event/type :change-networking-keys]
            [?s :pki-event/time ?t]])
 
 (def set-networking-keys-query-node-type
-  '[:find ?t
+  '[:find ?s ?t
     :in $ ?node-type
     :where [?s :pki-event/revision 1]
            [?s :pki-event/node ?e]
@@ -677,15 +677,16 @@ attr by amount, treating a missing value as 1."
    (let [conn (d/connect (get-client) {:db-name "network-explorer-2"})
          db   (d/db conn)]
      (map merge
-          (running-total :set-networking-keys (run-aggregate-query
-                                               (java.time.LocalDate/parse "2018-11-27")
-                                               #(d/q set-networking-keys-query db)))
+          (running-total :set-networking-keys
+                         (run-aggregate-query
+                          (java.time.LocalDate/parse "2018-11-27")
+                          (fn [] (map (fn [y] [(second y)]) (d/q set-networking-keys-query db)))))
           (running-total :spawned (run-aggregate-query
                                    (java.time.LocalDate/parse "2018-11-27")
-                                   #(d/q spawned-query db)))
+                                   (fn [] (map (fn [y] [(second y)]) (d/q spawned-query db)))))
           (running-total :activated (run-aggregate-query
                                      (java.time.LocalDate/parse "2018-11-27")
-                                     #(d/q activated-query db)))
+                                     (fn [] (map (fn [y] [(second y)]) (d/q activated-query db)))))
           (get-locked-aggregate db))))
   ([node-type latest-tx]
    (let [conn (d/connect (get-client) {:db-name "network-explorer-2"})

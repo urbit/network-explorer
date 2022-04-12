@@ -97,10 +97,16 @@
 
 
 (defn parse-pki-time [s]
-  (.parse
-   (doto (java.text.SimpleDateFormat. "~yyyy.MM.dd..HH.mm.ss")
-     (.setTimeZone (java.util.TimeZone/getTimeZone "UTC")))
-   s))
+  (try
+    (.parse
+     (doto (java.text.SimpleDateFormat. "~yyyy.MM.dd..HH.mm.ss")
+       (.setTimeZone (java.util.TimeZone/getTimeZone "UTC")))
+     s)
+    (catch Exception e
+      (.parse
+       (doto (java.text.SimpleDateFormat. "~yyyy.MM.dd")
+         (.setTimeZone (java.util.TimeZone/getTimeZone "UTC")))
+       s))))
 
 (defn format-pki-time [inst]
   (-> (java.text.SimpleDateFormat. "yyyy-MM-dd'T'HH:mm:ss.SSSXXX")

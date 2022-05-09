@@ -580,8 +580,9 @@
       ;:  weld
         "date,"
         "point,"
+        "dominion,"
         "event,"
-        "field 1,field2,field3"
+        "field1,field2,field3"
       ==
   |^  ^-  (list @t)
       %+  turn  seen
@@ -599,7 +600,7 @@
   ++  point-diff-to-row
     |=  [who=ship dif=diff-point]
     ^-  tape
-    %+  weld  "{(pon who)},"
+    %+  weld  "{(pon who)},{dominion.dif},"
     ?-  -.dif
       %full               "full,"
       %owner              "owner,{(adr new.dif)}"

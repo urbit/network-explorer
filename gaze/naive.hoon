@@ -134,7 +134,7 @@
       [%tx =raw-tx err=(unit @tas)]
       [%operator owner=address operator=address approved=?]
       [%dns domains=(list @t)]
-      $:  %point  =ship
+      $:  %point  =ship  dominion=?(%l1 %l2)
           $%  [%rift =rift]
               [%keys =keys]
               [%sponsor sponsor=(unit @p)]
@@ -450,14 +450,14 @@
     ?>  ?=([@ *] t.topics.log)
     =*  ship=@  i.t.topics.log
     :_  state
-    [%point ship %activated ~]~
+    [%point ship %l1 %activated ~]~
   ?:  =(log-name spawned:log-names)  ::`state
     ?>  ?=([@ *] t.topics.log)
     =*  parent=@  i.t.topics.log
     ?>  ?=([@ ~] t.t.topics.log)
     =*  ship=@  i.t.t.topics.log
     :_  state
-    [%point parent %spawned ship]~
+    [%point parent %l1 %spawned ship]~
   ?:  =(log-name ownership-transferred:log-names)  `state
   ?:  =(log-name changed-dns:log-names)
     ?>  ?=(~ t.topics.log)
@@ -509,9 +509,9 @@
     ::  but it doesn't change the actual spawn proxy.
     ::
     ?:  =(deposit-address to)
-      :+  ~  [%point ship %dominion %spawn]~
+      :+  ~  [%point ship %l1 %dominion %spawn]~
       point(dominion %spawn)
-    :+  ~  [%point ship %spawn-proxy to]~
+    :+  ~  [%point ship %l1 %spawn-proxy to]~
     point(address.spawn-proxy.own to)
   ::
   ?:  =(log-name escape-accepted:log-names)
@@ -520,7 +520,7 @@
     =/  parent-point  (get-point state parent)
     ?>  ?=(^ parent-point)
     ?:  ?=(%l2 -.u.parent-point)  ~
-    :+  ~  [%point ship %sponsor `parent]~
+    :+  ~  [%point ship %l1 %sponsor `parent]~
     point(escape.net ~, sponsor.net [%& parent])
   ::
   ?:  =(log-name lost-sponsor:log-names)
@@ -538,7 +538,7 @@
     ::  is on L1.
     ::
     ?:  ?=(%l2 -.u.parent-point)  ~
-    :+  ~  [%point ship %sponsor ~]~
+    :+  ~  [%point ship %l1 %sponsor ~]~
     point(has.sponsor.net %|)
   ::
   ::  The rest can be done by any ship on L1, even if their spawn proxy
@@ -551,7 +551,7 @@
     =*  parent=@  i.t.t.topics.log
     =/  parent-point  (get-point state parent)
     ?>  ?=(^ parent-point)
-    :+  ~  [%point ship %escape `parent]~
+    :+  ~  [%point ship %l1 %escape `parent]~
     point(escape.net `parent)
   ::
   ?:  =(log-name escape-canceled:log-names)
@@ -559,13 +559,13 @@
     =*  parent=@  i.t.t.topics.log
     =/  parent-point  (get-point state parent)
     ?>  ?=(^ parent-point)
-    :+  ~  [%point ship %escape ~]~
+    :+  ~  [%point ship %l1 %escape ~]~
     point(escape.net ~)
   ::
   ?:  =(log-name broke-continuity:log-names)
     ?>  ?=(~ t.t.topics.log)
     =*  rift=@  data.log
-    :+  ~  [%point ship %rift rift]~
+    :+  ~  [%point ship %l1 %rift rift]~
     point(rift.net rift)
   ::
   ?:  =(log-name changed-keys:log-names)
@@ -586,27 +586,27 @@
     ::  but it doesn't change who actually owns the ship.
     ::
     ?:  =(deposit-address to)
-      :+  ~  [%point ship %dominion %l2]~
+      :+  ~  [%point ship %l1 %dominion %l2]~
       point(dominion %l2)
-    :+  ~  [%point ship %owner to]~
+    :+  ~  [%point ship %l1 %owner to]~
     point(address.owner.own to)
   ::
   ?:  =(log-name changed-transfer-proxy:log-names)
     ?>  ?=([@ ~] t.t.topics.log)
     =*  to  i.t.t.topics.log
-    :+  ~  [%point ship %transfer-proxy to]~
+    :+  ~  [%point ship %l1 %transfer-proxy to]~
     point(address.transfer-proxy.own to)
   ::
   ?:  =(log-name changed-management-proxy:log-names)
     ?>  ?=([@ ~] t.t.topics.log)
     =*  to  i.t.t.topics.log
-    :+  ~  [%point ship %management-proxy to]~
+    :+  ~  [%point ship %l1 %management-proxy to]~
     point(address.management-proxy.own to)
   ::
   ?:  =(log-name changed-voting-proxy:log-names)
     ?>  ?=([@ ~] t.t.topics.log)
     =*  to  i.t.t.topics.log
-    :+  ~  [%point ship %voting-proxy to]~
+    :+  ~  [%point ship %l1 %voting-proxy to]~
     point(address.voting-proxy.own to)
   ::
   (debug %unknown-log ~)
@@ -742,7 +742,7 @@
     ::  Execute transfer
     ::
     =/  effects-1
-      ~[[%point ship %owner to] [%point ship %transfer-proxy *address]]
+      ~[[%point ship %l2 %owner to] [%point ship %l2 %transfer-proxy *address]]
     =:  address.owner.own.point           to
         address.transfer-proxy.own.point  *address
       ==
@@ -755,18 +755,18 @@
       ?:  =([0 0 0] +.keys.net.point)
         `net.point
       =/  =keys  [+(life.keys.net.point) 0 0 0]
-      :-  [%point ship %keys keys]~
+      :-  [%point ship %l2 %keys keys]~
       [rift.net.point keys sponsor.net.point escape.net.point]
     =^  effects-3  rift.net.point
       ?:  =(0 life.keys.net.point)
         `rift.net.point
-      :-  [%point ship %rift +(rift.net.point)]~
+      :-  [%point ship %l2 %rift +(rift.net.point)]~
       +(rift.net.point)
     =/  effects-4
-      :~  [%point ship %spawn-proxy *address]
-          [%point ship %management-proxy *address]
-          [%point ship %voting-proxy *address]
-          [%point ship %transfer-proxy *address]
+      :~  [%point ship %l2 %spawn-proxy *address]
+          [%point ship %l2 %management-proxy *address]
+          [%point ship %l2 %voting-proxy *address]
+          [%point ship %l2 %transfer-proxy *address]
       ==
     =:  address.spawn-proxy.own.point       *address
         address.management-proxy.own.point  *address
@@ -809,20 +809,20 @@
                   =(to address.spawn-proxy.own.u.parent-point)
               ==
           ==
-        :-  ~[[%point ship %dominion %l2] [%point ship %owner to]]
+        :-  ~[[%point ship %l2 %dominion %l2] [%point ship %l2 %owner to]]
         u.point(address.owner.own to)
       ::  Else spawn to parent and set transfer proxy
       ::
-      :-  :~  [%point ship %dominion %l2]
-              [%point ship %owner address.owner.own.u.parent-point]
-              [%point ship %transfer-proxy to]
+      :-  :~  [%point ship %l2 %dominion %l2]
+              [%point ship %l2 %owner address.owner.own.u.parent-point]
+              [%point ship %l2 %transfer-proxy to]
           ==
       %=  u.point
         address.owner.own           address.owner.own.u.parent-point
         address.transfer-proxy.own  to
       ==
     ::
-    =/  new-point-effects  ~[[%point parent %spawned ship] [%point ship %activated ~]]
+    =/  new-point-effects  ~[[%point parent %l2 %spawned ship] [%point ship %l2 %activated ~]]
     `[(welp effects new-point-effects) state(points (put:orm points.state ship new-point))]
   ::
   ++  process-configure-keys
@@ -835,14 +835,14 @@
     =^  rift-effects  rift.net.point
       ?.  breach
         `rift.net.point
-      [[%point ship %rift +(rift.net.point)]~ +(rift.net.point)]
+      [[%point ship %l2 %rift +(rift.net.point)]~ +(rift.net.point)]
     ::
     =^  keys-effects  keys.net.point
       ?:  =(+.keys.net.point [suite auth crypt])
         `keys.net.point
       =/  =keys
         [+(life.keys.net.point) suite auth crypt]
-      [[%point ship %keys keys]~ keys]
+      [[%point ship %l2 %keys keys]~ keys]
     ::
     `[(welp rift-effects keys-effects) point]
   ::
@@ -855,7 +855,7 @@
     ?.  =(+((ship-rank parent)) (ship-rank ship))
       (debug %bad-rank ~)
     ::
-    :+  ~  [%point ship %escape `parent]~
+    :+  ~  [%point ship %l2 %escape `parent]~
     point(escape.net `parent)
   ::
   ++  process-cancel-escape
@@ -864,7 +864,7 @@
     ?.  |(=(%own proxy.from.tx) =(%manage proxy.from.tx))
       (debug %bad-permission ~)
     ::
-    :+  ~  [%point ship %escape ~]~
+    :+  ~  [%point ship %l2 %escape ~]~
     point(escape.net ~)
   ::
   ++  process-adopt
@@ -874,7 +874,7 @@
       (debug %bad-permission ~)
     ::
     ?.  =(escape.net.point `parent)  (debug %no-adopt ~)
-    :+  ~  [%point ship %sponsor `parent]~
+    :+  ~  [%point ship %l2 %sponsor `parent]~
     point(escape.net ~, sponsor.net [%& parent])
   ::
   ++  process-reject
@@ -884,7 +884,7 @@
       (debug %bad-permission ~)
     ::
     ?.  =(escape.net.point `parent)  (debug %no-reject ~)
-    :+  ~  [%point ship %escape ~]~
+    :+  ~  [%point ship %l2 %escape ~]~
     point(escape.net ~)
   ::
   ++  process-detach
@@ -894,7 +894,7 @@
       (debug %bad-permission ~)
     ::
     ?.  =(who.sponsor.net.point parent)  (debug %no-detach ~)
-    :+  ~  [%point ship %sponsor ~]~
+    :+  ~  [%point ship %l2 %sponsor ~]~
     point(has.sponsor.net %|)
   ::
   ++  process-set-management-proxy
@@ -902,7 +902,7 @@
     ?.  |(=(%own proxy.from.tx) =(%manage proxy.from.tx))
       (debug %bad-permission ~)
     ::
-    :+  ~  [%point ship.from.tx %management-proxy address]~
+    :+  ~  [%point ship.from.tx %l2 %management-proxy address]~
     point(address.management-proxy.own address)
   ::
   ++  process-set-spawn-proxy
@@ -913,7 +913,7 @@
     ?:  (gte (ship-rank ship.from.tx) 2)
       (debug %spawn-proxy-planet ~)
     ::
-    :+  ~  [%point ship.from.tx %spawn-proxy address]~
+    :+  ~  [%point ship.from.tx %l2 %spawn-proxy address]~
     point(address.spawn-proxy.own address)
   ::
   ++  process-set-transfer-proxy
@@ -921,7 +921,7 @@
     ?.  |(=(%own proxy.from.tx) =(%transfer proxy.from.tx))
       (debug %bad-permission ~)
     ::
-    :+  ~  [%point ship.from.tx %transfer-proxy address]~
+    :+  ~  [%point ship.from.tx %l2 %transfer-proxy address]~
     point(address.transfer-proxy.own address)
   --
 --

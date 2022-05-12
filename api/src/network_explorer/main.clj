@@ -232,7 +232,7 @@ attr by amount, treating a missing value as 1."
            [(<= ?since ?t)]])
 
 (def aggregate-query
-  '[:find ?t
+  '[:find ?e ?t
     :in $ ?event-type ?since ?until
     :where [?e :pki-event/type ?event-type]
            [?e :pki-event/time ?t]
@@ -240,7 +240,7 @@ attr by amount, treating a missing value as 1."
            [(>= ?until ?t)]])
 
 (def aggregate-query-node-type
-  '[:find ?t
+  '[:find ?e ?t
     :in $ ?node-type ?event-type ?since ?until
     :where [?e :pki-event/type ?event-type]
            [?e :pki-event/node ?p]
@@ -507,20 +507,22 @@ attr by amount, treating a missing value as 1."
   ([event-type since db]
    (run-aggregate-query
     since
-    #(d/q aggregate-query
-          db
-          event-type
-          (java.util.Date/from (.toInstant (.atStartOfDay since java.time.ZoneOffset/UTC)))
-          (java.util.Date.))))
+    (fn [] (map (fn [y] [(second y)])
+                (d/q aggregate-query
+                     db
+                     event-type
+                     (java.util.Date/from (.toInstant (.atStartOfDay since java.time.ZoneOffset/UTC)))
+                     (java.util.Date.))))))
   ([node-type event-type since db]
    (run-aggregate-query
     since
-    #(d/q aggregate-query-node-type
-          db
-          node-type
-          event-type
-          (java.util.Date/from (.toInstant (.atStartOfDay since java.time.ZoneOffset/UTC)))
-          (java.util.Date.)))))
+    (fn [] (map (fn [y] [(second y)])
+                (d/q aggregate-query-node-type
+                     db
+                     node-type
+                     event-type
+                     (java.util.Date/from (.toInstant (.atStartOfDay since java.time.ZoneOffset/UTC)))
+                     (java.util.Date.)))))))
 
 (defn get-aggregate-pki-events* [query-params db]
   (let [since (java.time.LocalDate/parse (get query-params :since "2018-11-27"))

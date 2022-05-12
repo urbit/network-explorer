@@ -189,14 +189,14 @@
         `this
       ::
          [%batch bl=@]
-         =/  last  (last-block-id:dice logs.state)
+         =/  last  (max number:(last-block-id:dice logs.state) last-snap)
          =+  net=(get-network:dice net.state)
          :_  this
          =/  args
          :+  %watch  /[dap.bowl]
          ^-  config:eth-watcher
          :*  url.state  =(%czar (clan:title our.bowl))  refresh  ~h30
-             +(number.last)
+             +(last)
              [~ bl.q.vase]
              ~[azimuth.net]
              ~[naive.net]
@@ -417,7 +417,7 @@
   |=  tag=tagged-diff
   ^-  (unit [=ship =udiff:point])
   ?.  ?=(%point +<.tag)  ~
-  ?+    +>+<.tag  ~
+  ?+    +>+>-.tag  ~
       %rift     `[ship.tag id.tag %rift rift.tag %.n]
       %sponsor  `[ship.tag id.tag %spon sponsor.tag]
       %keys

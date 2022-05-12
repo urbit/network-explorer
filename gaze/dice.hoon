@@ -113,7 +113,7 @@
   |=  [=diff:naive =ship new=point:naive old=(unit point:naive) =sponsors]
   ^-  (quip update _sponsors)
   ?.  ?=([%point *] diff)  `sponsors
-  =*  event  +>.diff
+  =*  event  +>+.diff
   ?+    -.event  `sponsors
       %owner
     ?^  old
@@ -197,7 +197,7 @@
   |=  [=diff:naive =ship new=point:naive old=(unit point:naive) =owners]
   ^-  (quip update _owners)
   ?.  ?=([%point *] diff)  `owners
-  =*  event  +>.diff
+  =*  event  +>+.diff
   =;  [to=(unit owner) from=(unit owner)]
     =?  owners  &(?=(^ from) !=(address.u.from 0x0))
       (~(del ju owners) u.from ship)
@@ -310,7 +310,7 @@
   |=  [=diff:naive =ship =point:naive old=(unit point:naive)]
   ^-  (list update)
   ?.  ?=([%point *] diff)  ~
-  =*  event  +>.diff
+  =*  event  +>+.diff
   ?+    -.event  ~
     %rift      (proxy-updates +<)
     %keys      (proxy-updates +<)

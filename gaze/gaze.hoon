@@ -26,7 +26,7 @@
     ::
     +$  loglist  loglist:eth-watcher
     +$  event
-      $%  [%azimuth who=ship dif=diff-point]
+      $%  [%azimuth who=ship dominion=?(%l1 %l2) dif=diff-point]
           [%invite by=ship of=ship gift=ship to=address]
       ==
     ::
@@ -236,6 +236,7 @@
       refresh-rate
       timeout-time
       11.565.019
+      ~
       ~[azimuth delegated-sending]:mainnet-contracts
       ~
       ~
@@ -360,52 +361,22 @@
   ^-  (unit event)
   ?.  ?=(%point -.diff.tag)  ~
   =/  who=ship  ship.diff.tag
-  ?:  ?=(%dominion -.+.+.diff.tag)  ~
+  ?:  ?=(%dominion -.+.+.+.diff.tag)  ~
   %-  some
   ^-  event
-  ?-  -.+.+.diff.tag
-    %rift  [%azimuth who %continuity rift.diff.tag]
-    %keys  [%azimuth who %keys life.keys.diff.tag auth.keys.diff.tag]
-    %sponsor  [%azimuth who %sponsor ?~(sponsor.diff.tag %.n %.y) ?~(sponsor.diff.tag ~zod u.sponsor.diff.tag)]
-    %escape  [%azimuth who %escape to.diff.tag]
-    %owner  [%azimuth who %owner address.diff.tag]
-    %spawn-proxy  [%azimuth who %spawn-proxy address.diff.tag]
-    %management-proxy  [%azimuth who %management-proxy address.diff.tag]
-    %voting-proxy  [%azimuth who %voting-proxy address.diff.tag]
-    %transfer-proxy  [%azimuth who %transfer-proxy address.diff.tag]
-    %activated  [%azimuth who %activated who]
-    %spawned  [%azimuth who %spawned who.diff.tag]
+  ?-  -.+.+.+.diff.tag
+    %rift  [%azimuth who dominion.diff.tag %continuity rift.diff.tag]
+    %keys  [%azimuth who dominion.diff.tag %keys life.keys.diff.tag auth.keys.diff.tag]
+    %sponsor  [%azimuth who dominion.diff.tag %sponsor ?~(sponsor.diff.tag %.n %.y) ?~(sponsor.diff.tag ~zod u.sponsor.diff.tag)]
+    %escape  [%azimuth who dominion.diff.tag %escape to.diff.tag]
+    %owner  [%azimuth who dominion.diff.tag %owner address.diff.tag]
+    %spawn-proxy  [%azimuth who dominion.diff.tag %spawn-proxy address.diff.tag]
+    %management-proxy  [%azimuth who dominion.diff.tag %management-proxy address.diff.tag]
+    %voting-proxy  [%azimuth who dominion.diff.tag %voting-proxy address.diff.tag]
+    %transfer-proxy  [%azimuth who dominion.diff.tag %transfer-proxy address.diff.tag]
+    %activated  [%azimuth who dominion.diff.tag %activated who]
+    %spawned  [%azimuth who dominion.diff.tag %spawned who.diff.tag]
   ==
-::
-::  +event-log-to-event: turn raw log into gaze noun
-::
-++  event-log-to-event
-  |=  log=event-log:rpc
-  ^-  (unit event)
-  ?:  =(azimuth:mainnet-contracts address.log)
-    =+  (event-log-to-point-diff log)
-    ?~  -  ~
-    `azimuth+u
-  ?:  =(delegated-sending:mainnet-contracts address.log)
-    ?.  .=  i.topics.log
-        0x4763.8e3c.ddee.2204.81e4.c3f9.183d.639c.
-          0efe.a7f0.5fcd.2df4.1888.5572.9f71.5419
-      ~
-    =/  [of=@ pool=@]
-      ~|  t.topics.log
-      %+  decode-topics:abi:ethereum  t.topics.log
-      ~[%uint %uint]
-    =/  [by=@ gift=@ to=@]
-      ~|  data.log
-      %+  decode-topics:abi:ethereum
-        %+  rash  data.log
-        =-  ;~(pfix (jest '0x') -)
-        %+  stun  [3 3]
-        (bass 16 (stun [64 64] hit))
-      ~[%uint %uint %address]
-    `invite+[by of gift to]
-  ~
-::
 ::  +count-events: add events to the daily stats
 ::
 ++  count-events
@@ -598,9 +569,9 @@
     ==
   ::
   ++  point-diff-to-row
-    |=  [who=ship dif=diff-point]
+    |=  [who=ship dominion=?(%l1 %l2) dif=diff-point]
     ^-  tape
-    %+  weld  "{(pon who)},{dominion.dif},"
+    %+  weld  "{(pon who)},{(dom dominion)},"
     ?-  -.dif
       %full               "full,"
       %owner              "owner,{(adr new.dif)}"
@@ -621,6 +592,7 @@
     "{(pon by)},invite,{(pon of)},{(adr to)}"
   ::
   ++  num  (d-co:co 1)
+  ++  dom  (cury scow %tas)
   ++  pon  (cury scow %p)
   ++  adr  |=(a=@ ['0' 'x' ((x-co:co (mul 2 20)) a)])
   ++  spo  |=(h=? ?:(h "escaped to" "detached from"))

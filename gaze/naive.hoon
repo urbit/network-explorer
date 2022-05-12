@@ -576,7 +576,7 @@
           auth=(cut 8 [2 1] data.log)
           crypt=(cut 8 [3 1] data.log)
       ==
-    :+  ~  [%point ship %keys keys]~
+    :+  ~  [%point ship %l1 %keys keys]~
     point(keys.net keys)
   ::
   ?:  =(log-name owner-changed:log-names)

@@ -622,17 +622,18 @@ attr by amount, treating a missing value as 1."
            [?p :pki-event/time ?t]])
 
 (def set-networking-keys-query
-  '[:find ?s ?t
+  '[:find (distinct ?p) ?t
     :in $
     :where (or (and [?s :pki-event/revision 1]
                     [?s :pki-event/dominion :l1])
                (and [?s :pki-event/revision 2]
                     [?s :pki-event/dominion :l2]))
            [?s :pki-event/type :change-networking-keys]
+           [?s :pki-event/node ?p]
            [?s :pki-event/time ?t]])
 
 (def set-networking-keys-query-node-type
-  '[:find ?s ?t
+  '[:find (distinct ?p) ?t
     :in $ ?node-type
     :where (or (and [?s :pki-event/revision 1]
                     [?s :pki-event/dominion :l1])
@@ -641,6 +642,7 @@ attr by amount, treating a missing value as 1."
            [?s :pki-event/node ?e]
            [?e :node/type ?node-type]
            [?s :pki-event/type :change-networking-keys]
+           [?s :pki-event/node ?p]
            [?s :pki-event/time ?t]])
 
 

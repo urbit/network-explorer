@@ -140,6 +140,7 @@ attr by amount, treating a missing value as 1."
   '[:find (pull ?e [:pki-event/id
                     {:pki-event/node [:node/urbit-id]}
                     {:pki-event/target-node [:node/urbit-id]}
+                    :pki-event/dominion
                     :pki-event/type
                     :pki-event/time
                     :pki-event/address
@@ -428,6 +429,7 @@ attr by amount, treating a missing value as 1."
    (let [selector [:pki-event/id
                    {:pki-event/node [:node/urbit-id]}
                    {:pki-event/target-node [:node/urbit-id]}
+                   :pki-event/dominion
                    :pki-event/type
                    :pki-event/time
                    :pki-event/address
@@ -444,6 +446,7 @@ attr by amount, treating a missing value as 1."
    (let [selector [:pki-event/id
                    {:pki-event/node [:node/urbit-id :node/type]}
                    {:pki-event/target-node [:node/urbit-id]}
+                   :pki-event/dominion
                    :pki-event/type
                    :pki-event/time
                    :pki-event/address

@@ -90,7 +90,7 @@
        (mapcat identity)))
 
 (defn get-pki-data []
-  (:body (http/get "https://gaze-exports.s3.us-east-2.amazonaws.com/events4.txt"
+  (:body (http/get "https://gaze-exports.s3.us-east-2.amazonaws.com/events-l2.txt"
                    {:timeout 300000
                     :connect-timeout 300000
                     :http-client {:ssl-context {:insecure? true}}})))
@@ -264,55 +264,56 @@ attr by amount, treating a missing value as 1."
 (defn pki-line->txs [idx l]
   (let [base {:pki-event/id   idx
               :pki-event/time (parse-pki-time (first l))
-              :pki-event/node {:db/id [:node/urbit-id (second l)]}}]
-    [(case (nth l 2)
+              :pki-event/node {:db/id [:node/urbit-id (second l)]}
+              :pki-event/dominion (case (nth l 2) "l1" :l1 "l2" :l2)}]
+    [(case (nth l 3)
        "keys"         [(merge base {:pki-event/type :change-networking-keys
-                                    :pki-event/revision (Long/valueOf (nth l 3))})
+                                    :pki-event/revision (Long/valueOf (nth l 4))})
                        {:node/urbit-id (second l)
-                        :node/revision (Long/valueOf (nth l 3))}]
+                        :node/revision (Long/valueOf (nth l 4))}]
        "breached"     [(merge base {:pki-event/type :broke-continuity
-                                    :pki-event/continuity (Long/valueOf (nth l 3))})
+                                    :pki-event/continuity (Long/valueOf (nth l 4))})
                        {:node/urbit-id (second l)
-                        :node/continuity (Long/valueOf (nth l 3))}]
+                        :node/continuity (Long/valueOf (nth l 4))}]
        "management-p" [(merge base {:pki-event/type :change-management-proxy
-                                    :pki-event/address (nth l 3)})
+                                    :pki-event/address (nth l 4)})
                        {:node/urbit-id (second l)
-                        :node/management-proxy (nth l 3)}]
+                        :node/management-proxy (nth l 4)}]
        "transfer-p"   [(merge base {:pki-event/type :change-transfer-proxy
-                                    :pki-event/address (nth l 3)})
+                                    :pki-event/address (nth l 4)})
                        {:node/urbit-id (second l)
-                        :node/transfer-proxy (nth l 3)}]
+                        :node/transfer-proxy (nth l 4)}]
        "spawn-p"      [(merge base {:pki-event/type :change-spawn-proxy
-                                    :pki-event/address (nth l 3)})
+                                    :pki-event/address (nth l 4)})
                        {:node/urbit-id (second l)
-                        :node/spawn-proxy (nth l 3)}]
+                        :node/spawn-proxy (nth l 4)}]
        "voting-p"     [(merge base {:pki-event/type :change-voting-proxy
-                                    :pki-event/address (nth l 3)})
+                                    :pki-event/address (nth l 4)})
                        {:node/urbit-id (second l)
-                        :node/voting-proxy (nth l 3)}]
+                        :node/voting-proxy (nth l 4)}]
        "owner"        [(merge base {:pki-event/type :change-ownership
-                                    :pki-event/address (nth l 3)})
+                                    :pki-event/address (nth l 4)})
                        {:node/urbit-id (second l)
-                        :node/ownership-address (nth l 3)}
+                        :node/ownership-address (nth l 4)}
                        `(network-explorer.main/inc-attr [:node/urbit-id ~(second l)] :node/num-owners 1)]
        "activated"    [(merge base {:pki-event/type :activate})]
        "spawned"      [(merge base {:pki-event/type :spawn
-                                    :pki-event/target-node {:db/id [:node/urbit-id (nth l 3)]}})]
+                                    :pki-event/target-node {:db/id [:node/urbit-id (nth l 4)]}})]
        "invite"       [(merge base {:pki-event/type :invite
-                                    :pki-event/target-node {:db/id [:node/urbit-id (nth l 3)]}
-                                    :pki-event/address (nth l 4)})]
-       "sponsor"      (case (nth l 3)
+                                    :pki-event/target-node {:db/id [:node/urbit-id (nth l 4)]}
+                                    :pki-event/address (nth l 5)})]
+       "sponsor"      (case (nth l 4)
                         "escaped to"    [(merge base {:pki-event/type :escaped
-                                                      :pki-event/target-node {:db/id [:node/urbit-id (nth l 4)]}})
+                                                      :pki-event/target-node {:db/id [:node/urbit-id (nth l 5)]}})
                                          {:node/urbit-id (second l)
-                                          :node/sponsor {:db/id [:node/urbit-id (nth l 4)]}}]
+                                          :node/sponsor {:db/id [:node/urbit-id (nth l 5)]}}]
                         "detached from" [(merge base {:pki-event/type :lost-sponsor
-                                                      :pki-event/target-node {:db/id [:node/urbit-id (nth l 4)]}})
-                                         [:db/retract [:node/urbit-id (second l)] :node/sponsor [:node/urbit-id (nth l 4)]]])
-       "escape-req"   (case (nth l 3)
+                                                      :pki-event/target-node {:db/id [:node/urbit-id (nth l 5)]}})
+                                         [:db/retract [:node/urbit-id (second l)] :node/sponsor [:node/urbit-id (nth l 5)]]])
+       "escape-req"   (case (nth l 4)
                         "canceled"   [(merge base {:pki-event/type :escape-canceled})]
                         [(merge base {:pki-event/type :escape-requested
-                                      :pki-event/target-node {:db/id [:node/urbit-id (nth l 3)]}})]))]))
+                                      :pki-event/target-node {:db/id [:node/urbit-id (nth l 4)]}})]))]))
 
 (defn mapcat-indexed [f & colls]
  (apply concat (apply map-indexed f colls)))
@@ -329,8 +330,8 @@ attr by amount, treating a missing value as 1."
 (defn update-data [_]
   (let [;; pki-event/id is just line index, historic is the index of the last
         ;; pki event from the previous events.txt file, currently
-        ;; https://gaze-exports.s3.us-east-2.amazonaws.com/events-2022-L2.txt
-        historic   406598
+        ;; https://gaze-exports.s3.us-east-2.amazonaws.com/events-l2.txt
+        historic   295629
         client     (get-client)
         conn       (d/connect client {:db-name "network-explorer-2"})
         db         (d/db conn)

@@ -108,7 +108,12 @@
    {:db/ident :pki-event/revision
     :db/valueType :db.type/long
     :db/cardinality :db.cardinality/one
-    :db/doc "The revision number of the pki event"}])
+    :db/doc "The revision number of the pki event"}
+
+   {:db/ident :pki-event/dominion
+    :db/valueType :db.type/keyword
+    :db/cardinality :db.cardinality/one
+    :db/doc "The dominion of the pki event, one of :l1 or :l2"}])
 
 (def ping-schema
   [{:db/ident :ping/time

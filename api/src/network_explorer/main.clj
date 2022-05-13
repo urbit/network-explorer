@@ -624,14 +624,20 @@ attr by amount, treating a missing value as 1."
 (def set-networking-keys-query
   '[:find ?s ?t
     :in $
-    :where [?s :pki-event/revision 1]
+    :where (or (and [?s :pki-event/revision 1]
+                    [?s :pki-event/dominion :l1])
+               (and [?s :pki-event/revision 2]
+                    [?s :pki-event/dominion :l2]))
            [?s :pki-event/type :change-networking-keys]
            [?s :pki-event/time ?t]])
 
 (def set-networking-keys-query-node-type
   '[:find ?s ?t
     :in $ ?node-type
-    :where [?s :pki-event/revision 1]
+    :where (or (and [?s :pki-event/revision 1]
+                    [?s :pki-event/dominion :l1])
+               (and [?s :pki-event/revision 2]
+                    [?s :pki-event/dominion :l2]))
            [?s :pki-event/node ?e]
            [?e :node/type ?node-type]
            [?s :pki-event/type :change-networking-keys]
@@ -698,10 +704,11 @@ attr by amount, treating a missing value as 1."
    (let [conn (d/connect (get-client) {:db-name "network-explorer-2"})
          db   (d/db conn)]
      (let [locked (if (= :star node-type) (get-locked-aggregate db) (repeat {}))
-           set-keys (running-total :set-networking-keys (run-aggregate-query
-                                                         (java.time.LocalDate/parse "2018-11-27")
-                                                         (fn [] (map (fn [y] [(second y)]) (d/q set-networking-keys-query-node-type db node-type)))
-                                                         ))]
+           set-keys (running-total
+                     :set-networking-keys
+                     (run-aggregate-query
+                      (java.time.LocalDate/parse "2018-11-27")
+                      (fn [] (map (fn [y] [(second y)]) (d/q set-networking-keys-query-node-type db node-type)))))]
        (concat (map merge
                     set-keys
                     (running-total :spawned (run-aggregate-query

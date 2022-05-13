@@ -37,6 +37,9 @@ export function AzimuthEvents(props) {
                  <Text fontWeight={400} fontSize={0} color='gray'>Data</Text>
                </th>
                <th style={{borderBottom: '1px solid rgba(0, 0, 0, 0.04)'}}>
+                 <Text fontWeight={400} fontSize={0} color='gray'>Layer</Text>
+               </th>
+               <th style={{borderBottom: '1px solid rgba(0, 0, 0, 0.04)'}}>
                  <Text fontWeight={400} fontSize={0} color='gray'>Time</Text>
                </th>
              </Tr>

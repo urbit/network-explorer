@@ -141,7 +141,7 @@ const formatData = data => {
 };
 
 export function AzimuthEvent(props) {
-  const {type, time, node} = props;
+  const {type, time, dominion, node} = props;
 
   let sig = sigil({patp: node['urbit-id'],
                      renderer: reactRenderer,
@@ -173,6 +173,18 @@ export function AzimuthEvent(props) {
       </Td>
       <Td>
         {formatData(props)}
+      </Td>
+      <Td>
+        <Text ml={1}
+              pl={1}
+              pr={1}
+              fontSize={0}
+              color='black'
+              backgroundColor='rgba(0, 0, 0, 0.04)'
+              borderRadius='2px'
+        >
+          {dominion.toUpperCase()}
+        </Text>
       </Td>
       <Td>
         <Text

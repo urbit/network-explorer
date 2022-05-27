@@ -412,6 +412,17 @@ attr by amount, treating a missing value as 1."
        :headers {"Content-Type" "application/json"}
        :body (json/write-str (get-node urbit-id db))})))
 
+(defn get-nodes-by-address [address db]
+  (d/q '[:find (pull ?e [:node/urbit-id :node/point])
+         :in $ ?a
+         :where [?e :node/ownership-address ?a]] db address))
+
+(defn get-nodes-by-address* [query-params db]
+  (let [address (get query-params :address)]
+    {:status 200
+     :headers {"Content-Type" "application/json"}
+     :body (json/write-str (get-nodes-by-address address db))}))
+
 (defn stringify-date [key value]
   (case key
     :pki-event/time (format-pki-time value)
@@ -757,6 +768,7 @@ attr by amount, treating a missing value as 1."
       "/get-pki-events"           (get-pki-events* query-params db)
       "/get-activity"             (get-activity* query-params db)
       "/get-aggregate-status"     (get-aggregate-status* query-params db)
+      "/get-nodes-by-address"     (get-nodes-by-address* query-params db)
       {:status 404})))
 
 (defn deploy-build! []

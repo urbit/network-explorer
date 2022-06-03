@@ -94,11 +94,11 @@
        s))))
 
 (defn radar-data->txs [data]
-  (->> (map (fn [l]
-              (let [[recvd sent point] (str/split l #",")]
-                {:ping/sent (parse-pki-time (str/join ".." (take 2 (str/split sent #"\.\."))))
-                 :ping/received (parse-pki-time (str/join ".." (take 2 (str/split recvd #"\.\."))))
-                 :ping/urbit-id {:db/id [:node/urbit-id point]}})))
+  (->> data
+       (map (fn [l] (let [[recvd sent point] (str/split l #",")]
+                      {:ping/sent (parse-pki-time (str/join ".." (take 2 (str/split sent #"\.\."))))
+                       :ping/received (parse-pki-time (str/join ".." (take 2 (str/split recvd #"\.\."))))
+                       :ping/urbit-id {:db/id [:node/urbit-id point]}})))
        (filter (fn [{:keys [ping/urbit-id]}]
                  (#{:galaxy :star :planet} (ob/clan (second (:db/id urbit-id))))))))
 
@@ -356,7 +356,7 @@ attr by amount, treating a missing value as 1."
         db     (d/db conn)
         pings  (ffirst (d/q '[:find (count ?e) :where [?e :ping/received]] db))
         lines  (drop-last pings (drop 1 (str/split-lines (get-radar-data))))]
-    (d/transact conn {:tx-data (radar-data->txs lines)})))
+    (pr-str (d/transact conn {:tx-data (radar-data->txs lines)}))))
 
 (defn get-all-nodes [limit offset types db]
   (let [query (if (empty? types)

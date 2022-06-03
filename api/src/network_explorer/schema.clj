@@ -116,28 +116,18 @@
     :db/doc "The dominion of the pki event, one of :l1 or :l2"}])
 
 (def ping-schema
-  [{:db/ident :ping/time
+  [{:db/ident :ping/sent
     :db/valueType :db.type/instant
     :db/cardinality :db.cardinality/one
-    :db/doc "UTC midnight timestamp of the date when the ping was received"}
-   {:db/ident :ping/response
+    :db/doc "Timestamp of when the ping was sent"}
+   {:db/ident :ping/received
     :db/valueType :db.type/instant
     :db/cardinality :db.cardinality/one
-    :db/doc "DEPRECATED"}
+    :db/doc "Timestamp of when the ping was received"}
    {:db/ident :ping/urbit-id
     :db/valueType :db.type/ref
     :db/cardinality :db.cardinality/one
-    :db/doc "The urbit-id that was pinged"}
-   {:db/ident :ping/result
-    :db/valueType :db.type/string
-    :db/cardinality :db.cardinality/one
-    :db/doc "The base hash of the pinged ship"}
-   {:db/ident :ping/time+urbit-id
-    :db/valueType :db.type/tuple
-    :db/tupleAttrs [:ping/time :ping/urbit-id]
-    :db/cardinality :db.cardinality/one
-    :db/unique :db.unique/identity
-    :db/doc "Composite of the ping send time and urbit-id for uniqueness constraint"}])
+    :db/doc "The urbit-id that was pinged"}])
 
 (def lsr-schema
   [{:db/ident :lsr/address

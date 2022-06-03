@@ -20,9 +20,10 @@
 
 
 (defn get-radar-data []
-  (-> (http/get "http://165.232.131.25/~radar.json" {:timeout 300000 :connect-timeout 300000})
-      :body
-      json/read-str))
+  (:body (http/get "https://gaze-exports.s3.us-east-2.amazonaws.com/radar.txt"
+                   {:timeout 300000
+                    :connect-timeout 300000
+                    :http-client {:ssl-context {:insecure? true}}})))
 
 (defn transform-radar-time [n]
   (-> (java.time.Instant/ofEpochMilli n)
@@ -72,22 +73,6 @@
                                                             :db/id
                                                             second))])) es)) data)))
 
-(defn radar-data->txs [data]
-  (->> data
-       (map (fn [[k v]]
-              (map (fn [e]
-                     {:ping/result (get e "result")
-                      :ping/time (transform-radar-time (get e "response"))
-                      :ping/urbit-id {:db/id [:node/urbit-id k]}}) v)))
-       (remove empty?)
-       (map (fn [e] (distinct-by :ping/time e)))
-       (filter (fn [e]
-                 (#{:galaxy :star :planet} (ob/clan (-> (first e)
-                                                        :ping/urbit-id
-                                                        :db/id
-                                                        second)))))
-       add-composite-index
-       (mapcat identity)))
 
 (defn get-pki-data []
   (:body (http/get "https://gaze-exports.s3.us-east-2.amazonaws.com/events.txt"
@@ -107,6 +92,15 @@
        (doto (java.text.SimpleDateFormat. "~yyyy.MM.dd")
          (.setTimeZone (java.util.TimeZone/getTimeZone "UTC")))
        s))))
+
+(defn radar-data->txs [data]
+  (->> (map (fn [l]
+              (let [[recvd sent point] (str/split l #",")]
+                {:ping/sent (parse-pki-time (str/join ".." (take 2 (str/split sent #"\.\."))))
+                 :ping/received (parse-pki-time (str/join ".." (take 2 (str/split recvd #"\.\."))))
+                 :ping/urbit-id {:db/id [:node/urbit-id point]}})))
+       (filter (fn [{:keys [ping/urbit-id]}]
+                 (#{:galaxy :star :planet} (ob/clan (second (:db/id urbit-id))))))))
 
 (defn format-pki-time [inst]
   (-> (java.text.SimpleDateFormat. "yyyy-MM-dd'T'HH:mm:ss.SSSXXX")
@@ -356,6 +350,14 @@ attr by amount, treating a missing value as 1."
     #_(d/transact conn {:tx-data (radar-data->txs (get-radar-data))})
     (pr-str (count pki-txs))))
 
+(defn update-radar-data [_]
+  (let [client (get-client)
+        conn   (d/connect client {:db-name "network-explorer-2"})
+        db     (d/db conn)
+        pings  (ffirst (d/q '[:find (count ?e) :where [?e :ping/received]] db))
+        lines  (drop-last pings (drop 1 (str/split-lines (get-radar-data))))]
+    (d/transact conn {:tx-data (radar-data->txs lines)})))
+
 (defn get-all-nodes [limit offset types db]
   (let [query (if (empty? types)
                 all-urbit-ids-query
@@ -489,7 +491,7 @@ attr by amount, treating a missing value as 1."
                                (get-all-pki-events limit offset since db)))
                            :value-fn stringify-date)}))
 
-(defn add-zero-counts [dr query-res]
+(defn add-zero-counts [dr query-res k]
   (loop [d dr
          q query-res
          res []]
@@ -497,26 +499,30 @@ attr by amount, treating a missing value as 1."
       res
       (if (= (first d) (:date (first q)))
         (recur (rest d) (rest q) (conj res (first q)))
-        (recur (rest d) q (conj res {:date (first d) :count 0}))))))
+        (recur (rest d) q (conj res {:date (first d) k 0}))))))
 
-(defn run-aggregate-query [since f]
-  (let [dr (map str (date-range since (.plusDays (java.time.LocalDate/now java.time.ZoneOffset/UTC) 1)))]
-    (add-zero-counts
-     dr
-     (into []
-           (comp (partition-by
-                  (fn [e] (-> (first e)
-                              .toInstant
-                              (.atZone java.time.ZoneOffset/UTC)
-                              .toLocalDate
-                              .toString)))
-                 (map (fn [e] {:date (-> (ffirst e)
-                                         .toInstant
-                                         (.atZone java.time.ZoneOffset/UTC)
-                                         .toLocalDate
-                                         .toString)
-                               :count (count e)})))
-           (sort (f))))))
+(defn run-aggregate-query
+  ([since f]
+   (run-aggregate-query since f :count))
+  ([since f k]
+   (let [dr (map str (date-range since (.plusDays (java.time.LocalDate/now java.time.ZoneOffset/UTC) 1)))]
+     (add-zero-counts
+      dr
+      (into []
+            (comp (partition-by
+                   (fn [e] (-> (first e)
+                               .toInstant
+                               (.atZone java.time.ZoneOffset/UTC)
+                               .toLocalDate
+                               .toString)))
+                  (map (fn [e] {:date (-> (ffirst e)
+                                          .toInstant
+                                          (.atZone java.time.ZoneOffset/UTC)
+                                          .toLocalDate
+                                          .toString)
+                                k (count e)})))
+            (sort (f)))
+      k))))
 
 (defn get-aggregate-pki-events
   ([event-type since db]
@@ -643,6 +649,7 @@ attr by amount, treating a missing value as 1."
            [?s :pki-event/node ?p]
            [?s :pki-event/time ?t]])
 
+
 (def set-networking-keys-query-node-type
   '[:find (distinct ?p) ?t
     :in $ ?node-type
@@ -656,6 +663,17 @@ attr by amount, treating a missing value as 1."
            [?s :pki-event/node ?p]
            [?s :pki-event/time ?t]])
 
+(def online-query
+  '[:find ?e ?t
+    :in $
+    :where [?e :ping/received ?t]])
+
+(def online-query-node-type
+  '[:find ?e ?t
+    :in $ ?node-type
+    :where [?e :ping/received ?t]
+           [?e :ping/urbit-id ?u]
+           [?u :node/type ?node-type]])
 
 (defn running-total [key agg]
   (loop [sum 0
@@ -692,8 +710,8 @@ attr by amount, treating a missing value as 1."
         us (sort (map second datoms))
         dr (map str (date-range (java.time.LocalDate/parse "2018-11-27")
                                 (.plusDays (.toLocalDate (.atZone (.toInstant (last us)) java.time.ZoneOffset/UTC)) 1)))
-        deposits  (add-zero-counts dr (partition-by-date ds))
-        unlocks   (add-zero-counts dr (partition-by-date us))]
+        deposits  (add-zero-counts dr (partition-by-date ds) :count)
+        unlocks   (add-zero-counts dr (partition-by-date us) :count)]
     (running-total :locked
                    (map (fn [d u] {:date (:date d) :count (- (:count d) (:count u))}) deposits unlocks))))
 
@@ -712,6 +730,10 @@ attr by amount, treating a missing value as 1."
           (running-total :activated (run-aggregate-query
                                      (java.time.LocalDate/parse "2018-11-27")
                                      (fn [] (map (fn [y] [(second y)]) (d/q activated-query db)))))
+          (concat (repeat 1284 {})
+                  (run-aggregate-query
+                   (java.time.LocalDate/parse "2022-06-03")
+                   (fn [] (map (fn [y] [(second y)]) (d/q online-query db))) :online))
           (get-locked-aggregate db))))
   ([node-type latest-tx]
    (let [conn (d/connect (get-client) {:db-name "network-explorer-2"})
@@ -732,6 +754,10 @@ attr by amount, treating a missing value as 1."
                                                (java.time.LocalDate/parse "2018-11-27")
                                                (fn [] (map (fn [y] [(second y)]) (d/q activated-query-node-type db node-type)))
                                                ))
+                    (concat (repeat 1284 {})
+                            (run-aggregate-query
+                             (java.time.LocalDate/parse "2022-06-03")
+                             (fn [] (map (fn [y] [(second y)]) (d/q online-query-node-type db node-type))) :online))
                     locked)
                (when (= :star node-type) (drop (count set-keys) locked)))))))
 

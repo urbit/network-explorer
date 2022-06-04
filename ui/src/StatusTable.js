@@ -8,7 +8,7 @@ import { Table,
 
 export function StatusTable(props) {
 
-  const {last, first, nodesText} = props;
+  const {last, secondLast, first, nodesText} = props;
 
   const showUnlockedData = nodesText === 'Stars';
 
@@ -126,7 +126,7 @@ export function StatusTable(props) {
           </Td>
           <Td>
             <Text fontSize={0}>
-              {(100 * (last.spawned / ((last.unlocked || 0) + last.spawned + last.activated + last['set-networking-keys']))).toFixed(2)}
+              {(100 * (last.spawned / ((last.unlocked || 0) + secondLast.online + last.spawned + last.activated + last['set-networking-keys']))).toFixed(2)}
             </Text>
           </Td>
           <Td>
@@ -159,7 +159,7 @@ export function StatusTable(props) {
           </Td>
           <Td>
             <Text fontSize={0}>
-              {(100 * (last.activated / ((last.unlocked || 0) + last.spawned + last.activated + last['set-networking-keys']))).toFixed(2)}
+              {(100 * (last.activated / ((last.unlocked || 0) + secondLast.online + last.spawned + last.activated + last['set-networking-keys']))).toFixed(2)}
             </Text>
           </Td>
           <Td>
@@ -192,7 +192,7 @@ export function StatusTable(props) {
           </Td>
           <Td>
             <Text fontSize={0}>
-              {(100 * (last['set-networking-keys'] / ((last.unlocked || 0) + last.spawned + last.activated + last['set-networking-keys']))).toFixed(2)}
+              {(100 * (last['set-networking-keys'] / ((last.unlocked || 0) + secondLast.online + last.spawned + last.activated + last['set-networking-keys']))).toFixed(2)}
             </Text>
           </Td>
           <Td>
@@ -208,6 +208,39 @@ export function StatusTable(props) {
           <Td>
             <Text fontSize={0}>
               {last['set-networking-keys'] - first['set-networking-keys']}
+            </Text>
+          </Td>
+        </Tr>
+        <Tr>
+          <Td>
+            <svg style={{verticalAlign: 'middle'}}
+                 width='16'
+                 height='16'
+                 viewBox='0 0 16 16'
+                 fill='none'
+                 xmlns='http://www.w3.org/2000/svg'>
+              <circle cx='8' cy='8' r='8' fill='#00B171' />
+            </svg>
+            <Text color='#00B171' fontSize={0} ml={1}>Online</Text>
+          </Td>
+          <Td>
+            <Text fontSize={0}>
+              {(100 * (secondLast.online / ((last.unlocked || 0) + secondLast.online + last.spawned + last.activated + last['set-networking-keys']))).toFixed(2)}
+            </Text>
+          </Td>
+          <Td>
+            <Text fontSize={0}>
+              {secondLast.online}
+            </Text>
+          </Td>
+          <Td>
+            <Text fontSize={0}>
+              {((100 * ((secondLast.online / first.online) - 1)).toFixed(2))}
+            </Text>
+          </Td>
+          <Td>
+            <Text fontSize={0}>
+              {secondLast.online - (first.online || 0)}
             </Text>
           </Td>
         </Tr>

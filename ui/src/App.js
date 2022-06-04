@@ -313,6 +313,7 @@ function App() {
                        <StatusTable
                          first={aggregateStatus.events[0]}
                          last={aggregateStatus.events[aggregateStatus.events.length - 1]}
+                         secondLast={aggregateStatus.events[aggregateStatus.events.length - 2]}
                          nodesText={nodesText}
                        />
                      </>

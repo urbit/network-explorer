@@ -38,6 +38,7 @@ export function StatusChart(props) {
         <Area dot={false} name='Spawned' dataKey='spawned' stroke='#BF421B' fill='#BF421B' />
         <Area dot={false} name='Activated' dataKey='activated' stroke='#DD9C34' fill='#DD9C34' />
         <Area dot={false} name='Set Networking Keys' dataKey='set-networking-keys' stroke='#219DFF' fill='#219DFF'/>
+        <Area dot={false} name='Online' dataKey='online' stroke='#00B171' fill='#00B171'/>
       </AreaChart>
     </ResponsiveContainer >
   );

@@ -731,9 +731,12 @@ attr by amount, treating a missing value as 1."
                                      (java.time.LocalDate/parse "2018-11-27")
                                      (fn [] (map (fn [y] [(second y)]) (d/q activated-query db)))))
           (concat (repeat 1284 {})
-                  (run-aggregate-query
-                   (java.time.LocalDate/parse "2022-06-03")
-                   (fn [] (map (fn [y] [(second y)]) (d/q online-query db))) :online))
+                  (conj
+                   (pop
+                    (run-aggregate-query
+                     (java.time.LocalDate/parse "2022-06-03")
+                     (fn [] (map (fn [y] [(second y)]) (d/q online-query db))) :online))
+                   {}))
           (get-locked-aggregate db))))
   ([node-type latest-tx]
    (let [conn (d/connect (get-client) {:db-name "network-explorer-2"})
@@ -755,9 +758,12 @@ attr by amount, treating a missing value as 1."
                                                (fn [] (map (fn [y] [(second y)]) (d/q activated-query-node-type db node-type)))
                                                ))
                     (concat (repeat 1284 {})
-                            (run-aggregate-query
-                             (java.time.LocalDate/parse "2022-06-03")
-                             (fn [] (map (fn [y] [(second y)]) (d/q online-query-node-type db node-type))) :online))
+                            (conj
+                             (pop
+                              (run-aggregate-query
+                               (java.time.LocalDate/parse "2022-06-03")
+                               (fn [] (map (fn [y] [(second y)]) (d/q online-query-node-type db node-type))) :online))
+                             {}))
                     locked)
                (when (= :star node-type) (drop (count set-keys) locked)))))))
 

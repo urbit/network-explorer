@@ -35,6 +35,10 @@ input:focus {
         height: 100% !important;
     }
 
+    .h-40 {
+        height: 40% !important;
+    }
+
     .ml {
         margin-left: 16px;
     }

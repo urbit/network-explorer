@@ -16,7 +16,7 @@ export function StatusChart(props) {
   const showUnlockedData = nodesText === 'Stars';
 
   return(
-    <ResponsiveContainer height='75%'>
+    <ResponsiveContainer height='75%' className='h-40'>
       <AreaChart
         data={events}>
         <CartesianGrid strokeDasharray='3 3' />

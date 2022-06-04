@@ -93,14 +93,10 @@
          (.setTimeZone (java.util.TimeZone/getTimeZone "UTC")))
        s))))
 
-(defn radar-data->txs [data]
-  (->> data
-       (map (fn [l] (let [[recvd sent point] (str/split l #",")]
-                      {:ping/sent (parse-pki-time (str/join ".." (take 2 (str/split sent #"\.\."))))
-                       :ping/received (parse-pki-time (str/join ".." (take 2 (str/split recvd #"\.\."))))
-                       :ping/urbit-id {:db/id [:node/urbit-id point]}})))
-       (filter (fn [{:keys [ping/urbit-id]}]
-                 (#{:galaxy :star :planet} (ob/clan (second (:db/id urbit-id))))))))
+(defn radar-data->tx [[recvd sent point]]
+  {:ping/sent (parse-pki-time (str/join ".." (take 2 (str/split sent #"\.\."))))
+   :ping/received (parse-pki-time (str/join ".." (take 2 (str/split recvd #"\.\."))))
+   :ping/urbit-id {:db/id [:node/urbit-id point]}})
 
 (defn format-pki-time [inst]
   (-> (java.text.SimpleDateFormat. "yyyy-MM-dd'T'HH:mm:ss.SSSXXX")
@@ -347,7 +343,6 @@ attr by amount, treating a missing value as 1."
       (d/transact conn {:tx-data txs}))
     (doseq [txs pki-txs]
       (d/transact conn {:tx-data txs}))
-    #_(d/transact conn {:tx-data (radar-data->txs (get-radar-data))})
     (pr-str (count pki-txs))))
 
 (defn update-radar-data [_]
@@ -355,8 +350,14 @@ attr by amount, treating a missing value as 1."
         conn   (d/connect client {:db-name "network-explorer-2"})
         db     (d/db conn)
         pings  (ffirst (d/q '[:find (count ?e) :where [?e :ping/received]] db))
-        lines  (drop-last pings (drop 1 (str/split-lines (get-radar-data))))]
-    (pr-str (d/transact conn {:tx-data (radar-data->txs lines)}))))
+        data   (->> (get-radar-data)
+                    str/split-lines
+                    (drop 1)
+                    (map (fn [l] (str/split l #",")))
+                    (filter (fn [[_ _ p]] (#{:galaxy :star :planet} (ob/clan p))))
+                    (drop-last pings)
+                    (map radar-data->tx))]
+    (pr-str (d/transact conn {:tx-data data}))))
 
 (defn get-all-nodes [limit offset types db]
   (let [query (if (empty? types)

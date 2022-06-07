@@ -123,9 +123,9 @@ attr by amount, treating a missing value as 1."
                        urbit-id))]
     [(merge {:node/urbit-id urbit-id
              :node/point   (ob/patp->biginteger urbit-id)
-             :node/type    (ob/clan urbit-id)})
-     (when-not (= :galaxy (ob/clan urbit-id))
-       {:node/sponsor (if s s [:node/urbit-id (ob/sein urbit-id)])})]))
+             :node/type    (ob/clan urbit-id)}
+            (when-not (= :galaxy (ob/clan urbit-id))
+              {:node/sponsor (if s s [:node/urbit-id (ob/sein urbit-id)])}))]))
 
 (def pki-events-query
   '[:find (pull ?e [:pki-event/id

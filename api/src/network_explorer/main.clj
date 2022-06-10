@@ -384,8 +384,8 @@ attr by amount, treating a missing value as 1."
   (let [urbit-ids (if (get query-params :urbit-id)
                     (str/split (get query-params :urbit-id) #",")
                     #{})
-        limit (Integer/parseInt (get query-params :limit "1000"))
-        offset  (Integer/parseInt (get query-params :offset "0"))
+        limit (parse-long (get query-params :limit "1000"))
+        offset  (parse-long (get query-params :offset "0"))
         types (if (get query-params :node-types)
                 (map keyword (str/split (get query-params :node-types) #","))
                 #{})]
@@ -482,8 +482,8 @@ attr by amount, treating a missing value as 1."
         node-type (keyword (get query-params :nodeType))
         since     (.parse (java.text.SimpleDateFormat. "yyyy-MM-dd'T'HH:mm:ss.SSSXXX" )
                           (get query-params :since "1970-01-01T00:00:00.000Z"))
-        limit     (Integer/parseInt (get query-params :limit "1000"))
-        offset    (Integer/parseInt (get query-params :offset "0"))]
+        limit     (parse-long (get query-params :limit "1000"))
+        offset    (parse-long (get query-params :offset "0"))]
     {:status 200
      :headers {"Content-Type" "application/json"}
      :body (json/write-str (if urbit-id
@@ -577,8 +577,8 @@ attr by amount, treating a missing value as 1."
 (defn get-activity* [query-params db]
   (let [urbit-id (get query-params :urbit-id)
         since    (parse-pki-time (get query-params :since "~1970.1.1..00.00.00"))
-        limit    (Integer/parseInt (get query-params :limit "1000"))
-        offset   (Integer/parseInt (get query-params :offset "0"))]
+        limit    (parse-long (get query-params :limit "1000"))
+        offset   (parse-long (get query-params :offset "0"))]
     {:status 200
      :headers {"Content-Type" "application/json"}
      :body (json/write-str (if urbit-id

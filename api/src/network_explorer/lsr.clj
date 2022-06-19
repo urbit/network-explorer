@@ -5,6 +5,9 @@
 
 (def LSR-START 1546990481000)
 
+(def LSR-ADDRESS "0x86cd9cd0992f04231751e3761de45cecea5d1801")
+(def TLON-GNOSIS-SAFE-ADDRESS "0x5eb03d359e6815d6407771ab69e80af5644104b9")
+
 (defn parse-deposit [timestamp s]
   (let [[addr star] (map (partial apply str) (partition 64 s))]
     {:address   (str "0x" (subs addr 24))
@@ -47,14 +50,14 @@
 
 (defn parse-transactions [ts]
   (->> ts
-       (filter (fn [e] (= "0" (get e "isError"))))
        (map parse-transaction)
        (reduce (fn [acc e]
                  (case (:type e)
                    :register (assoc acc (:address e)
                                     (assoc e :stars []
                                            :withdrawn []
-                                           :next-unlock (:windup e)
+                                           :next-unlock (java.util.Date. (+ (.getTime (:windup e))
+                                                                            (* 1000 (:rate-unit e))))
                                            :current-rate 1))
                    :deposit
                    (let [{:keys [amount
@@ -101,26 +104,28 @@
                          (update-in [(:address e) :stars] pop)))
                    acc
                    )) {})
-       vals
+        vals
        (mapcat (fn [e]
                  (map (fn [s] (merge {:lsr/address (:address s)
                                       :lsr/star {:db/id [:node/urbit-id (:star s)]}
-                                      :lsr/deposited-at (:deposited-at s)}
+                                      :lsr/deposited-at (:deposited-at s)
+                                      :lsr/star+deposited-at [{:db/id [:node/urbit-id (:star s)]}
+                                                              (:deposited-at s)]}
                                      (when (:unlocked-at s)
                                        {:lsr/unlocked-at (:unlocked-at s)})
                                      (when (:withdrawn-at s)
                                        {:lsr/withdrawn-at (:withdrawn-at s)})))
                       (concat (:stars e) (:withdrawn e)))))))
 
-(defn get-transactions []
+(defn get-transactions [address]
   (loop [r []
          startblock "0"]
     (let [res (-> (http/get "https://api.etherscan.io/api"
                             {:query-params {:module "account"
                                             :action "txlist"
-                                            :address "0x86cd9cd0992f04231751e3761de45cecea5d1801"
+                                            :address address
                                             :startblock startblock
-                                            :endblock 99999999
+                                            :endblock "latest"
                                             :page 1
                                             :offset 10000
                                             :sort "asc"
@@ -130,7 +135,49 @@
                   (get "result"))
           block (get (last res) "blockNumber")]
       ;; etherscan api rate limit
-      (Thread/sleep 1000)
+      (Thread/sleep 200)
       (if (< (count res) 10000)
         (concat r res)
         (recur (concat r (take-while (fn [e] (not= block (get e "blockNumber"))) res)) block)))))
+
+(defn unpack [{:strs [input from timeStamp]}]
+  (loop [r []
+         idx 2]
+    (if (>= idx (count input))
+      r
+      (let [len (* 2 (Long/parseLong (subs input (+ idx 106) (+ idx 170)) 16))
+            end-idx (+ idx 170 len)]
+        (recur (conj r {"input" (str "0x" (subs input (+ idx 170) end-idx))
+                        "from" from
+                        "timeStamp" timeStamp})
+               end-idx)))))
+
+(defn parse-multisend-tx [{:strs [input from timeStamp]}]
+  (if (not= (subs input 0 10) "0x8d80ff0a")
+    (throw (ex-info "Invalid method id for parse-multisend-tx" {:method-id (subs input 0 10)}))
+    (let [bs-loc (+ 10 (* 2 (Long/parseLong (subs input 10 74) 16)))
+          bs-len (* 2 (Long/parseLong (subs input bs-loc (+ 64 bs-loc)) 16))
+          bs     (str "0x" (subs input (+ 64 bs-loc) (+ bs-len (+ 64 bs-loc))))]
+      (unpack {"input" bs "from" from "timeStamp" timeStamp}))))
+
+(defn parse-gnosis-tx [{:strs [input from timeStamp]}]
+  (if (not= (subs input 0 10) "0x6a761202")
+    (throw (ex-info "Invalid method id for parse-gnosis-tx" {:method-id (subs input 0 10)}))
+    (let [bs-loc (+ 10 (* 2 (Long/parseLong (subs input 138 202) 16)))
+          bs-len (* 2 (Long/parseLong (subs input bs-loc (+ 64 bs-loc)) 16))
+          bs     (str "0x" (subs input (+ 64 bs-loc) (+ bs-len (+ 64 bs-loc))))]
+      (parse-multisend-tx {"input" bs "from" from "timeStamp" timeStamp}))))
+
+(defn get-gnosis-transactions []
+  (->> (get-transactions TLON-GNOSIS-SAFE-ADDRESS)
+       (drop 1) ;; TODO make more robust
+       (mapcat parse-gnosis-tx)))
+
+(defn get-all-transactions []
+  (->> (get-transactions TLON-GNOSIS-SAFE-ADDRESS)
+       (drop 1) ;; TODO make more robust
+       (filter (fn [e] (= "0" (get e "isError"))))
+       (mapcat parse-gnosis-tx)
+       (concat (filter (fn [e] (= "0" (get e "isError")))(get-transactions LSR-ADDRESS)))
+       (sort-by (fn [e] (parse-long (get e "timeStamp"))))))
+

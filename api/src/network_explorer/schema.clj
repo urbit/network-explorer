@@ -150,7 +150,7 @@
     :db/valueType :db.type/instant
     :db/cardinality :db.cardinality/one
     :db/doc "Timestamp of when the star was withdrawn from the lockup contract"}
-   {:db/ident :ping/star+deposited-at
+   {:db/ident :lsr/star+deposited-at
     :db/valueType :db.type/tuple
     :db/tupleAttrs [:lsr/star :lsr/deposited-at]
     :db/cardinality :db.cardinality/one

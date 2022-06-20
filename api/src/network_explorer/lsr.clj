@@ -168,11 +168,6 @@
           bs     (str "0x" (subs input (+ 64 bs-loc) (+ bs-len (+ 64 bs-loc))))]
       (parse-multisend-tx {"input" bs "from" from "timeStamp" timeStamp}))))
 
-(defn get-gnosis-transactions []
-  (->> (get-transactions TLON-GNOSIS-SAFE-ADDRESS)
-       (drop 1) ;; TODO make more robust
-       (mapcat parse-gnosis-tx)))
-
 (defn get-all-transactions []
   (->> (get-transactions TLON-GNOSIS-SAFE-ADDRESS)
        (drop 1) ;; TODO make more robust

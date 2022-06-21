@@ -223,23 +223,149 @@ attr by amount, treating a missing value as 1."
            [?e :ping/time ?t]
            [(<= ?since ?t)]])
 
+
+(def locked-query
+  '[:find ?date-s (count ?l)
+    :keys date count
+    :in $
+    :where [?l :lsr/deposited-at ?d]
+           [?l :lsr/unlocked-at ?u]
+           [(> ?u ?d)]
+           [(ground java.time.ZoneOffset/UTC) ?UTC]
+           [(.toInstant ^Date ?d) ?inst]
+           [(.atZone ^Instant ?inst ?UTC) ?inst-in-zone]
+           [(.toLocalDate ^ZonedDateTime ?inst-in-zone) ?date]
+           [(.toString ^java.time.LocalDate ?date) ?date-s]])
+
+(def unlocked-query
+  '[:find ?date-s (count ?l)
+    :keys date count
+    :in $
+    :where [?l :lsr/deposited-at ?d]
+           [?l :lsr/unlocked-at ?u]
+           [(> ?u ?d)]
+           [(ground java.time.ZoneOffset/UTC) ?UTC]
+           [(.toInstant ^Date ?u) ?inst]
+           [(.atZone ^Instant ?inst ?UTC) ?inst-in-zone]
+           [(.toLocalDate ^ZonedDateTime ?inst-in-zone) ?date]
+           [(.toString ^java.time.LocalDate ?date) ?date-s]])
+
+
 (def aggregate-query
-  '[:find ?e ?t
-    :in $ ?event-type ?since ?until
-    :where [?e :pki-event/type ?event-type]
-           [?e :pki-event/time ?t]
-           [(<= ?since ?t)]
-           [(>= ?until ?t)]])
+  '[:find ?date-s (count ?s)
+    :in $ ?event-type
+    :keys date count
+    :where [?s :pki-event/type ?event-type]
+           [?s :pki-event/time ?t]
+           [(ground java.time.ZoneOffset/UTC) ?UTC]
+           [(.toInstant ^Date ?t) ?inst]
+           [(.atZone ^Instant ?inst ?UTC) ?inst-in-zone]
+           [(.toLocalDate ^ZonedDateTime ?inst-in-zone) ?date]
+           [(.toString ^java.time.LocalDate ?date) ?date-s]])
 
 (def aggregate-query-node-type
-  '[:find ?e ?t
-    :in $ ?node-type ?event-type ?since ?until
-    :where [?e :pki-event/type ?event-type]
-           [?e :pki-event/node ?p]
-           [?p :node/type ?node-type]
-           [?e :pki-event/time ?t]
+  '[:find ?date-s (count ?s)
+    :in $ ?event-type ?node-type
+    :keys date count
+    :where [?e :node/type ?node-type]
+           [?s :pki-event/node ?e]
+           [?s :pki-event/type ?event-type]
+           [?s :pki-event/time ?t]
+           [(ground java.time.ZoneOffset/UTC) ?UTC]
+           [(.toInstant ^Date ?t) ?inst]
+           [(.atZone ^Instant ?inst ?UTC) ?inst-in-zone]
+           [(.toLocalDate ^ZonedDateTime ?inst-in-zone) ?date]
+           [(.toString ^java.time.LocalDate ?date) ?date-s]])
+
+(def aggregate-query-since
+  '[:find ?date-s (count ?s)
+    :in $ ?event-type ?since
+    :keys date count
+    :where [?s :pki-event/type ?event-type]
+           [?s :pki-event/time ?t]
            [(<= ?since ?t)]
-           [(>= ?until ?t)]])
+           [?s :pki-event/node ?e]
+           [(ground java.time.ZoneOffset/UTC) ?UTC]
+           [(.toInstant ^Date ?t) ?inst]
+           [(.atZone ^Instant ?inst ?UTC) ?inst-in-zone]
+           [(.toLocalDate ^ZonedDateTime ?inst-in-zone) ?date]
+           [(.toString ^java.time.LocalDate ?date) ?date-s]])
+
+(def aggregate-query-since-node-type
+  '[:find ?date-s (count ?s)
+    :in $ ?event-type ?since ?node-type
+    :keys date count
+    :where [?s :pki-event/type ?event-type]
+           [?s :pki-event/node ?e]
+           [?e :node/type ?node-type]
+           [?s :pki-event/time ?t]
+           [(<= ?since ?t)]
+           [(ground java.time.ZoneOffset/UTC) ?UTC]
+           [(.toInstant ^Date ?t) ?inst]
+           [(.atZone ^Instant ?inst ?UTC) ?inst-in-zone]
+           [(.toLocalDate ^ZonedDateTime ?inst-in-zone) ?date]
+           [(.toString ^java.time.LocalDate ?date) ?date-s]])
+
+
+(def set-networking-keys-query
+  '[:find ?date-s (count-distinct ?p)
+    :in $
+    :keys date count
+    :where (or (and [?s :pki-event/revision 1]
+                    [?s :pki-event/dominion :l1])
+               (and [?s :pki-event/revision 2]
+                    [?s :pki-event/dominion :l2]))
+           [?s :pki-event/type :change-networking-keys]
+           [?s :pki-event/node ?p]
+           [?s :pki-event/time ?t]
+           [(ground java.time.ZoneOffset/UTC) ?UTC]
+           [(.toInstant ^Date ?t) ?inst]
+           [(.atZone ^Instant ?inst ?UTC) ?inst-in-zone]
+           [(.toLocalDate ^ZonedDateTime ?inst-in-zone) ?date]
+           [(.toString ^java.time.LocalDate ?date) ?date-s]])
+
+(def set-networking-keys-query-node-type
+  '[:find ?date-s (count-distinct ?p)
+    :in $ ?node-type
+    :keys date count
+    :where (or (and [?s :pki-event/revision 1]
+                    [?s :pki-event/dominion :l1])
+               (and [?s :pki-event/revision 2]
+                    [?s :pki-event/dominion :l2]))
+           [?s :pki-event/type :change-networking-keys]
+           [?s :pki-event/node ?p]
+           [?p :node/type ?node-type]
+           [?s :pki-event/time ?t]
+           [(ground java.time.ZoneOffset/UTC) ?UTC]
+           [(.toInstant ^Date ?t) ?inst]
+           [(.atZone ^Instant ?inst ?UTC) ?inst-in-zone]
+           [(.toLocalDate ^ZonedDateTime ?inst-in-zone) ?date]
+           [(.toString ^java.time.LocalDate ?date) ?date-s]])
+
+(def online-query
+  '[:find ?date-s (count ?e)
+    :in $
+    :keys date count
+    :where [?e :ping/received ?t]
+           [(ground java.time.ZoneOffset/UTC) ?UTC]
+           [(.toInstant ^Date ?t) ?inst]
+           [(.atZone ^Instant ?inst ?UTC) ?inst-in-zone]
+           [(.toLocalDate ^ZonedDateTime ?inst-in-zone) ?date]
+           [(.toString ^java.time.LocalDate ?date) ?date-s]])
+
+(def online-query-node-type
+  '[:find ?date-s (count ?e)
+    :in $ ?node-type
+    :keys date count
+    :where [?u :node/type ?node-type]
+           [?e :ping/urbit-id ?u]
+           [?e :ping/received ?t]
+           [(ground java.time.ZoneOffset/UTC) ?UTC]
+           [(.toInstant ^Date ?t) ?inst]
+           [(.atZone ^Instant ?inst ?UTC) ?inst-in-zone]
+           [(.toLocalDate ^ZonedDateTime ?inst-in-zone) ?date]
+           [(.toString ^java.time.LocalDate ?date) ?date-s]])
+
 
 (defn pki-line->nodes [acc l]
   (->> (filter ob/patp? l)
@@ -503,49 +629,19 @@ attr by amount, treating a missing value as 1."
         (recur (rest d) (rest q) (conj res (first q)))
         (recur (rest d) q (conj res {:date (first d) k 0}))))))
 
-(defn run-aggregate-query
-  ([since f]
-   (run-aggregate-query since f :count))
-  ([since f k]
-   (let [dr (map str (date-range since (.plusDays (java.time.LocalDate/now java.time.ZoneOffset/UTC) 1)))]
-     (add-zero-counts
-      dr
-      (into []
-            (comp (partition-by
-                   (fn [e] (-> (first e)
-                               .toInstant
-                               (.atZone java.time.ZoneOffset/UTC)
-                               .toLocalDate
-                               .toString)))
-                  (map (fn [e] {:date (-> (ffirst e)
-                                          .toInstant
-                                          (.atZone java.time.ZoneOffset/UTC)
-                                          .toLocalDate
-                                          .toString)
-                                k (count e)})))
-            (sort (f)))
-      k))))
-
 (defn get-aggregate-pki-events
   ([event-type since db]
-   (run-aggregate-query
-    since
-    (fn [] (map (fn [y] [(second y)])
-                (d/q aggregate-query
-                     db
-                     event-type
-                     (java.util.Date/from (.toInstant (.atStartOfDay since java.time.ZoneOffset/UTC)))
-                     (java.util.Date.))))))
+   (get-aggregate-pki-events nil event-type since db))
   ([node-type event-type since db]
-   (run-aggregate-query
-    since
-    (fn [] (map (fn [y] [(second y)])
-                (d/q aggregate-query-node-type
-                     db
-                     node-type
-                     event-type
-                     (java.util.Date/from (.toInstant (.atStartOfDay since java.time.ZoneOffset/UTC)))
-                     (java.util.Date.)))))))
+   (let [tomorrow (.plusDays (java.time.LocalDate/now java.time.ZoneOffset/UTC) 1)
+         dr       (map str (date-range since tomorrow))
+         date     (java.util.Date/from (.toInstant (.atStartOfDay since java.time.ZoneOffset/UTC)))]
+     (add-zero-counts
+      dr
+      (if node-type
+        (d/q aggregate-query-since-node-type db event-type date node-type)
+        (d/q aggregate-query-since db event-type date))
+      :count))))
 
 (defn get-aggregate-pki-events* [query-params db]
   (let [since (java.time.LocalDate/parse (get query-params :since "2018-11-27"))
@@ -585,97 +681,6 @@ attr by amount, treating a missing value as 1."
                              (get-activity urbit-id since db)
                              (get-all-activity limit offset db))
                            :value-fn stringify-date)}))
-(def unlockable-query
-  '[:find (count ?l) ?until
-    :keys count date
-    :in $ [?until ...]
-    :where [?l :lsr/star ?e]
-           [?l :lsr/unlocked-at ?u]
-           [?l :lsr/deposited-at ?d]
-           [(> ?u ?until)]
-           [(> ?until ?d)]
-           [?l :lsr/withdrawn-at ?w]
-           [(> ?w ?until)]
-           #_(or-join [?l ?until]
-             [(missing? $ ?l :lsr/withdrawn-at)]
-             (and [?l :lsr/withdrawn-at ?w]
-                  [(> ?w ?until)]))])
-
-(def locked-query
-  '[:find (count ?e) ?until
-    :keys locked date
-    :in $ [?until ...]
-    :where [?l :lsr/star ?e]
-           [?l :lsr/unlocked-at ?u]
-           [?l :lsr/deposited-at ?d]
-           [(> ?u ?until)]
-           [(> ?until ?d)]])
-
-(def activated-query
-  '[:find ?a ?t
-    :in $
-    :where [?a :pki-event/type :activate]
-           [?a :pki-event/time ?t]])
-
-
-(def activated-query-node-type
-  '[:find ?p ?t
-    :in $ ?node-type
-    :where [?e :node/type ?node-type]
-           [?p :pki-event/node ?e]
-           [?p :pki-event/type :activate]
-           [?p :pki-event/time ?t]])
-
-(def spawned-query
-  '[:find ?s ?t
-    :in $
-    :where [?s :pki-event/type :spawn]
-           [?s :pki-event/time ?t]])
-
-(def spawned-query-node-type
-  '[:find ?p ?t
-    :in $ ?node-type
-    :where [?e :node/type ?node-type]
-           [?p :pki-event/target-node ?e]
-           [?p :pki-event/type :spawn]
-           [?p :pki-event/time ?t]])
-
-(def set-networking-keys-query
-  '[:find (distinct ?p) ?t
-    :in $
-    :where (or (and [?s :pki-event/revision 1]
-                    [?s :pki-event/dominion :l1])
-               (and [?s :pki-event/revision 2]
-                    [?s :pki-event/dominion :l2]))
-           [?s :pki-event/type :change-networking-keys]
-           [?s :pki-event/node ?p]
-           [?s :pki-event/time ?t]])
-
-
-(def set-networking-keys-query-node-type
-  '[:find (distinct ?p) ?t
-    :in $ ?node-type
-    :where (or (and [?s :pki-event/revision 1]
-                    [?s :pki-event/dominion :l1])
-               (and [?s :pki-event/revision 2]
-                    [?s :pki-event/dominion :l2]))
-           [?s :pki-event/node ?e]
-           [?e :node/type ?node-type]
-           [?s :pki-event/type :change-networking-keys]
-           [?s :pki-event/node ?p]
-           [?s :pki-event/time ?t]])
-
-(def online-query
-  '[:find ?e ?t
-    :in $
-    :where [?e :ping/received ?t]])
-
-(def online-query-node-type
-  '[:find ?e ?t
-    :in $ ?node-type
-    :where [?e :ping/received ?t]
-           [?e :ping/urbit-id ?u]
-           [?u :node/type ?node-type]])
 
 (defn running-total [key agg]
   (loop [sum 0
@@ -687,87 +692,83 @@ attr by amount, treating a missing value as 1."
              (rest in)
              (conj out {:date (:date (first in)) key (+ (:count (first in)) sum)})))))
 
-(defn partition-by-date [datoms]
-  (into []
-        (comp (partition-by
-               (fn [e] (-> e
-                           .toInstant
-                           (.atZone java.time.ZoneOffset/UTC)
-                           .toLocalDate
-                           .toString)))
-              (map (fn [e] {:date (-> (first e)
-                                      .toInstant
-                                      (.atZone java.time.ZoneOffset/UTC)
-                                      .toLocalDate
-                                      .toString)
-                            :count (count e)})))
-        datoms))
 
 (defn get-locked-aggregate [db]
-  (let [datoms (d/q '[:find ?d ?u
-                      :where [?e :lsr/unlocked-at ?u]
-                             [?e :lsr/deposited-at ?d]
-                             [(> ?u ?d)]] db)
-        ds (sort (map first datoms))
-        us (sort (map second datoms))
-        dr (map str (date-range (java.time.LocalDate/parse "2018-11-27")
-                                (.plusDays (.toLocalDate (.atZone (.toInstant (last us)) java.time.ZoneOffset/UTC)) 1)))
-        deposits  (add-zero-counts dr (partition-by-date ds) :count)
-        unlocks   (add-zero-counts dr (partition-by-date us) :count)]
-    (running-total :locked
-                   (map (fn [d u] {:date (:date d) :count (- (:count d) (:count u))}) deposits unlocks))))
+  (let [ds (d/q locked-query db)
+        us (d/q unlocked-query db)
+        dr (map str (date-range
+                     (java.time.LocalDate/parse "2018-11-27")
+                     (.plusDays (java.time.LocalDate/parse (:date (last us))) 1)))
+        deposits  (add-zero-counts dr ds :count)
+        unlocks   (add-zero-counts dr us :count)]
+    (running-total
+     :locked
+     (map (fn [d u] (update u :count (partial - (:count d))))
+          deposits unlocks))))
 
 (defn get-aggregate-status
   ([latest-tx]
-   (let [conn (d/connect (get-client) {:db-name "network-explorer-2"})
-         db   (d/db conn)]
+   (let [conn          (d/connect (get-client) {:db-name "network-explorer-2"})
+         db            (d/db conn)
+         tomorrow      (.plusDays (java.time.LocalDate/now java.time.ZoneOffset/UTC) 1)
+         azimuth-start (map str (date-range (java.time.LocalDate/parse "2018-11-27") tomorrow))
+         online-start  (map str (date-range (java.time.LocalDate/parse "2022-06-03") tomorrow))]
      (map merge
-          (running-total :set-networking-keys
-                         (run-aggregate-query
-                          (java.time.LocalDate/parse "2018-11-27")
-                          (fn [] (map (fn [y] [(second y)]) (d/q set-networking-keys-query db)))))
-          (running-total :spawned (run-aggregate-query
-                                   (java.time.LocalDate/parse "2018-11-27")
-                                   (fn [] (map (fn [y] [(second y)]) (d/q spawned-query db)))))
-          (running-total :activated (run-aggregate-query
-                                     (java.time.LocalDate/parse "2018-11-27")
-                                     (fn [] (map (fn [y] [(second y)]) (d/q activated-query db)))))
+          (running-total
+           :set-networking-keys
+           (add-zero-counts
+            azimuth-start
+            (d/q set-networking-keys-query db)
+            :count))
+          (running-total
+           :spawned
+           (add-zero-counts
+            azimuth-start
+            (d/q aggregate-query db :spawn)
+            :count))
+          (running-total
+           :activated
+           (add-zero-counts
+            azimuth-start
+            (d/q aggregate-query db :activate)
+            :count))
           (concat (repeat 1284 {})
-                  (conj
-                   (pop
-                    (run-aggregate-query
-                     (java.time.LocalDate/parse "2022-06-03")
-                     (fn [] (map (fn [y] [(second y)]) (d/q online-query db))) :online))
-                   {}))
+                  (conj (pop (add-zero-counts online-start (d/q online-query db) :count)) {}))
           (get-locked-aggregate db))))
   ([node-type latest-tx]
-   (let [conn (d/connect (get-client) {:db-name "network-explorer-2"})
-         db   (d/db conn)]
-     (let [locked (if (= :star node-type) (get-locked-aggregate db) (repeat {}))
-           set-keys (running-total
-                     :set-networking-keys
-                     (run-aggregate-query
-                      (java.time.LocalDate/parse "2018-11-27")
-                      (fn [] (map (fn [y] [(second y)]) (d/q set-networking-keys-query-node-type db node-type)))))]
-       (concat (map merge
-                    set-keys
-                    (running-total :spawned (run-aggregate-query
-                                             (java.time.LocalDate/parse "2018-11-27")
-                                             (fn [] (map (fn [y] [(second y)]) (d/q spawned-query-node-type db node-type)))
-                                             ))
-                    (running-total :activated (run-aggregate-query
-                                               (java.time.LocalDate/parse "2018-11-27")
-                                               (fn [] (map (fn [y] [(second y)]) (d/q activated-query-node-type db node-type)))
-                                               ))
-                    (concat (repeat 1284 {})
-                            (conj
-                             (pop
-                              (run-aggregate-query
-                               (java.time.LocalDate/parse "2022-06-03")
-                               (fn [] (map (fn [y] [(second y)]) (d/q online-query-node-type db node-type))) :online))
-                             {}))
-                    locked)
-               (when (= :star node-type) (drop (count set-keys) locked)))))))
+   (let [conn          (d/connect (get-client) {:db-name "network-explorer-2"})
+         db            (d/db conn)
+         tomorrow      (.plusDays (java.time.LocalDate/now java.time.ZoneOffset/UTC) 1)
+         azimuth-start (map str (date-range (java.time.LocalDate/parse "2018-11-27") tomorrow))
+         online-start  (map str (date-range (java.time.LocalDate/parse "2022-06-03") tomorrow))
+         locked        (if (= :star node-type) (get-locked-aggregate db) (repeat {}))
+         set-keys      (running-total
+                        :set-networking-keys
+                        (add-zero-counts
+                         azimuth-start
+                         (d/q set-networking-keys-query-node-type db node-type)
+                         :count))]
+     (concat (map merge
+                  (running-total
+                   :spawned
+                   (add-zero-counts
+                    azimuth-start
+                    (d/q aggregate-query-node-type db :spawn node-type)
+                    :count))
+                  (running-total
+                   :activated
+                   (add-zero-counts
+                    azimuth-start
+                    (d/q aggregate-query-node-type db :activate node-type)
+                    :count))
+                  (concat (repeat 1284 {})
+                          (conj (pop (add-zero-counts
+                                      online-start
+                                      (d/q online-query-node-type db node-type)
+                                      :count))
+                                {}))
+                  locked)
+             (when (= :star node-type) (drop (count set-keys) locked))))))
 
 (def get-aggregate-status-memoized
   (memo/fifo get-aggregate-status :fifo/threshold 4))

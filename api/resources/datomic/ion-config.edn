@@ -1,5 +1,6 @@
 {:allow [network-explorer.main/inc-attr
-         network-explorer.main/add-urbit-id]
+         network-explorer.main/add-urbit-id
+         network-explorer.main/date->day]
  :http-direct {:handler-fn network-explorer.main/app-handler}
  :lambdas {:update-data {:fn network-explorer.main/update-data
                          :description "Updates the PKI data"

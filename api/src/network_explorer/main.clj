@@ -248,7 +248,7 @@ attr by amount, treating a missing value as 1."
     :where [?l :lsr/deposited-at ?d]
            [?l :lsr/unlocked-at ?u]
            [(> ?u ?d)]
-           [(network-explorer.main/date->day ?d) ?date-s]])
+           [(network-explorer.main/date->day ?u) ?date-s]])
 
 (def spawned-query-node-type
   '[:find ?date-s (count ?s)

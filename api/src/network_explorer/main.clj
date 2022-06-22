@@ -322,7 +322,7 @@ attr by amount, treating a missing value as 1."
 
 
 (def set-networking-keys-query
-  '[:find ?date-s (distinct ?p)
+  '[:find ?date-s (count-distinct ?p)
     :in $
     :keys date count
     :where (or (and [?s :pki-event/revision 1]

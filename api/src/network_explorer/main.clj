@@ -232,9 +232,9 @@ attr by amount, treating a missing value as 1."
            [?l :lsr/unlocked-at ?u]
            [(> ?u ?d)]
            [(ground java.time.ZoneOffset/UTC) ?UTC]
-           [(.toInstant ^Date ?d) ?inst]
-           [(.atZone ^Instant ?inst ?UTC) ?inst-in-zone]
-           [(.toLocalDate ^ZonedDateTime ?inst-in-zone) ?date]
+           [(.toInstant ^java.util.Date ?d) ?inst]
+           [(.atZone ^java.time.Instant ?inst ?UTC) ?inst-in-zone]
+           [(.toLocalDate ^java.time.ZonedDateTime ?inst-in-zone) ?date]
            [(.toString ^java.time.LocalDate ?date) ?date-s]])
 
 (def unlocked-query
@@ -245,9 +245,9 @@ attr by amount, treating a missing value as 1."
            [?l :lsr/unlocked-at ?u]
            [(> ?u ?d)]
            [(ground java.time.ZoneOffset/UTC) ?UTC]
-           [(.toInstant ^Date ?u) ?inst]
-           [(.atZone ^Instant ?inst ?UTC) ?inst-in-zone]
-           [(.toLocalDate ^ZonedDateTime ?inst-in-zone) ?date]
+           [(.toInstant ^java.util.Date ?u) ?inst]
+           [(.atZone ^java.time.Instant ?inst ?UTC) ?inst-in-zone]
+           [(.toLocalDate ^java.time.ZonedDateTime ?inst-in-zone) ?date]
            [(.toString ^java.time.LocalDate ?date) ?date-s]])
 
 
@@ -258,9 +258,9 @@ attr by amount, treating a missing value as 1."
     :where [?s :pki-event/type ?event-type]
            [?s :pki-event/time ?t]
            [(ground java.time.ZoneOffset/UTC) ?UTC]
-           [(.toInstant ^Date ?t) ?inst]
-           [(.atZone ^Instant ?inst ?UTC) ?inst-in-zone]
-           [(.toLocalDate ^ZonedDateTime ?inst-in-zone) ?date]
+           [(.toInstant ^java.util.Date ?t) ?inst]
+           [(.atZone ^java.time.Instant ?inst ?UTC) ?inst-in-zone]
+           [(.toLocalDate ^java.time.ZonedDateTime ?inst-in-zone) ?date]
            [(.toString ^java.time.LocalDate ?date) ?date-s]])
 
 (def aggregate-query-node-type
@@ -272,9 +272,9 @@ attr by amount, treating a missing value as 1."
            [?s :pki-event/type ?event-type]
            [?s :pki-event/time ?t]
            [(ground java.time.ZoneOffset/UTC) ?UTC]
-           [(.toInstant ^Date ?t) ?inst]
-           [(.atZone ^Instant ?inst ?UTC) ?inst-in-zone]
-           [(.toLocalDate ^ZonedDateTime ?inst-in-zone) ?date]
+           [(.toInstant ^java.util.Date ?t) ?inst]
+           [(.atZone ^java.time.Instant ?inst ?UTC) ?inst-in-zone]
+           [(.toLocalDate ^java.time.ZonedDateTime ?inst-in-zone) ?date]
            [(.toString ^java.time.LocalDate ?date) ?date-s]])
 
 (def aggregate-query-since
@@ -286,9 +286,9 @@ attr by amount, treating a missing value as 1."
            [(<= ?since ?t)]
            [?s :pki-event/node ?e]
            [(ground java.time.ZoneOffset/UTC) ?UTC]
-           [(.toInstant ^Date ?t) ?inst]
-           [(.atZone ^Instant ?inst ?UTC) ?inst-in-zone]
-           [(.toLocalDate ^ZonedDateTime ?inst-in-zone) ?date]
+           [(.toInstant ^java.util.Date ?t) ?inst]
+           [(.atZone ^java.time.Instant ?inst ?UTC) ?inst-in-zone]
+           [(.toLocalDate ^java.time.ZonedDateTime ?inst-in-zone) ?date]
            [(.toString ^java.time.LocalDate ?date) ?date-s]])
 
 (def aggregate-query-since-node-type
@@ -301,9 +301,9 @@ attr by amount, treating a missing value as 1."
            [?s :pki-event/time ?t]
            [(<= ?since ?t)]
            [(ground java.time.ZoneOffset/UTC) ?UTC]
-           [(.toInstant ^Date ?t) ?inst]
-           [(.atZone ^Instant ?inst ?UTC) ?inst-in-zone]
-           [(.toLocalDate ^ZonedDateTime ?inst-in-zone) ?date]
+           [(.toInstant ^java.util.Date ?t) ?inst]
+           [(.atZone ^java.time.Instant ?inst ?UTC) ?inst-in-zone]
+           [(.toLocalDate ^java.time.ZonedDateTime ?inst-in-zone) ?date]
            [(.toString ^java.time.LocalDate ?date) ?date-s]])
 
 
@@ -319,9 +319,9 @@ attr by amount, treating a missing value as 1."
            [?s :pki-event/node ?p]
            [?s :pki-event/time ?t]
            [(ground java.time.ZoneOffset/UTC) ?UTC]
-           [(.toInstant ^Date ?t) ?inst]
-           [(.atZone ^Instant ?inst ?UTC) ?inst-in-zone]
-           [(.toLocalDate ^ZonedDateTime ?inst-in-zone) ?date]
+           [(.toInstant ^java.util.Date ?t) ?inst]
+           [(.atZone ^java.time.Instant ?inst ?UTC) ?inst-in-zone]
+           [(.toLocalDate ^java.time.ZonedDateTime ?inst-in-zone) ?date]
            [(.toString ^java.time.LocalDate ?date) ?date-s]])
 
 (def set-networking-keys-query-node-type
@@ -337,9 +337,9 @@ attr by amount, treating a missing value as 1."
            [?p :node/type ?node-type]
            [?s :pki-event/time ?t]
            [(ground java.time.ZoneOffset/UTC) ?UTC]
-           [(.toInstant ^Date ?t) ?inst]
-           [(.atZone ^Instant ?inst ?UTC) ?inst-in-zone]
-           [(.toLocalDate ^ZonedDateTime ?inst-in-zone) ?date]
+           [(.toInstant ^java.util.Date ?t) ?inst]
+           [(.atZone ^java.time.Instant ?inst ?UTC) ?inst-in-zone]
+           [(.toLocalDate ^java.time.ZonedDateTime ?inst-in-zone) ?date]
            [(.toString ^java.time.LocalDate ?date) ?date-s]])
 
 (def online-query
@@ -348,9 +348,9 @@ attr by amount, treating a missing value as 1."
     :keys date count
     :where [?e :ping/received ?t]
            [(ground java.time.ZoneOffset/UTC) ?UTC]
-           [(.toInstant ^Date ?t) ?inst]
-           [(.atZone ^Instant ?inst ?UTC) ?inst-in-zone]
-           [(.toLocalDate ^ZonedDateTime ?inst-in-zone) ?date]
+           [(.toInstant ^java.util.Date ?t) ?inst]
+           [(.atZone ^java.time.Instant ?inst ?UTC) ?inst-in-zone]
+           [(.toLocalDate ^java.time.ZonedDateTime ?inst-in-zone) ?date]
            [(.toString ^java.time.LocalDate ?date) ?date-s]])
 
 (def online-query-node-type
@@ -361,9 +361,9 @@ attr by amount, treating a missing value as 1."
            [?e :ping/urbit-id ?u]
            [?e :ping/received ?t]
            [(ground java.time.ZoneOffset/UTC) ?UTC]
-           [(.toInstant ^Date ?t) ?inst]
-           [(.atZone ^Instant ?inst ?UTC) ?inst-in-zone]
-           [(.toLocalDate ^ZonedDateTime ?inst-in-zone) ?date]
+           [(.toInstant ^java.util.Date ?t) ?inst]
+           [(.atZone ^java.time.Instant ?inst ?UTC) ?inst-in-zone]
+           [(.toLocalDate ^java.time.ZonedDateTime ?inst-in-zone) ?date]
            [(.toString ^java.time.LocalDate ?date) ?date-s]])
 
 

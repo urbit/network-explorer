@@ -345,7 +345,7 @@ attr by amount, treating a missing value as 1."
 (def online-query
   '[:find ?date-s (count ?e)
     :in $
-    :keys date count
+    :keys date online
     :where [?e :ping/received ?t]
            [(ground java.time.ZoneOffset/UTC) ?UTC]
            [(.toInstant ^java.util.Date ?t) ?inst]
@@ -356,7 +356,7 @@ attr by amount, treating a missing value as 1."
 (def online-query-node-type
   '[:find ?date-s (count ?e)
     :in $ ?node-type
-    :keys date count
+    :keys date online
     :where [?u :node/type ?node-type]
            [?e :ping/urbit-id ?u]
            [?e :ping/received ?t]
@@ -733,7 +733,7 @@ attr by amount, treating a missing value as 1."
             (d/q aggregate-query db :activate)
             :count))
           (concat (repeat 1284 {})
-                  (conj (pop (add-zero-counts online-start (d/q online-query db) :count)) {}))
+                  (conj (pop (add-zero-counts online-start (d/q online-query db) :online)) {}))
           (get-locked-aggregate db))))
   ([node-type latest-tx]
    (let [conn          (d/connect (get-client) {:db-name "network-explorer-2"})
@@ -765,7 +765,7 @@ attr by amount, treating a missing value as 1."
                           (conj (pop (add-zero-counts
                                       online-start
                                       (d/q online-query-node-type db node-type)
-                                      :count))
+                                      :online))
                                 {}))
                   locked)
              (when (= :star node-type) (drop (count set-keys) locked))))))

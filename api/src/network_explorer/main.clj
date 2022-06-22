@@ -250,6 +250,20 @@ attr by amount, treating a missing value as 1."
            [(.toLocalDate ^java.time.ZonedDateTime ?inst-in-zone) ?date]
            [(.toString ^java.time.LocalDate ?date) ?date-s]])
 
+(def spawned-query-node-type
+  '[:find ?date-s (count ?s)
+    :in $ ?node-type
+    :keys date count
+    :where [?e :node/type ?node-type]
+           [?s :pki-event/target-node ?e]
+           [?s :pki-event/type :spawn]
+           [?s :pki-event/time ?t]
+           [(ground java.time.ZoneOffset/UTC) ?UTC]
+           [(.toInstant ^java.util.Date ?t) ?inst]
+           [(.atZone ^java.time.Instant ?inst ?UTC) ?inst-in-zone]
+           [(.toLocalDate ^java.time.ZonedDateTime ?inst-in-zone) ?date]
+           [(.toString ^java.time.LocalDate ?date) ?date-s]])
+
 
 (def aggregate-query
   '[:find ?date-s (count ?s)
@@ -308,7 +322,7 @@ attr by amount, treating a missing value as 1."
 
 
 (def set-networking-keys-query
-  '[:find ?date-s (count-distinct ?p)
+  '[:find ?date-s (distinct ?p)
     :in $
     :keys date count
     :where (or (and [?s :pki-event/revision 1]
@@ -753,7 +767,7 @@ attr by amount, treating a missing value as 1."
                    :spawned
                    (add-zero-counts
                     azimuth-start
-                    (d/q aggregate-query-node-type db :spawn node-type)
+                    (d/q spawned-query-node-type db node-type)
                     :count))
                   (running-total
                    :activated
@@ -761,6 +775,7 @@ attr by amount, treating a missing value as 1."
                     azimuth-start
                     (d/q aggregate-query-node-type db :activate node-type)
                     :count))
+                  set-keys
                   (concat (repeat 1284 {})
                           (conj (pop (add-zero-counts
                                       online-start

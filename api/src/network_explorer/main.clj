@@ -329,14 +329,15 @@ attr by amount, treating a missing value as 1."
            [(network-explorer.main/date->day ?t) ?date-s]])
 
 (def online-query
-  '[:find ?date-s (count ?e)
+  '[:find ?date-s (count-distinct ?u)
     :in $
     :keys date online
     :where [?e :ping/received ?t]
+           [?e :ping/urbit-id ?u]
            [(network-explorer.main/date->day ?t) ?date-s]])
 
 (def online-query-node-type
-  '[:find ?date-s (count ?e)
+  '[:find ?date-s (count-distinct ?u)
     :in $ ?node-type
     :keys date online
     :where [?u :node/type ?node-type]

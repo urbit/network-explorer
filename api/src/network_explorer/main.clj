@@ -452,10 +452,11 @@ attr by amount, treating a missing value as 1."
     (pr-str (count pki-txs))))
 
 (defn update-radar-data [_]
-  (let [client (get-client)
+  (let [historic 133874
+        client (get-client)
         conn   (d/connect client {:db-name "network-explorer-2"})
         db     (d/db conn)
-        pings  (ffirst (d/q '[:find (count ?e) :where [?e :ping/received]] db))
+        pings  (- (ffirst (d/q '[:find (count ?e) :where [?e :ping/received]] db)) historic)
         data   (->> (get-radar-data)
                     str/split-lines
                     (drop 1)

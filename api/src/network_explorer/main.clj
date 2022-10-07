@@ -452,7 +452,7 @@ attr by amount, treating a missing value as 1."
     (pr-str (count pki-txs))))
 
 (defn update-radar-data [_]
-  (let [historic 190145
+  (let [historic 358607
         client (get-client)
         conn   (d/connect client {:db-name "network-explorer-2"})
         db     (d/db conn)

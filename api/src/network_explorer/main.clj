@@ -722,6 +722,13 @@ attr by amount, treating a missing value as 1."
          azimuth-start (map str (date-range (java.time.LocalDate/parse "2018-11-27") tomorrow))
          online-start  (map str (date-range (java.time.LocalDate/parse "2022-06-03") tomorrow))
          locked        (if (= :star node-type) (get-locked-aggregate db) (repeat {}))
+         spawned       (if (= :galaxy node-type) (repeat {:spawned 256})
+                           (running-total
+                            :spawned
+                            (add-zero-counts
+                             azimuth-start
+                             (d/q spawned-query-node-type db node-type)
+                             :count)))
          set-keys      (running-total
                         :set-networking-keys
                         (add-zero-counts
@@ -729,12 +736,7 @@ attr by amount, treating a missing value as 1."
                          (d/q set-networking-keys-query-node-type db node-type)
                          :count))]
      (concat (map merge
-                  (running-total
-                   :spawned
-                   (add-zero-counts
-                    azimuth-start
-                    (d/q spawned-query-node-type db node-type)
-                    :count))
+                  spawned
                   (running-total
                    :activated
                    (add-zero-counts

@@ -6,11 +6,13 @@ import { Table,
          Icon,
          Text } from '@tlon/indigo-react';
 
+const display = n => isNaN(n) ? 'N/A' : n;
+
 export function StatusTable(props) {
 
   const {last, secondLast, first, nodesText} = props;
 
-  const showUnlockedData = nodesText === 'Stars';
+  const showLockedData = nodesText === 'Stars';
 
   return (
     <Table ml={3} mt={2} border='0' width='100%' flex='1'>
@@ -78,40 +80,6 @@ export function StatusTable(props) {
         </Tr>
       </thead>
       <tbody>
-        { showUnlockedData &&
-          <Tr>
-            <Td>
-              <svg style={{verticalAlign: 'middle'}}
-                   width='16'
-                   height='16'
-                   viewBox='0 0 16 16'
-                   fill='none'
-                   xmlns='http://www.w3.org/2000/svg'>
-                <circle cx='8' cy='8' r='8' fill='#2C2C57' />
-              </svg>
-              <Text color='#2C2C57' fontSize={0} ml={1}>Unlocked</Text>
-            </Td>
-            <Td>
-              <Text fontSize={0}>
-                {(100 * (last.unlocked / (last.unlocked + last.spawned + last.activated + last['set-networking-keys']))).toFixed(2)}
-              </Text>
-            </Td>
-            <Td>
-              <Text fontSize={0}>
-                {last.unlocked}
-              </Text>
-            </Td>
-            <Td>
-              <Text fontSize={0}>
-                {((100 * ((last.unlocked / first.unlocked) - 1)).toFixed(2))}
-              </Text>
-            </Td>
-            <Td>
-              <Text fontSize={0}>
-                {last.unlocked - first.unlocked}
-              </Text>
-            </Td>
-          </Tr>}
         <Tr>
           <Td>
             <svg style={{verticalAlign: 'middle'}}
@@ -126,22 +94,22 @@ export function StatusTable(props) {
           </Td>
           <Td>
             <Text fontSize={0}>
-              {(100 * (last.spawned / ((last.unlocked || 0) + secondLast.online + last.spawned + last.activated + last['set-networking-keys']))).toFixed(2)}
+              {'100.00'}
             </Text>
           </Td>
           <Td>
             <Text fontSize={0}>
-              {last.spawned}
+              {display(last.spawned)}
             </Text>
           </Td>
           <Td>
             <Text fontSize={0}>
-              {((100 * ((last.spawned / first.spawned) - 1)).toFixed(2))}
+              {display((100 * ((last.spawned / first.spawned) - 1)).toFixed(2))}
             </Text>
           </Td>
           <Td>
             <Text fontSize={0}>
-              {last.spawned - first.spawned}
+              {display(last.spawned - first.spawned)}
             </Text>
           </Td>
         </Tr>
@@ -159,25 +127,59 @@ export function StatusTable(props) {
           </Td>
           <Td>
             <Text fontSize={0}>
-              {(100 * (last.activated / ((last.unlocked || 0) + secondLast.online + last.spawned + last.activated + last['set-networking-keys']))).toFixed(2)}
+              {display((100 * (last.activated / last.spawned)).toFixed(2))}
             </Text>
           </Td>
           <Td>
             <Text fontSize={0}>
-              {last.activated}
+              {display(last.activated)}
             </Text>
           </Td>
           <Td>
             <Text fontSize={0}>
-              {((100 * ((last.activated / first.activated) - 1)).toFixed(2))}
+              {display((100 * ((last.activated / first.activated) - 1)).toFixed(2))}
             </Text>
           </Td>
           <Td>
             <Text fontSize={0}>
-              {last.activated - first.activated}
+              {display(last.activated - first.activated)}
             </Text>
           </Td>
         </Tr>
+        { showLockedData &&
+          <Tr>
+            <Td>
+              <svg style={{verticalAlign: 'middle'}}
+                   width='16'
+                   height='16'
+                   viewBox='0 0 16 16'
+                   fill='none'
+                   xmlns='http://www.w3.org/2000/svg'>
+                <circle cx='8' cy='8' r='8' fill='#2C2C57' />
+              </svg>
+              <Text color='#2C2C57' fontSize={0} ml={1}>Locked</Text>
+            </Td>
+            <Td>
+              <Text fontSize={0}>
+                N/A
+              </Text>
+            </Td>
+            <Td>
+              <Text fontSize={0}>
+                {display(last.locked)}
+              </Text>
+            </Td>
+            <Td>
+              <Text fontSize={0}>
+                {display((100 * ((last.locked / first.locked) - 1)).toFixed(2))}
+              </Text>
+            </Td>
+            <Td>
+              <Text fontSize={0}>
+                {display(last.locked - first.locked)}
+              </Text>
+            </Td>
+          </Tr>}
         <Tr>
           <Td>
             <svg style={{verticalAlign: 'middle'}}
@@ -192,22 +194,22 @@ export function StatusTable(props) {
           </Td>
           <Td>
             <Text fontSize={0}>
-              {(100 * (last['set-networking-keys'] / ((last.unlocked || 0) + secondLast.online + last.spawned + last.activated + last['set-networking-keys']))).toFixed(2)}
+              {display((100 * (last['set-networking-keys'] / last.spawned)).toFixed(2))}
             </Text>
           </Td>
           <Td>
             <Text fontSize={0}>
-              {last['set-networking-keys']}
+              {display(last['set-networking-keys'])}
             </Text>
           </Td>
           <Td>
             <Text fontSize={0}>
-              {((100 * ((last['set-networking-keys'] / first['set-networking-keys']) - 1)).toFixed(2))}
+              {display((100 * ((last['set-networking-keys'] / first['set-networking-keys']) - 1)).toFixed(2))}
             </Text>
           </Td>
           <Td>
             <Text fontSize={0}>
-              {last['set-networking-keys'] - first['set-networking-keys']}
+              {display(last['set-networking-keys'] - first['set-networking-keys'])}
             </Text>
           </Td>
         </Tr>
@@ -225,22 +227,22 @@ export function StatusTable(props) {
           </Td>
           <Td>
             <Text fontSize={0}>
-              {(100 * (secondLast.online / ((last.unlocked || 0) + secondLast.online + last.spawned + last.activated + last['set-networking-keys']))).toFixed(2)}
+              {display((100 * (secondLast.online / last.spawned)).toFixed(2))}
             </Text>
           </Td>
           <Td>
             <Text fontSize={0}>
-              {secondLast.online}
+              {display(secondLast.online)}
             </Text>
           </Td>
           <Td>
             <Text fontSize={0}>
-              {((100 * ((secondLast.online / first.online) - 1)).toFixed(2))}
+              {display((100 * ((secondLast.online / first.online) - 1)).toFixed(2))}
             </Text>
           </Td>
           <Td>
             <Text fontSize={0}>
-              {secondLast.online - (first.online || 0)}
+              {display(secondLast.online - (first.online || 0))}
             </Text>
           </Td>
         </Tr>

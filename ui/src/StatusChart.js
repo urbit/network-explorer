@@ -13,7 +13,7 @@ export function StatusChart(props) {
 
   const { events, timeRangeText, nodesText } = props;
 
-  const showUnlockedData = nodesText === 'Stars';
+  const showLockedData = nodesText === 'Stars';
 
   return(
     <ResponsiveContainer height='75%' className='h-40'>
@@ -33,8 +33,8 @@ export function StatusChart(props) {
         />
         <YAxis type='number' hide={true} domain={[0, 30000]} />
         <Tooltip />
-        {showUnlockedData &&
-          <Area dot={false} name='Unlocked' dataKey='unlocked' stroke='#2C2C57' fill='#2C2C57' />}
+        {showLockedData &&
+          <Area dot={false} name='Locked' dataKey='locked' stroke='#2C2C57' fill='#2C2C57' />}
         <Area dot={false} name='Spawned' dataKey='spawned' stroke='#BF421B' fill='#BF421B' />
         <Area dot={false} name='Activated' dataKey='activated' stroke='#DD9C34' fill='#DD9C34' />
         <Area dot={false} name='Set Networking Keys' dataKey='set-networking-keys' stroke='#219DFF' fill='#219DFF'/>

@@ -35,24 +35,6 @@
 (defn date-range [since until]
   (seq (.collect (.datesUntil since until) (java.util.stream.Collectors/toList))))
 
-(defn distinct-by
-  "Returns a stateful transducer that removes elements by calling f on each step as a uniqueness key.
-   Returns a lazy sequence when provided with a collection."
-  ([f]
-   (fn [rf]
-     (let [seen (volatile! #{})]
-       (fn
-         ([] (rf))
-         ([result] (rf result))
-         ([result input]
-          (let [v (f input)]
-            (if (contains? @seen v)
-              result
-              (do (vswap! seen conj v)
-                  (rf result input)))))))))
-  ([f xs]
-   (sequence (distinct-by f) xs)))
-
 (defn add-composite-index
   "Only required because lookup refs do not work when transacting an entity with
   a tuple index that contains a :db.type/ref."

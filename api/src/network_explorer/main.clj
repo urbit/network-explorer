@@ -789,13 +789,6 @@ attr by amount, treating a missing value as 1."
       "/get-nodes-by-address"     (get-nodes-by-address* query-params db)
       {:status 404})))
 
-(defn deploy-build! []
-  (let [rev (-> (clojure.java.shell/sh "git" "rev-parse" "HEAD")
-                :out
-                str/trim-newline)]
-    (ion/push {:rev rev})
-    (ion/deploy {:group "datomic-storage"
-                 :rev rev})))
 (def app-handler
   (-> root-handler
       kwparams/wrap-keyword-params

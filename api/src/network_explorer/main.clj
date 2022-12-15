@@ -698,13 +698,13 @@ attr by amount, treating a missing value as 1."
         nodes      (reduce pki-line->nodes #{} lines)
         no-sponsor (map node->node-tx-no-sponsor nodes)
         node-txs   (map node->node-tx nodes)
-        pki-txs    (vec (mapcat pki-line->txs
-                                (range (inc newest-id) (+ (inc newest-id) (count lines)))
-                                lines))]
+        pki-txs    (mapcat pki-line->txs
+                           (range (inc newest-id) (+ (inc newest-id) (count lines)))
+                           lines)]
     (d/transact conn {:tx-data no-sponsor})
     (doseq [txs (partition 30000 30000 nil node-txs)]
       (d/transact conn {:tx-data txs}))
-    (doseq [txs (pop pki-txs)]
+    (doseq [txs (drop-last 1 pki-txs)]
       (d/transact conn {:tx-data txs}))
     (when-not (empty? pki-txs)
       (refresh-aggregate-cache (:db-after (d/transact conn {:tx-data (last pki-txs)}))))

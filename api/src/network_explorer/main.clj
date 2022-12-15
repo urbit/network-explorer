@@ -677,8 +677,7 @@ attr by amount, treating a missing value as 1."
 
 (defn refresh-aggregate-cache [db]
   (let [latest-tx  (ffirst (d/q '[:find (max 1 ?tx)
-                                  :where (or [_ :pki-event/time ?tx]
-                                             [_ :ping/received ?tx])]
+                                  :where [_ :pki-event/time ?tx]]
                                 db))]
     (get-aggregate-status-memoized latest-tx)
     (get-aggregate-status-memoized :galaxy latest-tx)
@@ -727,8 +726,10 @@ attr by amount, treating a missing value as 1."
                     (map (fn [l] (str/split l #",")))
                     (filter (fn [[_ _ p]] (#{:galaxy :star :planet} (ob/clan p))))
                     (drop-last pings)
-                    (map radar-data->tx))]
-    (refresh-aggregate-cache (:db-after (d/transact conn {:tx-data data})))
+                    (map radar-data->tx))
+        tx     (d/transact conn {:tx-data data})]
+    (memo/memo-clear! get-aggregate-status-memoized)
+    (refresh-aggregate-cache (:db-after tx))
     (pr-str (count data))))
 
 
@@ -736,10 +737,7 @@ attr by amount, treating a missing value as 1."
   (let [node-type (keyword (get query-params :nodeType))
         since     (java.time.LocalDate/parse (get query-params :since "2018-11-27"))
         until     (java.time.LocalDate/parse (get query-params :until "3000-01-01"))
-        latest-tx (ffirst (d/q '[:find  (max 1 ?tx)
-                                 :where (or [_ :pki-event/time ?tx]
-                                            [_ :ping/received ?tx])]
-                               db))]
+        latest-tx (ffirst (d/q '[:find (max 1 ?tx) :where [_ :pki-event/time ?tx]] db))]
     {:status 200
      :headers {"Content-Type" "application/json"}
      :body (json/write-str

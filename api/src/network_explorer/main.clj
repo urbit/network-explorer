@@ -35,27 +35,6 @@
 (defn date-range [since until]
   (seq (.collect (.datesUntil since until) (java.util.stream.Collectors/toList))))
 
-(defn add-composite-index
-  "Only required because lookup refs do not work when transacting an entity with
-  a tuple index that contains a :db.type/ref."
-  [data]
-  (let [client (get-client)
-        conn   (d/connect client {:db-name "network-explorer"})
-        db     (d/db conn)
-        urbit-ids (map (comp second :db/id :ping/urbit-id first) data)
-        urbit-id->eid (into {} (d/q '[:find ?u ?e
-                                      :in $ [?u ...]
-                                      :where [?e :node/urbit-id ?u]] db urbit-ids))]
-
-    (map (fn [es]
-           (map (fn [e]
-                  (assoc e :ping/time+urbit-id
-                         [(:ping/time e) (urbit-id->eid (-> e
-                                                            :ping/urbit-id
-                                                            :db/id
-                                                            second))])) es)) data)))
-
-
 (defn get-pki-data []
   (:body (http/get "https://gaze-exports.s3.us-east-2.amazonaws.com/events.txt"
                    {:timeout 300000

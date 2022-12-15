@@ -385,48 +385,6 @@ attr by amount, treating a missing value as 1."
         pki-txs  (mapcat-indexed pki-line->txs lines)]
     [node-txs pki-txs]))
 
-(defn update-data [_]
-  (let [;; pki-event/id is just line index, historic is the index of the last
-        ;; pki event from the previous events.txt file, currently
-        ;; https://gaze-exports.s3.us-east-2.amazonaws.com/events-l2.txt
-        historic   450141
-        client     (get-client)
-        conn       (d/connect client {:db-name "network-explorer-2"})
-        db         (d/db conn)
-        newest-id  (or (ffirst (d/q '[:find (max ?id) :where [_ :pki-event/id ?id]] db)) -1)
-        lines      (->> (str/split-lines (get-pki-data))
-                        (map (fn [l] (str/split l #",")))
-                        (drop 1)
-                        reverse
-                        (drop (- (inc newest-id) (inc historic))))
-        nodes      (reduce pki-line->nodes #{} lines)
-        no-sponsor (map node->node-tx-no-sponsor nodes)
-        node-txs   (map node->node-tx nodes)
-        pki-txs    (mapcat pki-line->txs
-                           (range (inc newest-id) (+ (inc newest-id) (count lines)))
-                           lines)]
-    (d/transact conn {:tx-data no-sponsor})
-    (doseq [txs (partition 30000 30000 nil node-txs)]
-      (d/transact conn {:tx-data txs}))
-    (doseq [txs pki-txs]
-      (d/transact conn {:tx-data txs}))
-    (pr-str (count pki-txs))))
-
-(defn update-radar-data [_]
-  (let [historic 358607
-        client (get-client)
-        conn   (d/connect client {:db-name "network-explorer-2"})
-        db     (d/db conn)
-        pings  (- (ffirst (d/q '[:find (count ?e) :where [?e :ping/received]] db)) historic)
-        data   (->> (get-radar-data)
-                    str/split-lines
-                    (drop 1)
-                    (map (fn [l] (str/split l #",")))
-                    (filter (fn [[_ _ p]] (#{:galaxy :star :planet} (ob/clan p))))
-                    (drop-last pings)
-                    (map radar-data->tx))]
-    (pr-str (d/transact conn {:tx-data data}))))
-
 (defn get-all-nodes [limit offset types db]
   (let [query (if (empty? types)
                 all-urbit-ids-query
@@ -716,6 +674,59 @@ attr by amount, treating a missing value as 1."
 
 (def get-aggregate-status-memoized
   (memo/fifo get-aggregate-status :fifo/threshold 4))
+
+(defn refresh-aggregate-cache [db]
+  (let [latest-tx (ffirst (d/q '[:find (max 1 ?tx) :where [_ :pki-event/time ?tx]] db))]
+    (get-aggregate-status-memoized latest-tx)
+    (get-aggregate-status-memoized :galaxy latest-tx)
+    (get-aggregate-status-memoized :star latest-tx)
+    (get-aggregate-status-memoized :planet latest-tx)))
+
+(defn update-data [_]
+  (let [;; pki-event/id is just line index, historic is the index of the last
+        ;; pki event from the previous events.txt file, currently
+        ;; https://gaze-exports.s3.us-east-2.amazonaws.com/events-l2.txt
+        historic   450141
+        client     (get-client)
+        conn       (d/connect client {:db-name "network-explorer-2"})
+        db         (d/db conn)
+        newest-id  (or (ffirst (d/q '[:find (max ?id) :where [_ :pki-event/id ?id]] db)) -1)
+        lines      (->> (str/split-lines (get-pki-data))
+                        (map (fn [l] (str/split l #",")))
+                        (drop 1)
+                        reverse
+                        (drop (- (inc newest-id) (inc historic))))
+        nodes      (reduce pki-line->nodes #{} lines)
+        no-sponsor (map node->node-tx-no-sponsor nodes)
+        node-txs   (map node->node-tx nodes)
+        pki-txs    (vec (mapcat pki-line->txs
+                                (range (inc newest-id) (+ (inc newest-id) (count lines)))
+                                lines))]
+    (d/transact conn {:tx-data no-sponsor})
+    (doseq [txs (partition 30000 30000 nil node-txs)]
+      (d/transact conn {:tx-data txs}))
+    (doseq [txs (pop pki-txs)]
+      (d/transact conn {:tx-data txs}))
+    (when-not (empty? pki-txs)
+      (refresh-aggregate-cache (:db-after (d/transact conn {:tx-data (last pki-txs)}))))
+    (pr-str (count pki-txs))))
+
+(defn update-radar-data [_]
+  (let [historic 358607
+        client (get-client)
+        conn   (d/connect client {:db-name "network-explorer-2"})
+        db     (d/db conn)
+        pings  (- (ffirst (d/q '[:find (count ?e) :where [?e :ping/received]] db)) historic)
+        data   (->> (get-radar-data)
+                    str/split-lines
+                    (drop 1)
+                    (map (fn [l] (str/split l #",")))
+                    (filter (fn [[_ _ p]] (#{:galaxy :star :planet} (ob/clan p))))
+                    (drop-last pings)
+                    (map radar-data->tx))]
+    (refresh-aggregate-cache (:db-after (d/transact conn {:tx-data data})))
+    (pr-str (count data))))
+
 
 (defn get-aggregate-status* [query-params db]
   (let [node-type (keyword (get query-params :nodeType))

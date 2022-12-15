@@ -676,10 +676,15 @@ attr by amount, treating a missing value as 1."
   (memo/fifo get-aggregate-status :fifo/threshold 4))
 
 (defn refresh-aggregate-cache [db]
-  (get-aggregate-status-memoized db)
-  (get-aggregate-status-memoized :galaxy db)
-  (get-aggregate-status-memoized :star db)
-  (get-aggregate-status-memoized :planet db))
+  (let [latest-tx  (ffirst (d/q '[:find (max 1 ?tx)
+                                  :where [_ :pki-event/time ?tx]
+                                  [_ :ping/received ?tx]]
+                                db))]
+    (get-aggregate-status-memoized latest-tx)
+    (get-aggregate-status-memoized :galaxy latest-tx)
+    (get-aggregate-status-memoized :star latest-tx)
+    (get-aggregate-status-memoized :planet latest-tx)))
+
 
 (defn update-data [_]
   (let [;; pki-event/id is just line index, historic is the index of the last
@@ -730,7 +735,8 @@ attr by amount, treating a missing value as 1."
 (defn get-aggregate-status* [query-params db]
   (let [node-type (keyword (get query-params :nodeType))
         since     (java.time.LocalDate/parse (get query-params :since "2018-11-27"))
-        until     (java.time.LocalDate/parse (get query-params :until "3000-01-01"))]
+        until     (java.time.LocalDate/parse (get query-params :until "3000-01-01"))
+        latest-tx (ffirst (d/q '[:find (max 1 ?tx) :where [_ :pki-event/time ?tx]] db))]
     {:status 200
      :headers {"Content-Type" "application/json"}
      :body (json/write-str
@@ -739,8 +745,8 @@ attr by amount, treating a missing value as 1."
              (drop-while
               (fn [e] (.isBefore (java.time.LocalDate/parse (:date e)) since))
               (if node-type
-                (get-aggregate-status-memoized node-type db)
-                (get-aggregate-status-memoized db))))
+                (get-aggregate-status-memoized node-type latest-tx)
+                (get-aggregate-status-memoized latest-tx))))
             :value-fn stringify-date)}))
 
 (defn root-handler [req]

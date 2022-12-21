@@ -54,11 +54,13 @@
          (.setTimeZone (java.util.TimeZone/getTimeZone "UTC")))
        s))))
 
-(defn radar-data->tx [[recvd sent point kids]]
-  {:ping/sent (parse-pki-time (str/join ".." (take 2 (str/split sent #"\.\."))))
-   :ping/received (parse-pki-time (str/join ".." (take 2 (str/split recvd #"\.\."))))
-   :ping/kids kids
-   :ping/urbit-id {:db/id [:node/urbit-id point]}})
+(defn radar-data->txs [[recvd sent point kids]]
+  [{:node/urbit-id point
+    :node/kids-hash kids}
+   {:ping/sent (parse-pki-time (str/join ".." (take 2 (str/split sent #"\.\."))))
+    :ping/received (parse-pki-time (str/join ".." (take 2 (str/split recvd #"\.\."))))
+    :ping/kids kids
+    :ping/urbit-id {:db/id [:node/urbit-id point]}}])
 
 (defn format-pki-time [inst]
   (-> (java.text.SimpleDateFormat. "yyyy-MM-dd'T'HH:mm:ss.SSSXXX")
@@ -727,7 +729,7 @@ attr by amount, treating a missing value as 1."
                     (map (fn [l] (str/split l #",")))
                     (filter (fn [[_ _ p _]] (#{:galaxy :star :planet} (ob/clan p))))
                     (drop-last pings)
-                    (map radar-data->tx))
+                    (mapcat radar-data->tx))
         tx     (d/transact conn {:tx-data data})]
     (memo/memo-clear! get-aggregate-status-memoized)
     (refresh-aggregate-cache (:db-after tx))

@@ -66,7 +66,11 @@
     :db/valueType :db.type/string
     :db/cardinality :db.cardinality/one
     :db/doc "The voting proxy address of the node"}
-   ])
+
+   {:db/ident :node/kids-hash
+    :db/valueType :db.type/string
+    :db/cardinality :db.cardinality/one
+    :db/doc "The has of the kids desk of the node"}])
 
 (def pki-event-schema
   [{:db/ident :pki-event/id

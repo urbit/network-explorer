@@ -127,7 +127,11 @@
    {:db/ident :ping/urbit-id
     :db/valueType :db.type/ref
     :db/cardinality :db.cardinality/one
-    :db/doc "The urbit-id that was pinged"}])
+    :db/doc "The urbit-id that was pinged"}
+   {:db/ident :ping/kids
+    :db/valueType :db.type/string
+    :db/cardinality :db.cardinality/one
+    :db/doc "The has of the kids desk of the ship that was pinged"}])
 
 (def lsr-schema
   [{:db/ident :lsr/address

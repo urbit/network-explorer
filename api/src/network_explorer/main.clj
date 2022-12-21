@@ -728,12 +728,9 @@ attr by amount, treating a missing value as 1."
                     (filter (fn [[_ _ p _]] (#{:galaxy :star :planet} (ob/clan p))))
                     (drop-last pings)
                     (map radar-data->tx))
-        ;; tx     (d/transact conn {:tx-data data})
-        ]
-    (doseq [txs (partition 30000 30000 nil data)]
-      (d/transact conn {:tx-data txs}))
-    ;; (memo/memo-clear! get-aggregate-status-memoized)
-    ;; (refresh-aggregate-cache (:db-after tx))
+        tx     (d/transact conn {:tx-data data})]
+    (memo/memo-clear! get-aggregate-status-memoized)
+    (refresh-aggregate-cache (:db-after tx))
     (pr-str (count data))))
 
 

@@ -27,8 +27,8 @@
 ::
 =>  |%
     ++  deeded-ships
-      |=  bowl:gall
-      .^((set @p) %j /(scot %p our)/ships-with-deeds/(scot %da now))
+      |=  =bowl:gall
+      .^((set @p) %j /(scot %p our.bowl)/ships-with-deeds/(scot %da now.bowl))
     ::
     ++  request-kids-cz
       |=  [who=ship case=?([%ud @] [%da @da])]

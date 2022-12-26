@@ -53,7 +53,7 @@
             "kids"
           ==
       ^-  (list @t)
-      %+  turn  (skim logs |=(=log (gth recv.log ~2022.10.5)))
+      %+  turn  logs
       |=  =log
       (crip "{(scow %da recv.log)},{(scow %da sent.log)},{(scow %p who.log)},{(scow %uv kids.log)}")
     ::

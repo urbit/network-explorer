@@ -31,7 +31,7 @@ export function StatusChart(props) {
             return (new Date(e)).toLocaleString('default', {month: 'short'});
           }}
         />
-        <YAxis type='number' hide={true} domain={[0, 30000]} />
+        <YAxis type='number' hide={true}  />
         <Tooltip />
         {showLockedData &&
           <Area dot={false} name='Locked' dataKey='locked' stroke='#2C2C57' fill='#2C2C57' />}

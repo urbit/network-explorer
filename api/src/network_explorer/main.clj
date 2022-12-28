@@ -127,6 +127,7 @@ attr by amount, treating a missing value as 1."
                     [:node/transfer-proxy :default nil]
                     [:node/voting-proxy :default nil]
                     [:node/spawn-proxy :default nil]
+                    [:node/kids-hash :default nil]
                     {:node/sponsor [:node/urbit-id]}
                     {[:node/_sponsor :as :node/kids :default []] [:node/urbit-id]}])
     :in $ [?type ...]
@@ -144,6 +145,7 @@ attr by amount, treating a missing value as 1."
                     [:node/transfer-proxy :default nil]
                     [:node/voting-proxy :default nil]
                     [:node/spawn-proxy :default nil]
+                    [:node/kids-hash :default nil]
                     {:node/sponsor [:node/urbit-id {:node/sponsor [:node/urbit-id]}]}
                     {[:node/_sponsor :as :node/kids :default []] [:node/urbit-id]}])
     :where [?e :node/urbit-id]])
@@ -729,10 +731,12 @@ attr by amount, treating a missing value as 1."
                     (map (fn [l] (str/split l #",")))
                     (filter (fn [[_ _ p _]] (#{:galaxy :star :planet} (ob/clan p))))
                     (drop-last pings)
-                    (mapcat radar-data->tx))
-        tx     (d/transact conn {:tx-data data})]
+                    (mapcat radar-data->txs)
+                    reverse)]
+    (doseq [tx (drop-last 1 data)]
+      (d/transact conn {:tx-data [tx]}))
     (memo/memo-clear! get-aggregate-status-memoized)
-    (refresh-aggregate-cache (:db-after tx))
+    (refresh-aggregate-cache (:db-after (d/transact conn {:tx-data [(last data)]})))
     (pr-str (count data))))
 
 

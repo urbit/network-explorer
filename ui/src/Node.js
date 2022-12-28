@@ -59,6 +59,7 @@ export function Node(props) {
      'spawn-proxy': 'Not Set',
      'voting-proxy': 'Not Set',
      'loading': true,
+     'kids-hash': '0v0'
     }
   );
 
@@ -220,6 +221,22 @@ export function Node(props) {
                   {node['ownership-address']}
                 </Text>
               </Row>
+              {node['kids-hash'] !== '0v0' &&
+               <Row mt={3}>
+                 <Text fontSize={0} color='gray' flexBasis='25%' className='fb-50'>
+                   Kids desk hash
+                 </Text>
+                 <Text
+                   fontFamily='Source Code Pro !important'
+                   fontSize={0}
+                   flexBasis='75%'
+                   className='fb-50'
+                   style={{wordBreak:'break-all'}}
+                 >
+                   {node['kids-hash']}
+                 </Text>
+               </Row>
+              }
               <Row mt={3}>
                 <Text fontSize={0} color='gray' fontWeight={500}>
                   Proxy Addresses
@@ -285,40 +302,6 @@ export function Node(props) {
                  </Row>
                 }
               </Col>
-              {/* <Row mt={3}> */}
-              {/*   <Col flexBasis='25%' className='fb-50'> */}
-              {/*     <Text fontSize={0} color='gray'> */}
-              {/*       Ownership Proxy */}
-              {/*     </Text> */}
-              {/*     <Text fontSize={0} color='gray' mt={3}> */}
-              {/*       Spawn Proxy */}
-              {/*     </Text> */}
-              {/*     <Text fontSize={0} color='gray' mt={3}> */}
-              {/*       Transfer Proxy */}
-              {/*     </Text> */}
-              {/*     {clan(point) === 'galaxy' && */}
-              {/*      <Text fontSize={0} color='gray' mt={3}> */}
-              {/*        Voting Proxy */}
-              {/*      </Text> */}
-              {/*     } */}
-              {/*   </Col> */}
-              {/*   <Col flexBasis='25%' className='fb-50'> */}
-              {/*     <Text fontFamily='Source Code Pro !important' fontSize={0}> */}
-              {/*       {node['management-proxy']} */}
-              {/*     </Text> */}
-              {/*     <Text fontFamily='Source Code Pro !important' fontSize={0} mt={3}> */}
-              {/*       {node['spawn-proxy']} */}
-              {/*     </Text> */}
-              {/*     <Text fontFamily='Source Code Pro !important' fontSize={0} mt={3}> */}
-              {/*       {node['transfer-proxy']} */}
-              {/*     </Text> */}
-              {/*     {clan(point) === 'galaxy' && */}
-              {/*      <Text fontFamily='Source Code Pro !important' fontSize={0} mt={3}> */}
-              {/*        {node['voting-proxy']} */}
-              {/*      </Text> */}
-              {/*     } */}
-              {/*   </Col> */}
-              {/* </Row> */}
             </Box>
           </Box>
         </Box>

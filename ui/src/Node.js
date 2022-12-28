@@ -36,7 +36,8 @@ const defaultNodeData = point => {
     'transfer-proxy': 'Not Set',
     'management-proxy': 'Not Set',
     'spawn-proxy': 'Not Set',
-    'voting-proxy': 'Not Set'
+    'voting-proxy': 'Not Set',
+    'kids-hash': '0v0'
   };
 };
 
@@ -59,7 +60,6 @@ export function Node(props) {
      'spawn-proxy': 'Not Set',
      'voting-proxy': 'Not Set',
      'loading': true,
-     'kids-hash': '0v0'
     }
   );
 
@@ -224,7 +224,7 @@ export function Node(props) {
               {node['kids-hash'] !== '0v0' &&
                <Row mt={3}>
                  <Text fontSize={0} color='gray' flexBasis='25%' className='fb-50'>
-                   Kids desk hash
+                   Kids Desk Hash
                  </Text>
                  <Text
                    fontFamily='Source Code Pro !important'

@@ -27,8 +27,8 @@
 ::
 =>  |%
     ++  deeded-ships
-      |=  bowl:gall
-      .^((set @p) %j /(scot %p our)/ships-with-deeds/(scot %da now))
+      |=  =bowl:gall
+      .^((set @p) %j /(scot %p our.bowl)/ships-with-deeds/(scot %da now.bowl))
     ::
     ++  request-kids-cz
       |=  [who=ship case=?([%ud @] [%da @da])]
@@ -53,7 +53,7 @@
             "kids"
           ==
       ^-  (list @t)
-      %+  turn  (skim logs |=(=log (gth recv.log ~2022.10.5)))
+      %+  turn  logs
       |=  =log
       (crip "{(scow %da recv.log)},{(scow %da sent.log)},{(scow %p who.log)},{(scow %uv kids.log)}")
     ::

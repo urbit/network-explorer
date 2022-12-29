@@ -668,6 +668,24 @@ attr by amount, treating a missing value as 1."
                   locked)
              (when (= :star node-type) (drop (count set-keys) locked))))))
 
+(defn get-kids-hashes []
+  (let [conn (d/connect (get-client) {:db-name "network-explorer-2"})
+        db   (d/db conn)
+        ds   (d/q '[:find ?e ?h ?r
+                    :where [?p :ping/kids ?h]
+                           [?p :ping/urbit-id ?e]
+                           [?p :ping/received ?r]] db)]
+    (->>  ds
+          (sort-by last)
+          (partition-by (comp date->day last))
+          (map (fn [e] (assoc (frequencies
+                               (map (comp second last)
+                                    (vals (group-by first e))))
+                              :date (date->day (last (first e)))))))))
+
+(def get-kids-hashes-memoized
+  (memo/fifo get-kids-hashes :fifo/threshold 1))
+
 (def get-aggregate-status-memoized
   (memo/fifo get-aggregate-status :fifo/threshold 4))
 
@@ -678,7 +696,8 @@ attr by amount, treating a missing value as 1."
     (get-aggregate-status-memoized latest-tx)
     (get-aggregate-status-memoized :galaxy latest-tx)
     (get-aggregate-status-memoized :star latest-tx)
-    (get-aggregate-status-memoized :planet latest-tx)))
+    (get-aggregate-status-memoized :planet latest-tx)
+    (get-kids-hashes-memoized)))
 
 
 (defn update-data [_]
@@ -727,8 +746,10 @@ attr by amount, treating a missing value as 1."
     (doseq [tx (drop-last 1 data)]
       (d/transact conn {:tx-data [tx]}))
     (memo/memo-clear! get-aggregate-status-memoized)
+    (memo/memo-clear! get-kids-hashes-memoized)
     (refresh-aggregate-cache (:db-after (d/transact conn {:tx-data [(last data)]})))
     (pr-str (count data))))
+
 
 
 (defn get-aggregate-status* [query-params db]
@@ -748,6 +769,18 @@ attr by amount, treating a missing value as 1."
                 (get-aggregate-status-memoized latest-tx))))
             :value-fn stringify-date)}))
 
+(defn get-kids-hashes* [query-params db]
+  (let [since  (java.time.LocalDate/parse (get query-params :since "2018-11-27"))
+        until  (java.time.LocalDate/parse (get query-params :until "3000-01-01"))]
+    {:status 200
+     :headers {"Content-Type" "application/json"}
+     :body (json/write-str
+            (take-while
+             (fn [e] (.isBefore (java.time.LocalDate/parse (:date e)) until))
+             (drop-while
+              (fn [e] (.isBefore (java.time.LocalDate/parse (:date e)) since))
+              (get-kids-hashes-memoized))))}))
+
 (defn root-handler [req]
   (let [client       (get-client)
         conn         (d/connect client {:db-name "network-explorer-2"})
@@ -761,6 +794,7 @@ attr by amount, treating a missing value as 1."
       "/get-pki-events"           (get-pki-events* query-params db)
       "/get-activity"             (get-activity* query-params db)
       "/get-aggregate-status"     (get-aggregate-status* query-params db)
+      "/get-kids-hashes"          (get-kids-hashes* query-params)
       {:status 404})))
 
 (def app-handler

@@ -696,8 +696,7 @@ attr by amount, treating a missing value as 1."
     (get-aggregate-status-memoized latest-tx)
     (get-aggregate-status-memoized :galaxy latest-tx)
     (get-aggregate-status-memoized :star latest-tx)
-    (get-aggregate-status-memoized :planet latest-tx)
-    (get-kids-hashes-memoized)))
+    (get-aggregate-status-memoized :planet latest-tx)))
 
 
 (defn update-data [_]
@@ -746,8 +745,9 @@ attr by amount, treating a missing value as 1."
     (doseq [tx (drop-last 1 data)]
       (d/transact conn {:tx-data [tx]}))
     (memo/memo-clear! get-aggregate-status-memoized)
-    (memo/memo-clear! get-kids-hashes-memoized)
     (refresh-aggregate-cache (:db-after (d/transact conn {:tx-data [(last data)]})))
+    (memo/memo-clear! get-kids-hashes-memoized)
+    (get-kids-hashes-memoized)
     (pr-str (count data))))
 
 

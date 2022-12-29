@@ -769,7 +769,7 @@ attr by amount, treating a missing value as 1."
                 (get-aggregate-status-memoized latest-tx))))
             :value-fn stringify-date)}))
 
-(defn get-kids-hashes* [query-params db]
+(defn get-kids-hashes* [query-params]
   (let [since  (java.time.LocalDate/parse (get query-params :since "2018-11-27"))
         until  (java.time.LocalDate/parse (get query-params :until "3000-01-01"))]
     {:status 200

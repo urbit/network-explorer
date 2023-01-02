@@ -10,15 +10,6 @@ import { TimeRangeMenu } from './TimeRangeMenu';
 import { NodeMenu } from './NodeMenu';
 
 
-const setUrlParam = (key, value) => {
-  if (window.history.pushState) {
-    let searchParams = new URLSearchParams(window.location.search);
-    searchParams.set(key, value);
-    let newurl = window.location.protocol + '//' + window.location.host + window.location.pathname + '?' + searchParams.toString();
-    window.history.pushState({path: newurl}, '', newurl);
-  }
-};
-
 export function MenuHeader(props) {
   const { disabled,
           timeRangeText,
@@ -63,7 +54,6 @@ export function MenuHeader(props) {
             setTimeRangeText={setTimeRangeText}
             fetchPkiEvents={fetchTimeRangePkiEvents}
             fetchAggregateEvents={fetchTimeRangeAggregateEvents}
-            setUrlParam={setUrlParam}
           />
           <NodeMenu
             disabled={disabled}
@@ -71,7 +61,6 @@ export function MenuHeader(props) {
             setNodesText={setNodesText}
             fetchPkiEvents={fetchNodePkiEvents}
             fetchAggregateEvents={fetchNodeAggregateEvents}
-            setUrlParam={setUrlParam}
           />
         </Box>
       </Box>

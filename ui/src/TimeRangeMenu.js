@@ -7,14 +7,22 @@ import { Icon,
          MenuButton,
          Text } from '@tlon/indigo-react';
 
+const setUrlParam = (key, value) => {
+  if (window.history.pushState) {
+    let searchParams = new URLSearchParams(window.location.search);
+    searchParams.set(key, value);
+    let newurl = window.location.protocol + '//' + window.location.host + window.location.pathname + '?' + searchParams.toString();
+    window.history.pushState({path: newurl}, '', newurl);
+  }
+};
+
 export function TimeRangeMenu(props) {
 
   const { disabled,
           fetchPkiEvents,
           fetchAggregateEvents,
           timeRangeText,
-          setTimeRangeText,
-          setUrlParam} = props;
+          setTimeRangeText } = props;
 
   const onSelect = timeRange => {
     if (timeRange === timeRangeText) {

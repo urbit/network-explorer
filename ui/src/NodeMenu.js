@@ -7,14 +7,24 @@ import { Icon,
          MenuButton,
          Text } from '@tlon/indigo-react';
 
+
+const setUrlParam = (key, value) => {
+  if (window.history.pushState) {
+    let searchParams = new URLSearchParams(window.location.search);
+    searchParams.set(key, value);
+    let newurl = window.location.protocol + '//' + window.location.host + window.location.pathname + '?' + searchParams.toString();
+    window.history.pushState({path: newurl}, '', newurl);
+  }
+};
+
+
 export function NodeMenu(props) {
 
   const { disabled,
           fetchPkiEvents,
           fetchAggregateEvents,
           nodesText,
-          setNodesText,
-          setUrlParam} = props;
+          setNodesText } = props;
 
   const onSelect = nodes => {
     if (nodes === nodesText) {

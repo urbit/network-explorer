@@ -17,6 +17,7 @@ import { MenuHeader } from './MenuHeader';
 import { Node } from './Node';
 import { AzimuthEvents } from './AzimuthEvents';
 import { AzimuthChart } from './AzimuthChart';
+import { KidsHashChart } from './KidsHashChart';
 import { StatusChart } from './StatusChart';
 import { StatusTable } from './StatusTable';
 
@@ -30,6 +31,7 @@ const SIX_MONTHS = ONE_MONTH * 6;
 const ONE_YEAR = ONE_MONTH * 12;
 
 var lastApiCall;
+
 
 const isoStringToDate = isoString => {
   return (isoString === undefined) ? undefined : isoString.substring(0, 10);
@@ -58,6 +60,45 @@ const nodesTextToNodeType = nodesText => {
   };
 
   return m[nodesText];
+};
+
+const setUrlParam = (key, value) => {
+  if (window.history.pushState) {
+    let searchParams = new URLSearchParams(window.location.search);
+    searchParams.set(key, value);
+    let newurl = window.location.protocol + '//' + window.location.host + window.location.pathname + '?' + searchParams.toString();
+    window.history.pushState({path: newurl}, '', newurl);
+  }
+};
+
+const fetchKidsHashes = (stateSetter, since) => {
+  stateSetter({loading: true});
+
+  let url = `${API_BASE_URL}/get-kids-hashes`;
+
+  if (since) {
+    url += '?since=' + since;
+  }
+
+  lastApiCall = url;
+
+  fetch(url)
+    .then(res => res.json())
+    .then(kidsHashes => {
+      const kids = kidsHashes.map(e => {
+        const {date, ...rest} = e;
+        const o = Object.entries(rest).map(([k, v]) => {
+          const s = k.split('.');
+          return [s[s.length-1], v];
+        }).sort((a, b) => a[1] - b[1]).reverse();
+
+        return Object.fromEntries(
+          o.slice(0, 4).concat([['date', date],
+                                ['others', o.slice(4).reduce((acc, e) => e[1]+acc, 0)]]));
+      });
+
+      stateSetter({loading: false, data: kids});
+    });
 };
 
 const fetchPkiEvents = (stateSetter, nodeType, since) => {
@@ -141,6 +182,8 @@ function App() {
 
   const [aggregateStatus, setAggregateStatus] = useState({loading: true, events: []});
 
+  const [kidsHashes, setKidsHashes] = useState({loading: true, data: []});
+
   const [transferEvents, setTransferEvents] = useState({loading: true, events: []});
 
   const [nodesText, setNodesText] = useState(nodeMap[params.get('nodes')] || 'All');
@@ -149,6 +192,8 @@ function App() {
 
   const [offset, setOffset] = useState(0);
 
+  const [chart, setChart] = useState(params.get('chart') || 'addressSpace');
+
   useEffect(() => {
     const since = isoStringToDate(timeRangeTextToSince(timeRangeText));
     const until = (timeRangeText === 'All' && nodesText === 'Stars')
@@ -156,6 +201,7 @@ function App() {
           isoStringToDate(new Date(new Date().getTime() + ONE_DAY).toISOString());
 
     fetchPkiEvents(setAzimuthEvents, nodesTextToNodeType(nodesText), timeRangeTextToSince(timeRangeText));
+    fetchKidsHashes(setKidsHashes, since);
     fetchAggregateStatus(setAggregateStatus, since, until, nodesTextToNodeType(nodesText));
   }, []);
 
@@ -177,6 +223,9 @@ function App() {
                                  isoStringToDate(timeRangeTextToSince(timeRangeText)),
                                  until,
                                  nodesTextToNodeType(nodesText));
+
+            fetchKidsHashes(setKidsHashes,
+                            isoStringToDate(timeRangeTextToSince(timeRangeText)));
           }}
           fetchNodePkiEvents={nodesText => fetchPkiEvents(setAzimuthEvents,
                                                           nodesTextToNodeType(nodesText),
@@ -290,10 +339,47 @@ function App() {
                   minHeight='250px'
                   className='ml'
                 >
-                  <Row fontWeight={500} p={3} justifyContent='space-between'>
-                    <Text fontSize={0}>Address Space Composition</Text>
-                    <Icon icon='Info' size={16} cursor='pointer' />
+                  <Row fontWeight={500} p={3}>
+                    <Text
+                      fontSize={0}
+                      cursor='pointer'
+                      color={chart === 'addressSpace' ? '' : 'gray'}
+                      onClick={() => {
+                        setUrlParam('chart', 'addressSpace');
+                        setChart("addressSpace");
+                      }}
+                    >Address Space Composition</Text>
+                    <Text
+                      fontSize={0}
+                      ml={3}
+                      cursor='pointer'
+                      color={chart === 'kidsHash' ? '' : 'gray'}
+                      onClick={() => {
+                        setUrlParam('chart', 'kidsHash');
+                        setChart('kidsHash');
+                      }}
+                    >Kids Hash Composition</Text>
                   </Row>
+
+                  { chart === 'kidsHash' ?
+                  <Box flex='1'>
+                    {kidsHashes.loading ?
+                     <Center height='100%'>
+                       <LoadingSpinner
+                         width='36px'
+                         height='36px'
+                         foreground='rgba(0, 0, 0, 0.6)'
+                         background='rgba(0, 0, 0, 0.2)'
+                       />
+                     </Center> :
+                     <>
+                       <KidsHashChart
+                         kidsHashes={kidsHashes.data}
+                         timeRangeText={timeRangeText}
+                       />
+                     </>
+                  }
+                  </Box> :
                   <Box flex='1'>
                     {aggregateStatus.loading ?
                      <Center height='100%'>
@@ -319,6 +405,7 @@ function App() {
                      </>
                   }
                   </Box>
+                  }
                 </Box>
               </Col>
             </Row>

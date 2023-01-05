@@ -1,3 +1,4 @@
+import React from 'react';
 import { useState, useEffect, cloneElement } from 'react';
 import { BrowserRouter as Router, Route, Switch } from 'react-router-dom';
 

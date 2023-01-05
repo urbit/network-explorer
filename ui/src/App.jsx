@@ -73,13 +73,10 @@ const setUrlParam = (key, value) => {
 const fetchKidsHashes = (stateSetter, since, nodeType) => {
   stateSetter({loading: true});
 
-  let url = nodeType ?
-      `${API_BASE_URL}/get-kids-hashes` :
-      `${API_BASE_URL}/get-kids-hashes?nodeType=${nodeType}`;
+  const url = nodeType ?
+        `${API_BASE_URL}/get-kids-hashes?nodeType=${nodeType}&since=${since}` :
+        `${API_BASE_URL}/get-kids-hashes?since=${since}`;
 
-  if (since) {
-    url += '?since=' + since;
-  }
 
   fetch(url)
     .then(res => res.json())

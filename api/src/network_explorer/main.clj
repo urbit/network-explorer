@@ -698,7 +698,7 @@ attr by amount, treating a missing value as 1."
    (if (not-empty (node-type @kids-hashes))
      (node-type @kids-hashes)
      (let [res (get-kids-hashes db node-type)]
-       (swap! kids-hashes (fn [e] (update e node-type res)))
+       (swap! kids-hashes assoc node-type res)
        res))))
 
 (def get-aggregate-status-memoized

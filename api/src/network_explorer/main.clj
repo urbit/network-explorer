@@ -18,6 +18,7 @@
 
 (def get-client (memoize (fn [] (d/client cfg))))
 
+(def kids-hashes (atom {:all [] :planet [] :star [] :galaxy []}))
 
 (defn get-radar-data []
   (:body (http/get "https://gaze-exports.s3.us-east-2.amazonaws.com/radar.txt"
@@ -669,21 +670,19 @@ attr by amount, treating a missing value as 1."
              (when (= :star node-type) (drop (count set-keys) locked))))))
 
 (defn get-kids-hashes
-  ([] (get-kids-hashes :all))
-  ([node-type]
-   (let [conn (d/connect (get-client) {:db-name "network-explorer-2"})
-         db   (d/db conn)
-         ds   (if (= node-type :all)
-                (d/q '[:find ?e ?h ?r
-                       :where [?p :ping/kids ?h]
-                              [?p :ping/urbit-id ?e]
-                              [?p :ping/received ?r]] db)
-                (d/q '[:find ?e ?h ?r
-                       :in $ ?node-type
-                       :where [?e :node/type ?node-type]
-                              [?p :ping/urbit-id ?e]
-                              [?p :ping/kids ?h]
-                              [?p :ping/received ?r]] db node-type))]
+  ([db] (get-kids-hashes db :all))
+  ([db node-type]
+   (let [ds  (if (= node-type :all)
+               (d/q '[:find ?e ?h ?r
+                      :where [?p :ping/kids ?h]
+                      [?p :ping/urbit-id ?e]
+                      [?p :ping/received ?r]] db)
+               (d/q '[:find ?e ?h ?r
+                      :in $ ?node-type
+                      :where [?e :node/type ?node-type]
+                      [?p :ping/urbit-id ?e]
+                      [?p :ping/kids ?h]
+                      [?p :ping/received ?r]] db node-type))]
      (->>  ds
            (sort-by last)
            (partition-by (comp date->day last))
@@ -692,8 +691,15 @@ attr by amount, treating a missing value as 1."
                                      (vals (group-by first e))))
                                :date (date->day (last (first e))))))))))
 
-(def get-kids-hashes-memoized
-  (memo/fifo get-kids-hashes :fifo/threshold 4))
+(defn get-kids-hashes-memoized
+  ([db]
+   (get-kids-hashes-memoized db :all))
+  ([db node-type]
+   (if (not-empty (node-type @kids-hashes))
+     (node-type @kids-hashes)
+     (let [res (get-kids-hashes db node-type)]
+       (swap! kids-hashes (fn [e] (update e node-type res)))
+       res))))
 
 (def get-aggregate-status-memoized
   (memo/fifo get-aggregate-status :fifo/threshold 4))
@@ -705,7 +711,11 @@ attr by amount, treating a missing value as 1."
     (get-aggregate-status-memoized latest-tx)
     (get-aggregate-status-memoized :galaxy latest-tx)
     (get-aggregate-status-memoized :star latest-tx)
-    (get-aggregate-status-memoized :planet latest-tx)))
+    (get-aggregate-status-memoized :planet latest-tx)
+    (get-kids-hashes-memoized db :all)
+    (get-kids-hashes-memoized db :planet)
+    (get-kids-hashes-memoized db :star)
+    (get-kids-hashes-memoized db :galaxy)))
 
 
 (defn update-data [_]
@@ -754,8 +764,8 @@ attr by amount, treating a missing value as 1."
     (doseq [tx (drop-last 1 data)]
       (d/transact conn {:tx-data [tx]}))
     (memo/memo-clear! get-aggregate-status-memoized)
+    (reset! kids-hashes {:all [] :planet [] :star [] :galaxy []})
     (refresh-aggregate-cache (:db-after (d/transact conn {:tx-data [(last data)]})))
-    (memo/memo-clear! get-kids-hashes-memoized)
     (pr-str (count data))))
 
 
@@ -780,7 +790,9 @@ attr by amount, treating a missing value as 1."
 (defn get-kids-hashes* [query-params]
   (let [node-type (keyword (get query-params :nodeType))
         since     (java.time.LocalDate/parse (get query-params :since "2018-11-27"))
-        until     (java.time.LocalDate/parse (get query-params :until "3000-01-01"))]
+        until     (java.time.LocalDate/parse (get query-params :until "3000-01-01"))
+        conn      (d/connect (get-client) {:db-name "network-explorer-2"})
+        db        (d/db conn)]
     {:status 200
      :headers {"Content-Type" "application/json"}
      :body (json/write-str
@@ -789,8 +801,8 @@ attr by amount, treating a missing value as 1."
              (drop-while
               (fn [e] (.isBefore (java.time.LocalDate/parse (:date e)) since))
               (if node-type
-                (get-kids-hashes-memoized node-type)
-                (get-kids-hashes-memoized)))))}))
+                (get-kids-hashes-memoized db node-type)
+                (get-kids-hashes-memoized db)))))}))
 
 (defn root-handler [req]
   (let [client       (get-client)

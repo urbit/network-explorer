@@ -31,8 +31,6 @@ const ONE_MONTH = ONE_DAY * 30;
 const SIX_MONTHS = ONE_MONTH * 6;
 const ONE_YEAR = ONE_MONTH * 12;
 
-var lastApiCall;
-
 
 const isoStringToDate = isoString => {
   return (isoString === undefined) ? undefined : isoString.substring(0, 10);
@@ -100,18 +98,16 @@ const fetchKidsHashes = (stateSetter, since) => {
     });
 };
 
-const fetchPkiEvents = (stateSetter, nodeType, since) => {
+const fetchPkiEvents = (stateSetter, nodeType, offset, since) => {
   stateSetter({loading: true});
 
   let url = nodeType ?
-      `${API_BASE_URL}/get-pki-events?limit=100&nodeType=${nodeType}` :
-      `${API_BASE_URL}/get-pki-events?limit=100`;
+      `${API_BASE_URL}/get-pki-events?limit=100&nodeType=${nodeType}&offset=${offset}` :
+      `${API_BASE_URL}/get-pki-events?limit=100&offset=${offset}`;
 
   if (since) {
     url += '&since=' + since;
   }
-
-  lastApiCall = url;
 
   fetch(url)
     .then(res => res.json())
@@ -199,7 +195,7 @@ function App() {
           ? undefined :
           isoStringToDate(new Date(new Date().getTime() + ONE_DAY).toISOString());
 
-    fetchPkiEvents(setAzimuthEvents, nodesTextToNodeType(nodesText), timeRangeTextToSince(timeRangeText));
+    fetchPkiEvents(setAzimuthEvents, nodesTextToNodeType(nodesText), 0, timeRangeTextToSince(timeRangeText));
     fetchKidsHashes(setKidsHashes, since);
     fetchAggregateStatus(setAggregateStatus, since, until, nodesTextToNodeType(nodesText));
   }, []);
@@ -210,9 +206,13 @@ function App() {
           setTimeRangeText={setTimeRangeText}
           nodesText={nodesText}
           setNodesText={setNodesText}
-          fetchTimeRangePkiEvents={timeRangeText => fetchPkiEvents(setAzimuthEvents,
-                                                                   nodesTextToNodeType(nodesText),
-                                                                   timeRangeTextToSince(timeRangeText))}
+          fetchTimeRangePkiEvents={timeRangeText => {
+            fetchPkiEvents(setAzimuthEvents,
+                           nodesTextToNodeType(nodesText),
+                           0,
+                           timeRangeTextToSince(timeRangeText));
+            setOffset(0);
+          }}
           fetchTimeRangeAggregateEvents={timeRangeText => {
             const until = (timeRangeText === 'All' && nodesText === 'Stars')
                   ? undefined :
@@ -226,9 +226,13 @@ function App() {
             fetchKidsHashes(setKidsHashes,
                             isoStringToDate(timeRangeTextToSince(timeRangeText)));
           }}
-          fetchNodePkiEvents={nodesText => fetchPkiEvents(setAzimuthEvents,
-                                                          nodesTextToNodeType(nodesText),
-                                                          timeRangeTextToSince(timeRangeText))}
+          fetchNodePkiEvents={nodesText => {
+            fetchPkiEvents(setAzimuthEvents,
+                           nodesTextToNodeType(nodesText),
+                           offset,
+                           timeRangeTextToSince(timeRangeText));
+            setOffset(0);
+          }}
           fetchNodeAggregateEvents={nodesText => {
             const until = (timeRangeText === 'All' && nodesText === 'Stars')
                   ? undefined :
@@ -292,13 +296,11 @@ function App() {
                        cursor='pointer'
                        size={16}
                        onClick={() => {
-                         setAzimuthEvents({loading: true});
-                         fetch(lastApiCall + '&offset=' + (offset - 100))
-                           .then(res => res.json())
-                           .then(events => {
-                             setAzimuthEvents({loading: false, events: events});
-                             setOffset(offset - 100);
-                           });
+                         fetchPkiEvents(setAzimuthEvents,
+                                        nodesTextToNodeType(nodesText),
+                                        offset - 100,
+                                        timeRangeTextToSince(timeRangeText));
+                         setOffset(offset - 100);
                        }}
                      />
                     }
@@ -307,13 +309,11 @@ function App() {
                       cursor='pointer'
                       size={16}
                       onClick={() => {
-                        setAzimuthEvents({loading: true});
-                        fetch(lastApiCall + '&offset=' + (offset + 100))
-                          .then(res => res.json())
-                          .then(events => {
-                            setAzimuthEvents({loading: false, events: events});
-                            setOffset(offset + 100);
-                          });
+                         fetchPkiEvents(setAzimuthEvents,
+                                        nodesTextToNodeType(nodesText),
+                                        offset + 100,
+                                        timeRangeTextToSince(timeRangeText));
+                         setOffset(offset + 100);
                       }}
                     />
                   </Box>

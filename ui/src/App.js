@@ -80,8 +80,6 @@ const fetchKidsHashes = (stateSetter, since) => {
     url += '?since=' + since;
   }
 
-  lastApiCall = url;
-
   fetch(url)
     .then(res => res.json())
     .then(kidsHashes => {

@@ -70,10 +70,12 @@ const setUrlParam = (key, value) => {
   }
 };
 
-const fetchKidsHashes = (stateSetter, since) => {
+const fetchKidsHashes = (stateSetter, since, nodeType) => {
   stateSetter({loading: true});
 
-  let url = `${API_BASE_URL}/get-kids-hashes`;
+  let url = nodeType ?
+      `${API_BASE_URL}/get-kids-hashes` :
+      `${API_BASE_URL}/get-kids-hashes?nodeType=${nodeType}`;
 
   if (since) {
     url += '?since=' + since;
@@ -196,7 +198,7 @@ function App() {
           isoStringToDate(new Date(new Date().getTime() + ONE_DAY).toISOString());
 
     fetchPkiEvents(setAzimuthEvents, nodesTextToNodeType(nodesText), 0, timeRangeTextToSince(timeRangeText));
-    fetchKidsHashes(setKidsHashes, since);
+    fetchKidsHashes(setKidsHashes, since, nodesTextToNodeType(nodesText));
     fetchAggregateStatus(setAggregateStatus, since, until, nodesTextToNodeType(nodesText));
   }, []);
 
@@ -224,7 +226,8 @@ function App() {
                                  nodesTextToNodeType(nodesText));
 
             fetchKidsHashes(setKidsHashes,
-                            isoStringToDate(timeRangeTextToSince(timeRangeText)));
+                            isoStringToDate(timeRangeTextToSince(timeRangeText)),
+                            nodesTextToNodeType(nodesText));
           }}
           fetchNodePkiEvents={nodesText => {
             fetchPkiEvents(setAzimuthEvents,
@@ -242,6 +245,10 @@ function App() {
                                  isoStringToDate(timeRangeTextToSince(timeRangeText)),
                                  until,
                                  nodesTextToNodeType(nodesText));
+
+            fetchKidsHashes(setKidsHashes,
+                            isoStringToDate(timeRangeTextToSince(timeRangeText)),
+                            nodesTextToNodeType(nodesText));
           }}
         />;
 

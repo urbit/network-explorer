@@ -18,8 +18,9 @@ import { MenuHeader } from './MenuHeader';
 import { Node } from './Node';
 import { AzimuthEvents } from './AzimuthEvents';
 import { AzimuthChart } from './AzimuthChart';
+import { OnlineShipsChart } from './OnlineShipsChart';
 import { KidsHashChart } from './KidsHashChart';
-import { StarLockupChart } from './StarLockupChart';
+// import { StarLockupChart } from './StarLockupChart';
 import { StatusChart } from './StatusChart';
 import { StatusTable } from './StatusTable';
 
@@ -69,6 +70,21 @@ const setUrlParam = (key, value) => {
     let newurl = window.location.protocol + '//' + window.location.host + window.location.pathname + '?' + searchParams.toString();
     window.history.pushState({path: newurl}, '', newurl);
   }
+};
+
+const fetchOnlineStats = (stateSetter, since, nodeType) => {
+  stateSetter({loading: true});
+
+  const url = nodeType ?
+        `${API_BASE_URL}/get-online-stats?nodeType=${nodeType}&since=${since}` :
+        `${API_BASE_URL}/get-online-stats?since=${since}`;
+
+
+  fetch(url)
+    .then(res => res.json())
+    .then(onlineShips => {
+      stateSetter({loading: false, data: onlineShips});
+    });
 };
 
 const fetchKidsHashes = (stateSetter, since, nodeType) => {
@@ -173,6 +189,8 @@ function App() {
   const nodeMap = {all: 'All', planet: 'Planets', star: 'Stars', galaxy: 'Galaxies'};
   const timeRangeMap = {all: 'All', year: 'Year', sixMonths: '6 Months', month: 'Month', week: 'Week'};
 
+  const [onlineShips, setOnlineShips] = useState({loading: true, data: []});
+
   const [azimuthEvents, setAzimuthEvents] = useState({loading: true, events: []});
 
   const [aggregateStatus, setAggregateStatus] = useState({loading: true, events: []});
@@ -195,6 +213,7 @@ function App() {
           ? undefined :
           isoStringToDate(new Date(new Date().getTime() + ONE_DAY).toISOString());
 
+    fetchOnlineStats(setOnlineShips, since, nodesTextToNodeType(nodesText));
     fetchPkiEvents(setAzimuthEvents, nodesTextToNodeType(nodesText), 0, timeRangeTextToSince(timeRangeText));
     fetchKidsHashes(setKidsHashes, since, nodesTextToNodeType(nodesText));
     fetchAggregateStatus(setAggregateStatus, since, until, nodesTextToNodeType(nodesText));
@@ -250,6 +269,27 @@ function App() {
           }}
         />;
 
+  const onlineShipsChart =
+        <Box flex='1'>
+          {onlineShips.loading ?
+           <Center height='100%'>
+             <LoadingSpinner
+               width='36px'
+               height='36px'
+               foreground='rgba(0, 0, 0, 0.6)'
+               background='rgba(0, 0, 0, 0.2)'
+             />
+           </Center> :
+           <>
+             <OnlineShipsChart
+               onlineShips={onlineShips.data}
+               timeRangeText={timeRangeText}
+             />
+           </>
+          }
+        </Box>;
+
+
     const kidsHashChart =
           <Box flex='1'>
             {kidsHashes.loading ?
@@ -298,17 +338,18 @@ function App() {
           </Box>;
 
 
-    const lockupChart =
-          <Box flex='1'>
-            <StarLockupChart
-              timeRangeText={timeRangeText}
-            />
-          </Box>;
+    // const lockupChart =
+    //       <Box flex='1'>
+    //         <StarLockupChart
+    //           timeRangeText={timeRangeText}
+    //         />
+    //       </Box>;
 
     let visibleChart;
+    if (chart === 'onlineShips') visibleChart = onlineShipsChart;
     if (chart === 'addressSpace') visibleChart = addressSpaceChart;
     if (chart === 'kidsHash') visibleChart = kidsHashChart;
-    if (chart === 'lockup') visibleChart = lockupChart;
+    // if (chart === 'lockup') visibleChart = lockupChart;
 
   return (
     <Box className='App'
@@ -410,7 +451,7 @@ function App() {
                       color={chart === 'addressSpace' ? '' : 'gray'}
                       onClick={() => {
                         setUrlParam('chart', 'addressSpace');
-                        setChart("addressSpace");
+                        setChart('addressSpace');
                       }}
                     >Address Space Composition</Text>
                     <Text
@@ -423,6 +464,16 @@ function App() {
                         setChart('kidsHash');
                       }}
                     >Kids Hash Composition</Text>
+                    <Text
+                      ml={3}
+                      fontSize={0}
+                      cursor='pointer'
+                      color={chart === 'onlineShips' ? '' : 'gray'}
+                      onClick={() => {
+                        setUrlParam('chart', 'onlineShips');
+                        setChart('onlineShips');
+                      }}
+                    >Online Ships Composition</Text>
                     {/* <Text */}
                     {/*   fontSize={0} */}
                     {/*   ml={3} */}

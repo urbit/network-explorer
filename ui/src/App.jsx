@@ -75,10 +75,13 @@ const setUrlParam = (key, value) => {
 const fetchOnlineStats = (stateSetter, since, nodeType) => {
   stateSetter({loading: true});
 
-  const url = nodeType ?
-        `${API_BASE_URL}/get-online-stats?nodeType=${nodeType}&since=${since}` :
-        `${API_BASE_URL}/get-online-stats?since=${since}`;
+  let url = nodeType ?
+        `${API_BASE_URL}/get-online-stats?nodeType=${nodeType}` :
+        `${API_BASE_URL}/get-online-stats?`;
 
+  if (since) {
+    url += '&since=' + since;
+  }
 
   fetch(url)
     .then(res => res.json())
@@ -90,10 +93,13 @@ const fetchOnlineStats = (stateSetter, since, nodeType) => {
 const fetchKidsHashes = (stateSetter, since, nodeType) => {
   stateSetter({loading: true});
 
-  const url = nodeType ?
-        `${API_BASE_URL}/get-kids-hashes?nodeType=${nodeType}&since=${since}` :
-        `${API_BASE_URL}/get-kids-hashes?since=${since}`;
+  let url = nodeType ?
+        `${API_BASE_URL}/get-kids-hashes?nodeType=${nodeType}` :
+        `${API_BASE_URL}/get-kids-hashes?`;
 
+  if (since) {
+    url += '&since=' + since;
+  }
 
   fetch(url)
     .then(res => res.json())

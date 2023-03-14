@@ -724,12 +724,17 @@ attr by amount, treating a missing value as 1."
                                           (:yesterday stats)))}]))
                [{:ever #{} :yesterday #{}} {}]
                (->>
-                (d/index-pull db {:index :avet
-                                  :selector [{:ping/urbit-id [:node/urbit-id :node/type]}
-                                             :ping/received]
-                                  :start [:ping/received]})
-                (filter (fn [e] (if (= node-type :all) true
-                                    (= node-type (:node/type (:ping/urbit-id e))))))
+                (d/q (if (= node-type :all)
+                       '[:find ?u ?r
+                         :where [?p :ping/urbit-id ?e]
+                                [?p :ping/received ?r]]
+                       '[:find ?u ?r
+                         :in $ ?node-type
+                         :where [?e :node/type ?node-type]
+                                [?e :node/type ?u]
+                                [?p :ping/urbit-id ?e]
+                                [?p :ping/received ?r]]) db)
+                (sort-by second)
                 (map (fn [e] (update e :ping/received date->day)))
                 (partition-by :ping/received)))))))
 

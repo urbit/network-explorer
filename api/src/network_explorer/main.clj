@@ -20,6 +20,8 @@
 
 (def kids-hashes (atom {:all [] :planet [] :star [] :galaxy []}))
 
+(def online-stats (atom {:all [] :planet [] :star [] :galaxy []}))
+
 (defn get-radar-data []
   (:body (http/get "https://gaze-exports.s3.us-east-2.amazonaws.com/radar.txt"
                    {:timeout 300000
@@ -675,14 +677,14 @@ attr by amount, treating a missing value as 1."
    (let [ds  (if (= node-type :all)
                (d/q '[:find ?e ?h ?r
                       :where [?p :ping/kids ?h]
-                      [?p :ping/urbit-id ?e]
-                      [?p :ping/received ?r]] db)
+                             [?p :ping/urbit-id ?e]
+                             [?p :ping/received ?r]] db)
                (d/q '[:find ?e ?h ?r
                       :in $ ?node-type
                       :where [?e :node/type ?node-type]
-                      [?p :ping/urbit-id ?e]
-                      [?p :ping/kids ?h]
-                      [?p :ping/received ?r]] db node-type))]
+                             [?p :ping/urbit-id ?e]
+                             [?p :ping/kids ?h]
+                             [?p :ping/received ?r]] db node-type))]
      (->>  ds
            (sort-by last)
            (partition-by (comp date->day last))
@@ -701,6 +703,46 @@ attr by amount, treating a missing value as 1."
        (swap! kids-hashes assoc node-type res)
        res))))
 
+(defn get-online-stats
+  ([db]
+   (get-online-stats db :all))
+  ([db node-type]
+   (map second
+        (drop 1
+              (reductions
+               (fn [[stats acc] e]
+                 (let [today (set (map (comp :node/urbit-id :ping/urbit-id) e))]
+                   [(-> stats
+                        (assoc :ever (clojure.set/union (:ever stats) today))
+                        (assoc :yesterday today))
+                    {:date (:ping/received (first e))
+                     :new (count (clojure.set/difference today (:ever stats)))
+                     :churned (count (clojure.set/difference (:yesterday stats) today))
+                     :retained (count (clojure.set/intersection (:yesterday stats) today))
+                     :resurrected (count (clojure.set/difference
+                                          (clojure.set/intersection (:ever stats) today)
+                                          (:yesterday stats)))}]))
+               [{:ever #{} :yesterday #{}} {}]
+               (->>
+                (d/index-pull db {:index :avet
+                                  :selector [{:ping/urbit-id [:node/urbit-id :node/type]}
+                                             :ping/received]
+                                  :start [:ping/received]})
+                (filter (fn [e] (if (= node-type :all) true
+                                    (= node-type (:node/type (:ping/urbit-id e))))))
+                (map (fn [e] (update e :ping/received date->day)))
+                (partition-by :ping/received)))))))
+
+(defn get-online-stats-memoized
+  ([db]
+   (get-online-stats-memoized db :all))
+  ([db node-type]
+   (if (not-empty (node-type @online-stats))
+     (node-type @online-stats)
+     (let [res (get-online-stats db node-type)]
+       (swap! online-stats assoc node-type res)
+       res))))
+
 (def get-aggregate-status-memoized
   (memo/fifo get-aggregate-status :fifo/threshold 4))
 
@@ -715,7 +757,11 @@ attr by amount, treating a missing value as 1."
     (get-kids-hashes-memoized db :all)
     (get-kids-hashes-memoized db :planet)
     (get-kids-hashes-memoized db :star)
-    (get-kids-hashes-memoized db :galaxy)))
+    (get-kids-hashes-memoized db :galaxy)
+    (get-online-stats-memoized db :all)
+    (get-online-stats-memoized db :planet)
+    (get-online-stats-memoized db :star)
+    (get-online-stats-memoized db :galaxy)))
 
 
 (defn update-data [_]
@@ -765,6 +811,7 @@ attr by amount, treating a missing value as 1."
       (d/transact conn {:tx-data [tx]}))
     (memo/memo-clear! get-aggregate-status-memoized)
     (reset! kids-hashes {:all [] :planet [] :star [] :galaxy []})
+    (reset! online-stats {:all [] :planet [] :star [] :galaxy []})
     (refresh-aggregate-cache (:db-after (d/transact conn {:tx-data [(last data)]})))
     (pr-str (count data))))
 
@@ -804,6 +851,24 @@ attr by amount, treating a missing value as 1."
                 (get-kids-hashes-memoized db node-type)
                 (get-kids-hashes-memoized db)))))}))
 
+
+(defn get-online-stats* [query-params]
+  (let [node-type (keyword (get query-params :nodeType))
+        since     (java.time.LocalDate/parse (get query-params :since "2018-11-27"))
+        until     (java.time.LocalDate/parse (get query-params :until "3000-01-01"))
+        conn      (d/connect (get-client) {:db-name "network-explorer-2"})
+        db        (d/db conn)]
+    {:status 200
+     :headers {"Content-Type" "application/json"}
+     :body (json/write-str
+            (take-while
+             (fn [e] (.isBefore (java.time.LocalDate/parse (:date e)) until))
+             (drop-while
+              (fn [e] (.isBefore (java.time.LocalDate/parse (:date e)) since))
+              (if node-type
+                (get-online-stats-memoized db node-type)
+                (get-online-stats-memoized db)))))}))
+
 (defn root-handler [req]
   (let [client       (get-client)
         conn         (d/connect client {:db-name "network-explorer-2"})
@@ -818,6 +883,7 @@ attr by amount, treating a missing value as 1."
       "/get-activity"             (get-activity* query-params db)
       "/get-aggregate-status"     (get-aggregate-status* query-params db)
       "/get-kids-hashes"          (get-kids-hashes* query-params)
+      "/get-online-stats"         (get-online-stats* query-params)
       {:status 404})))
 
 (def app-handler

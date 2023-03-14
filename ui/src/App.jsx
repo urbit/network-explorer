@@ -19,6 +19,7 @@ import { Node } from './Node';
 import { AzimuthEvents } from './AzimuthEvents';
 import { AzimuthChart } from './AzimuthChart';
 import { KidsHashChart } from './KidsHashChart';
+import { StarLockupChart } from './StarLockupChart';
 import { StatusChart } from './StatusChart';
 import { StatusTable } from './StatusTable';
 
@@ -249,6 +250,66 @@ function App() {
           }}
         />;
 
+    const kidsHashChart =
+          <Box flex='1'>
+            {kidsHashes.loading ?
+             <Center height='100%'>
+               <LoadingSpinner
+                 width='36px'
+                 height='36px'
+                 foreground='rgba(0, 0, 0, 0.6)'
+                 background='rgba(0, 0, 0, 0.2)'
+               />
+             </Center> :
+             <>
+               <KidsHashChart
+                 kidsHashes={kidsHashes.data}
+                 timeRangeText={timeRangeText}
+               />
+             </>
+            }
+          </Box>;
+
+    const addressSpaceChart =
+          <Box flex='1'>
+            {aggregateStatus.loading ?
+             <Center height='100%'>
+               <LoadingSpinner
+                 width='36px'
+                 height='36px'
+                 foreground='rgba(0, 0, 0, 0.6)'
+                 background='rgba(0, 0, 0, 0.2)'
+               />
+             </Center> :
+             <>
+               <StatusChart
+                 events={aggregateStatus.events}
+                 timeRangeText={timeRangeText}
+                 nodesText={nodesText}
+               />
+               <StatusTable
+                 first={aggregateStatus.events[0]}
+                 last={aggregateStatus.events[aggregateStatus.events.length - 1]}
+                 secondLast={aggregateStatus.events[aggregateStatus.events.length - 2]}
+                 nodesText={nodesText}
+               />
+             </>
+            }
+          </Box>;
+
+
+    const lockupChart =
+          <Box flex='1'>
+            <StarLockupChart
+              timeRangeText={timeRangeText}
+            />
+          </Box>;
+
+    let visibleChart;
+    if (chart === 'addressSpace') visibleChart = addressSpaceChart;
+    if (chart === 'kidsHash') visibleChart = kidsHashChart;
+    if (chart === 'lockup') visibleChart = lockupChart;
+
   return (
     <Box className='App'
          display='flex'
@@ -362,53 +423,18 @@ function App() {
                         setChart('kidsHash');
                       }}
                     >Kids Hash Composition</Text>
+                    {/* <Text */}
+                    {/*   fontSize={0} */}
+                    {/*   ml={3} */}
+                    {/*   cursor='pointer' */}
+                    {/*   color={chart === 'lockup' ? '' : 'gray'} */}
+                    {/*   onClick={() => { */}
+                    {/*       setUrlParam('chart', 'lockup'); */}
+                    {/*       setChart('lockup'); */}
+                    {/*   }} */}
+                    {/* >Star Lockup Composition</Text> */}
                   </Row>
-
-                  { chart === 'kidsHash' ?
-                  <Box flex='1'>
-                    {kidsHashes.loading ?
-                     <Center height='100%'>
-                       <LoadingSpinner
-                         width='36px'
-                         height='36px'
-                         foreground='rgba(0, 0, 0, 0.6)'
-                         background='rgba(0, 0, 0, 0.2)'
-                       />
-                     </Center> :
-                     <>
-                       <KidsHashChart
-                         kidsHashes={kidsHashes.data}
-                         timeRangeText={timeRangeText}
-                       />
-                     </>
-                  }
-                  </Box> :
-                  <Box flex='1'>
-                    {aggregateStatus.loading ?
-                     <Center height='100%'>
-                       <LoadingSpinner
-                         width='36px'
-                         height='36px'
-                         foreground='rgba(0, 0, 0, 0.6)'
-                         background='rgba(0, 0, 0, 0.2)'
-                       />
-                     </Center> :
-                     <>
-                       <StatusChart
-                         events={aggregateStatus.events}
-                         timeRangeText={timeRangeText}
-                         nodesText={nodesText}
-                       />
-                       <StatusTable
-                         first={aggregateStatus.events[0]}
-                         last={aggregateStatus.events[aggregateStatus.events.length - 1]}
-                         secondLast={aggregateStatus.events[aggregateStatus.events.length - 2]}
-                         nodesText={nodesText}
-                       />
-                     </>
-                  }
-                  </Box>
-                  }
+                  { visibleChart }
                 </Box>
               </Col>
             </Row>

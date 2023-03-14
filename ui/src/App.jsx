@@ -237,6 +237,10 @@ function App() {
                   ? undefined :
                   isoStringToDate(new Date(new Date().getTime() + ONE_DAY).toISOString());
 
+            fetchOnlineStats(setOnlineShips,
+                            isoStringToDate(timeRangeTextToSince(timeRangeText)),
+                            nodesTextToNodeType(nodesText));
+
             fetchAggregateStatus(setAggregateStatus,
                                  isoStringToDate(timeRangeTextToSince(timeRangeText)),
                                  until,
@@ -257,6 +261,10 @@ function App() {
             const until = (timeRangeText === 'All' && nodesText === 'Stars')
                   ? undefined :
                   isoStringToDate(new Date(new Date().getTime() + ONE_DAY).toISOString());
+
+            fetchOnlineStats(setOnlineShips,
+                             isoStringToDate(timeRangeTextToSince(timeRangeText)),
+                             nodesTextToNodeType(nodesText));
 
             fetchAggregateStatus(setAggregateStatus,
                                  isoStringToDate(timeRangeTextToSince(timeRangeText)),

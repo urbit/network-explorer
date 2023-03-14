@@ -711,7 +711,7 @@ attr by amount, treating a missing value as 1."
         (drop 1
               (reductions
                (fn [[stats acc] e]
-                 (let [today (set (map (comp :node/urbit-id :ping/urbit-id) e))]
+                 (let [today (set (map :node/urbit-id e))]
                    [(-> stats
                         (assoc :ever (clojure.set/union (:ever stats) today))
                         (assoc :yesterday today))
@@ -723,21 +723,23 @@ attr by amount, treating a missing value as 1."
                                           (clojure.set/intersection (:ever stats) today)
                                           (:yesterday stats)))}]))
                [{:ever #{} :yesterday #{}} {}]
-               (->>
-                (d/q (if (= node-type :all)
-                       '[:find ?u ?r
-                         :keys :node/urbit-id :ping/received
-                         :where [?p :ping/urbit-id ?e]
-                                [?p :ping/received ?r]]
-                       '[:find ?u ?r
-                         :in $ ?node-type
-                         :where [?e :node/type ?node-type]
-                                [?e :node/type ?u]
-                                [?p :ping/urbit-id ?e]
-                                [?p :ping/received ?r]]) db)
-                (sort-by second)
-                (map (fn [e] (update e :ping/received date->day)))
-                (partition-by :ping/received)))))))
+               (let [q (if (= node-type :all)
+                         (d/q '[:find ?u ?r
+                                :keys :node/urbit-id :ping/received
+                                :where [?p :ping/urbit-id ?e]
+                                       [?e :node/urbit-id ?u]
+                                       [?p :ping/received ?r]] db)
+                         (d/q '[:find ?u ?r
+                                :in $ ?node-type
+                                :keys :node/urbit-id :ping/received
+                                :where [?e :node/type ?node-type]
+                                       [?e :node/urbit-id ?u]
+                                       [?p :ping/urbit-id ?e]
+                                       [?p :ping/received ?r]] db node-type))]
+                 (->> q
+                      (sort-by :ping/received)
+                      (map (fn [e] (update e :ping/received date->day)))
+                      (partition-by :ping/received))))))))
 
 (defn get-online-stats-memoized
   ([db]

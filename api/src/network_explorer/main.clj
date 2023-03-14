@@ -726,6 +726,7 @@ attr by amount, treating a missing value as 1."
                (->>
                 (d/q (if (= node-type :all)
                        '[:find ?u ?r
+                         :keys :node/urbit-id :ping/received
                          :where [?p :ping/urbit-id ?e]
                                 [?p :ping/received ?r]]
                        '[:find ?u ?r

@@ -30,8 +30,8 @@ export function OnlineShipsChart(props) {
         />
         <YAxis type='number' hide={true}  />
         <Tooltip />
-        <Bar dot={false} name='Retained' dataKey='retained' stroke='#219DFF' fill='#219DFF' stackId='a' />
         <Bar dot={false} name='Churned' dataKey='churned' stroke='#BF421B' fill='#BF421B' stackId='a' />
+        <Bar dot={false} name='Retained' dataKey='retained' stroke='#219DFF' fill='#219DFF' stackId='a' />
         <Bar dot={false} name='New' dataKey='new' stroke='#00B171' fill='#00B171' stackId='a' />
         <Bar dot={false} name='Resurrected' dataKey='resurrected' stroke='#DD9C34' fill='#DD9C34' stackId='a'  />
       </BarChart>

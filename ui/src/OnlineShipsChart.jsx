@@ -29,7 +29,7 @@ export function OnlineShipsChart(props) {
             return (new Date(e)).toLocaleString('default', {month: 'short'});
           }}
         />
-        <YAxis type='number' orientation='right' tick={{fontSize: 10}} />
+        <YAxis type='number' orientation='right' tick={{fontSize: 10}} domain={['dataMin - 50', 'dataMax + 50']} />
         <Tooltip />
         <Bar dot={false} name='Churned' dataKey='churned' stroke='#BF421B' fill='#BF421B' stackId='a' />
         <Bar dot={false} name='Retained' dataKey='retained' stroke='#219DFF' fill='#219DFF' stackId='a' />

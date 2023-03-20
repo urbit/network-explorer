@@ -80,7 +80,13 @@ const fetchOnlineStats = (stateSetter, since, nodeType) => {
         `${API_BASE_URL}/get-online-stats?`;
 
   if (since) {
-    url += '&since=' + since;
+    if (Date.parse(since) < 1663632000000) {
+      url += '&since=2022-09-20';
+    } else {
+      url += '&since=' + since;
+    }
+  } else {
+    url += '&since=2022-09-20';
   }
 
   fetch(url)
@@ -212,7 +218,7 @@ function App() {
 
   const [offset, setOffset] = useState(0);
 
-  const [chart, setChart] = useState(params.get('chart') || 'addressSpace');
+  const [chart, setChart] = useState(params.get('chart') || 'onlineShips');
 
   useEffect(() => {
     const since = isoStringToDate(timeRangeTextToSince(timeRangeText));
@@ -463,6 +469,16 @@ function App() {
                     <Text
                       fontSize={0}
                       cursor='pointer'
+                      color={chart === 'onlineShips' ? '' : 'gray'}
+                      onClick={() => {
+                        setUrlParam('chart', 'onlineShips');
+                        setChart('onlineShips');
+                      }}
+                    >Online Ships Composition</Text>
+                    <Text
+                      ml={3}
+                      fontSize={0}
+                      cursor='pointer'
                       color={chart === 'addressSpace' ? '' : 'gray'}
                       onClick={() => {
                         setUrlParam('chart', 'addressSpace');
@@ -479,16 +495,6 @@ function App() {
                         setChart('kidsHash');
                       }}
                     >Kids Hash Composition</Text>
-                    <Text
-                      ml={3}
-                      fontSize={0}
-                      cursor='pointer'
-                      color={chart === 'onlineShips' ? '' : 'gray'}
-                      onClick={() => {
-                        setUrlParam('chart', 'onlineShips');
-                        setChart('onlineShips');
-                      }}
-                    >Online Ships Composition</Text>
                     {/* <Text */}
                     {/*   fontSize={0} */}
                     {/*   ml={3} */}

@@ -711,6 +711,13 @@ attr by amount, treating a missing value as 1."
     (java.util.Date/from
      (.toInstant (.atStartOfDay (java.time.LocalDate/now java.time.ZoneOffset/UTC)
                                 java.time.ZoneOffset/UTC)))))
+  ([db node-type]
+   (get-online-stats
+    db
+    node-type
+    (java.util.Date/from
+     (.toInstant (.atStartOfDay (java.time.LocalDate/now java.time.ZoneOffset/UTC)
+                                java.time.ZoneOffset/UTC)))))
   ([db node-type until]
    (map second
         (drop 1

@@ -740,6 +740,7 @@ attr by amount, treating a missing value as 1."
                                 :in $ ?until
                                 :keys :node/urbit-id :ping/received
                                 :where [?p :ping/received ?r]
+                                       [(> ?r #inst "2022-09-20")]
                                        [(< ?r ?until)]
                                        [?p :ping/urbit-id ?e]
                                        [?e :node/urbit-id ?u]
@@ -751,6 +752,7 @@ attr by amount, treating a missing value as 1."
                                        [?e :node/urbit-id ?u]
                                        [?p :ping/urbit-id ?e]
                                        [?p :ping/received ?r]
+                                       [(> ?r #inst "2022-09-20")]
                                        [(< ?r ?until)]
                                 ] db node-type until))]
                  (->> q

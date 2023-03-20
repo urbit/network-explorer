@@ -86,6 +86,7 @@ const fetchOnlineStats = (stateSetter, since, nodeType) => {
   fetch(url)
     .then(res => res.json())
     .then(onlineShips => {
+      onlineShips.forEach(e => e.churned = -e.churned);
       stateSetter({loading: false, data: onlineShips});
     });
 };

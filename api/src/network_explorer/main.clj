@@ -705,8 +705,13 @@ attr by amount, treating a missing value as 1."
 
 (defn get-online-stats
   ([db]
-   (get-online-stats db :all))
-  ([db node-type]
+   (get-online-stats
+    db
+    :all
+    (java.util.Date/from
+     (.toInstant (.atStartOfDay (java.time.LocalDate/now java.time.ZoneOffset/UTC)
+                                java.time.ZoneOffset/UTC)))))
+  ([db node-type until]
    (map second
         (drop 1
               (reductions
@@ -725,17 +730,22 @@ attr by amount, treating a missing value as 1."
                [{:ever #{} :yesterday #{}} {}]
                (let [q (if (= node-type :all)
                          (d/q '[:find ?u ?r
+                                :in $ ?until
                                 :keys :node/urbit-id :ping/received
-                                :where [?p :ping/urbit-id ?e]
+                                :where [?p :ping/received ?r]
+                                       [(< ?r ?until)]
+                                       [?p :ping/urbit-id ?e]
                                        [?e :node/urbit-id ?u]
-                                       [?p :ping/received ?r]] db)
+                                       ] db until)
                          (d/q '[:find ?u ?r
-                                :in $ ?node-type
+                                :in $ ?node-type ?until
                                 :keys :node/urbit-id :ping/received
                                 :where [?e :node/type ?node-type]
                                        [?e :node/urbit-id ?u]
                                        [?p :ping/urbit-id ?e]
-                                       [?p :ping/received ?r]] db node-type))]
+                                       [?p :ping/received ?r]
+                                       [(< ?r ?until)]
+                                ] db node-type until))]
                  (->> q
                       (sort-by :ping/received)
                       (map (fn [e] (update e :ping/received date->day)))

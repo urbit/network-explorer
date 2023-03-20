@@ -35,7 +35,7 @@ export function MenuHeader(props) {
         <Box className='headerMargin' ml={3}>
           <Link to='/' style={{textDecoration:'none'}}>
             <Text cursor='pointer' fontSize={2}>
-              Azimuth activity
+              Network Activity
             </Text>
           </Link>
         </Box>

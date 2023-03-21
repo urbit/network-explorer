@@ -1,4 +1,6 @@
 import React from 'react';
+import ReactDOM from 'react-dom';
+import { Link } from 'react-router-dom';
 import { useState, useEffect, cloneElement } from 'react';
 import { BrowserRouter as Router, Route, Switch } from 'react-router-dom';
 
@@ -195,6 +197,119 @@ const fetchAggregateEvents = (eventType, stateSetter, since, nodeType) => {
     });
 };
 
+const modalText = {
+  'onlineShips':
+  <>
+    <Row>
+      <Text>
+        Online ships are measured using a <a href='https://tribecap.co/a-quantitative-approach-to-product-market-fit/' >growth accounting framework</a>. The partitions are as following:
+      </Text>
+    </Row>
+    <Row mt={2}>
+      <Text>
+        New: Online ships today that we have never seen before.
+      </Text>
+    </Row>
+    <Row mt={2}>
+      <Text>
+        Resurrected: Ships that were offline yesterday day but are online again.
+      </Text>
+    </Row>
+    <Row mt={2}>
+      <Text>
+        Retained: Ships that were online yesterday and also today.
+      </Text>
+    </Row>
+    <Row mt={2}>
+      <Text>
+        Churned: Ships that were online yesterday but are offline now.
+      </Text>
+    </Row>
+  </>,
+  'addressSpace':
+  <>
+    <Row>
+      <Text>
+        Address space composition is tracked via Azimuth L1 and L2. The partitions are as follows:
+      </Text>
+    </Row>
+    <Row mt={2}>
+      <Text>
+        Spawned: Cumulative number of ships spawned by date.
+      </Text>
+    </Row>
+    <Row mt={2}>
+      <Text>
+        Activated: Cumulative number of ships activated by date. This is almost always the exact same number as spawned ships because of the way Bridge spawning flows work. Note that all L2 ships are considered activated.
+      </Text>
+    </Row>
+    <Row mt={2}>
+      <Text>
+        Set Networking Keys: Cumulative number of ships that have set their networking keys at least once by date.
+      </Text>
+    </Row>
+    <Row mt={2}>
+      <Text>
+        Online: Cumulative number of ships online by date.
+      </Text>
+    </Row>
+  </>,
+  'kidsHash':
+  <>
+    <Row>
+      <Text>
+        Kids hash composition is useful for roughly measuring how well urbit-os over-the-air updates are propagating across the network.
+      </Text>
+    </Row>
+    <Row mt={2}>
+      <Text>
+        Every urbit-os version corresponds to a %cz hash. The four last hex characters are shown in this graph.
+      </Text>
+    </Row>
+    <Row mt={2}>
+      <Text>
+        Note that only the four most common versions are shown, the rest are aggregated under "others."
+      </Text>
+    </Row>
+  </>,
+};
+
+const useModal = () => {
+  const [isShowing, setIsShowing] = useState(false);
+
+  function toggle() {
+    setIsShowing(!isShowing);
+  }
+
+  return {
+    isShowing,
+    toggle,
+  };
+};
+
+const Modal = ({ isShowing, hide, tab }) => isShowing ? ReactDOM.createPortal(
+  <React.Fragment>
+    <div className='modal-overlay' />
+    <div className='modal-wrapper' onClick={hide} aria-modal aria-hidden tabIndex={-1} role='dialog'>
+      <div className='modal'>
+        <div className='modal-header'>
+          <Icon
+            icon='X'
+            className='modal-close-button'
+            data-dismiss='modal'
+            aria-label='Close'
+            cursor='pointer'
+            size={16}
+          >
+            <span aria-hidden='true'>&times;</span>
+          </Icon>
+        </div>
+        <Text fontSize={1}>{modalText[tab]}</Text>
+      </div>
+    </div>
+  </React.Fragment>, document.body
+) : null;
+
 function App() {
 
   const params = new URLSearchParams(window.location.search);
@@ -219,6 +334,8 @@ function App() {
   const [offset, setOffset] = useState(0);
 
   const [chart, setChart] = useState(params.get('chart') || 'onlineShips');
+
+  const {isShowing, toggle} = useModal();
 
   useEffect(() => {
     const since = isoStringToDate(timeRangeTextToSince(timeRangeText));
@@ -465,36 +582,46 @@ function App() {
                   minHeight='250px'
                   className='ml'
                 >
-                  <Row fontWeight={500} p={3}>
-                    <Text
-                      fontSize={0}
+                  <Row fontWeight={500} p={3} justifyContent='space-between'>
+                    <Box>
+                      <Text
+                        fontSize={0}
+                        cursor='pointer'
+                        color={chart === 'onlineShips' ? '' : 'gray'}
+                        onClick={() => {
+                          setUrlParam('chart', 'onlineShips');
+                          setChart('onlineShips');
+                        }}
+                      >Online Ships Composition</Text>
+                      <Text
+                        ml={3}
+                        fontSize={0}
+                        cursor='pointer'
+                        color={chart === 'addressSpace' ? '' : 'gray'}
+                        onClick={() => {
+                          setUrlParam('chart', 'addressSpace');
+                          setChart('addressSpace');
+                        }}
+                      >Address Space Composition</Text>
+                      <Text
+                        fontSize={0}
+                        ml={3}
+                        cursor='pointer'
+                        color={chart === 'kidsHash' ? '' : 'gray'}
+                        onClick={() => {
+                          setUrlParam('chart', 'kidsHash');
+                          setChart('kidsHash');
+                        }}
+                      >Kids Hash Composition</Text>
+                    </Box>
+                    <Icon
+                      icon='Info'
                       cursor='pointer'
-                      color={chart === 'onlineShips' ? '' : 'gray'}
+                      size={16}
                       onClick={() => {
-                        setUrlParam('chart', 'onlineShips');
-                        setChart('onlineShips');
+                        toggle();
                       }}
-                    >Online Ships Composition</Text>
-                    <Text
-                      ml={3}
-                      fontSize={0}
-                      cursor='pointer'
-                      color={chart === 'addressSpace' ? '' : 'gray'}
-                      onClick={() => {
-                        setUrlParam('chart', 'addressSpace');
-                        setChart('addressSpace');
-                      }}
-                    >Address Space Composition</Text>
-                    <Text
-                      fontSize={0}
-                      ml={3}
-                      cursor='pointer'
-                      color={chart === 'kidsHash' ? '' : 'gray'}
-                      onClick={() => {
-                        setUrlParam('chart', 'kidsHash');
-                        setChart('kidsHash');
-                      }}
-                    >Kids Hash Composition</Text>
+                    />
                     {/* <Text */}
                     {/*   fontSize={0} */}
                     {/*   ml={3} */}
@@ -510,6 +637,11 @@ function App() {
                 </Box>
               </Col>
             </Row>
+            <Modal
+              isShowing={isShowing}
+              hide={toggle}
+              tab={chart}
+            />
           </Route>
         </Switch>
       </Router>

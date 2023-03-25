@@ -14,6 +14,8 @@ import escapeCanceled from './escape_canceled.svg';
 import lostSponsor from './lost_sponsor.svg';
 import ownershipChanged from './ownership_changed.svg';
 
+import { CopiableAddress } from './CopiableAddress';
+
 const m = {
   'change-ownership': {svg: ownershipChanged, text: 'Ownership Changed'},
   'activate': {svg: activated, text: 'Activated'},
@@ -135,9 +137,7 @@ const formatData = data => {
            </>;
   }
 
-  return <Text title={data.address} color='gray' fontSize={0} fontFamily='Source Code Pro !important'>
-           {data.address ? data.address.substring(0, 8) + '...' + data.address.slice(-6) : ''}
-         </Text>;
+  return <CopiableAddress address={data.address} />;
 };
 
 export function AzimuthEvent(props) {

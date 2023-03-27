@@ -114,14 +114,14 @@ const fetchKidsHashes = (stateSetter, since, nodeType) => {
     .then(res => res.json())
     .then(kidsHashes => {
       const kids = kidsHashes.map(e => {
-        const { date } = e;
+        const { day } = e;
         const o = e['kids-hashes'].map(x => {
           const s = x['kids-hash'].split('.');
           return [s[s.length-1], x.count];
         }).sort((a, b) => a[1] - b[1]).reverse();
 
         return Object.fromEntries(
-          o.slice(0, 4).concat([['date', date],
+          o.slice(0, 4).concat([['day', day],
                                 ['others', o.slice(4).reduce((acc, e) => e[1]+acc, 0)]]));
       });
 
@@ -164,8 +164,7 @@ const fetchAggregateStatus = (stateSetter, since, until, nodeType) => {
     .then(res => res.json())
     .then(es => {
       const events = es.map(e => {
-        const d = new Date(e.date);
-        return Object.assign(e, {date: e.date.substring(0, 10), unlocked: 65536 - e.locked});
+        return Object.assign(e, {unlocked: 65536 - e.locked});
       });
 
       stateSetter({loading: false, events: events });

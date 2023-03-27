@@ -607,7 +607,18 @@ attr by amount, treating a missing value as 1."
     (running-total
      :locked
      (map (fn [d u] (update u :count (partial - (:count d))))
+
           deposits unlocks))))
+
+(defn add-zero-counts-2 [dr query-res k]
+  (loop [d dr
+         q query-res
+         res []]
+    (if-not (seq d)
+      res
+      (if (= (:aggregate/day (first d)) (:aggregate/day (first q)))
+        (recur (rest d) (rest q) (conj res (first q)))
+        (recur (rest d) q (conj res {:aggregate/day (:aggregate/day (first d)) k 0}))))))
 
 (defn update-aggregate-status
   ([conn db]
@@ -616,7 +627,7 @@ attr by amount, treating a missing value as 1."
    (update-aggregate-status conn db :star)
    (update-aggregate-status conn db :planet))
   ([conn db node-type]
-   (let [prev  (ffirst (d/q '[:find (max ?d)
+   (let [prev (ffirst (d/q '[:find (max ?d)
                              :in $ ?node-type
                              :where [?e :aggregate/day ?d]
                                     [?e :aggregate/node-type ?node-type]
@@ -643,6 +654,7 @@ attr by amount, treating a missing value as 1."
          spawned (if (= node-type :all)
                    (d/q '[:find ?date-s (count ?p)
                           :in $ ?since
+                          :keys :aggregate/day :aggregate/spawned
                           :where [?p :pki-event/time ?t]
                                  [(>= ?t ?since)]
                                  [?p :pki-event/type :spawn]
@@ -650,6 +662,7 @@ attr by amount, treating a missing value as 1."
                         db prev)
                    (d/q '[:find ?date-s (count ?p)
                           :in $ ?since ?node-type
+                          :keys :aggregate/day :aggregate/spawned
                           :where [?p :pki-event/time ?t]
                                  [(>= ?t ?since)]
                                  [?p :pki-event/target-node ?e]
@@ -661,25 +674,28 @@ attr by amount, treating a missing value as 1."
          activated (if (= node-type :all)
                      (d/q '[:find ?date-s (count ?p)
                             :in $ ?since
+                            :keys :aggregate/day :aggregate/activated
                             :where [?p :pki-event/time ?t]
                                    [(>= ?t ?since)]
                                    [?p :pki-event/type :activate]
                                    [(network-explorer.main/date->midnight-utc ?t) ?date-s]]
                           db prev)
                      (d/q '[:find ?date-s (count ?p)
-                            :in $ ?since
+                            :in $ ?since ?node-type
+                            :keys :aggregate/day :aggregate/activated
                             :where [?p :pki-event/time ?t]
                                    [(>= ?t ?since)]
                                    [?p :pki-event/node ?e]
                                    [?e :node/type ?node-type]
                                    [?p :pki-event/type :activate]
                                    [(network-explorer.main/date->midnight-utc ?t) ?date-s]]
-                          db prev)
+                          db prev node-type)
 
                      )
          set-keys (if (= node-type :all)
                     (d/q '[:find ?date-s (count-distinct ?p)
                            :in $ ?since
+                           :keys :aggregate/day :aggregate/set-networking-keys
                            :where [?s :pki-event/time ?t]
                                   [(>= ?t ?since)]
                                   (or (and [?s :pki-event/revision 1]
@@ -692,7 +708,8 @@ attr by amount, treating a missing value as 1."
                                   [(network-explorer.main/date->midnight-utc ?t) ?date-s]]
                          db prev)
                     (d/q '[:find ?date-s (count-distinct ?p)
-                           :in $ ?since
+                           :in $ ?since ?node-type
+                           :keys :aggregate/day :aggregate/set-networking-keys
                            :where [?s :pki-event/time ?t]
                                   [(>= ?t ?since)]
                                   (or (and [?s :pki-event/revision 1]
@@ -704,10 +721,11 @@ attr by amount, treating a missing value as 1."
                                   [?p :node/type ?node-type]
                                   [?s :pki-event/time ?t]
                                   [(network-explorer.main/date->midnight-utc ?t) ?date-s]]
-                         db prev))
+                         db prev node-type))
           online (if (= node-type :all)
                    (d/q '[:find ?date-s (count-distinct ?u)
                           :in $ ?since
+                          :keys :aggregate/day :aggregate/online
                           :where [?e :ping/received ?t]
                                  [(>= ?t ?since)]
                                  [?e :ping/urbit-id ?u]
@@ -715,63 +733,75 @@ attr by amount, treating a missing value as 1."
                          db prev)
                    (d/q '[:find ?date-s (count-distinct ?u)
                           :in $ ?since ?node-type
+                          :keys :aggregate/day :aggregate/online
                           :where [?e :ping/received ?t]
                                  [(>= ?t ?since)]
                                  [?e :ping/urbit-id ?u]
                                  [?u :node/type ?node-type]
                                  [(network-explorer.main/date->midnight-utc ?t) ?date-s]]
-                         db prev node-type))]
+                        db prev node-type))]
      (d/transact
       conn
-      {:tx-data (concat (if (empty? spawned)
-                          []
-                          (->>
-                           (map (fn [[d c]]
-                                  {:aggregate/day d :aggregate/spawned c
-                                   :aggregate/node-type node-type
-                                   :aggregate/day+node-type [d node-type]})
-                                (reductions (fn [acc [d c]] [d (+ c (second acc))]) [nil s] spawned))
-                           (drop 1)))
-                        (if (empty? activated)
-                          []
-                          (->>
-                           (map (fn [[d c]]
-                                  {:aggregate/day d :aggregate/activated c
-                                   :aggregate/node-type node-type
-                                   :aggregate/day+node-type [d node-type]})
-                                (reductions (fn [acc [d c]] [d (+ c (second acc))]) [nil a] activated))
-                           (drop 1)))
-                        (if (empty? set-keys)
-                          []
-                          (->>
-                           (map (fn [[d c]]
-                                  {:aggregate/day d :aggregate/set-networking-keys c
-                                   :aggregate/node-type node-type
-                                   :aggregate/day+node-type [d node-type]})
-                                (reductions (fn [acc [d c]] [d (+ c (second acc))]) [nil k] set-keys))
-                           (drop 1)))
-                        (map (fn [[d c]]
-                               {:aggregate/day d :aggregate/online c
-                                :aggregate/node-type node-type
-                                :aggregate/day+node-type [d node-type]})
-                             online))}))))
+      {:tx-data
+       (map merge (->>
+                   (map (fn [{:keys [:aggregate/day :aggregate/spawned]}]
+                          {:aggregate/day day :aggregate/spawned spawned
+                           :aggregate/node-type node-type
+                           :aggregate/day+node-type [day node-type]})
+                        (reductions (fn [acc e]
+                                      (update e :aggregate/spawned
+                                              (fn [x] (+ x (:aggregate/spawned acc)))))
+                                    {:aggregate/spawned s}
+                                    (add-zero-counts-2 online spawned :aggregate/spawned)))
+                   (drop 1))
+            (->>
+             (map (fn [{:keys [:aggregate/day :aggregate/activated]}]
+                    {:aggregate/day day :aggregate/activated activated
+                     :aggregate/node-type node-type
+                     :aggregate/day+node-type [day node-type]})
+                  (reductions (fn [acc e]
+                                (update e :aggregate/activated
+                                        (fn [x] (+ x (:aggregate/activated acc)))))
+                              {:aggregate/activated a}
+                              (add-zero-counts-2 online activated :aggregate/activated)))
+             (drop 1))
+            (->>
+             (map (fn [{:keys [:aggregate/day :aggregate/set-networking-keys]}]
+                    {:aggregate/day day :aggregate/set-networking-keys set-networking-keys
+                     :aggregate/node-type node-type
+                     :aggregate/day+node-type [day node-type]})
+                  (reductions (fn [acc e]
+                                (update e :aggregate/set-networking-keys
+                                        (fn [x]
+                                          (+ x (:aggregate/set-networking-keys acc)))))
+                              {:aggregate/set-networking-keys k}
+                              (add-zero-counts-2 online set-keys :aggregate/set-networking-keys)))
+             (drop 1))
+            (map (fn [{:keys [:aggregate/day :aggregate/online]}]
+                   {:aggregate/day day :aggregate/online online
+                    :aggregate/node-type node-type
+                    :aggregate/day+node-type [day node-type]})
+                 online))}))))
 
 (defn get-aggregate-status
   ([db since until]
    (get-aggregate-status db since until :all))
   ([db since until node-type]
-   (sort-by :aggregate/day
-            (d/q '[:find (pull ?e [:aggregate/day
-                                   :aggregate/spawned
-                                   :aggregate/activated
-                                   :aggregate/locked
-                                   :aggregate/online])
-                   :in $ ?since ?until ?node-type
-                   :where [?e :aggregate/node-type ?node-type]
-                          [?e :aggregate/day ?d]
-                          [(>= ?d ?since)]
-                          [(>= ?until ?d)]]
-                 db since until node-type))))
+   (->> (d/q '[:find (pull ?e [:aggregate/day
+                               :aggregate/spawned
+                               :aggregate/activated
+                               :aggregate/set-networking-keys
+                               :aggregate/locked
+                               :aggregate/online])
+               :in $ ?since ?until ?node-type
+               :where [?e :aggregate/node-type ?node-type]
+                      [?e :aggregate/day ?d]
+                      [?e :aggregate/spawned]
+                      [(>= ?d ?since)]
+                      [(>= ?until ?d)]]
+             db since until node-type)
+        (map first)
+        (sort-by :aggregate/day))))
 
 (defn update-kids-hashes
   ([conn db]
@@ -798,8 +828,8 @@ attr by amount, treating a missing value as 1."
                            :in $ ?node-type ?since
                            :where [?p :ping/received ?r]
                                   [(>= ?r ?since)]
-                                  [?e :node/type ?node-type]
                                   [?p :ping/urbit-id ?e]
+                                  [?e :node/type ?node-type]
                                   [?p :ping/kids ?h]
                            ] db node-type prev))
          txs (->>  ds
@@ -830,33 +860,36 @@ attr by amount, treating a missing value as 1."
 (defn get-kids-hashes
   ([db since until] (get-kids-hashes db since until :all))
   ([db since until node-type]
-   (sort-by :aggregate/day
-            (d/q '[:find (pull ?e [:aggregate/day
-                                   {:aggregate/kids-hashes [:hash/kids-hash :hash/count]}])
-                   :in $ ?since ?until ?node-type
-                   :where [?e :aggregate/node-type ?node-type]
-                          [?e :aggregate/day ?d]
-                          [(>= ?d ?since)]
-                          [(>= ?until ?d)]]
-                 db since until node-type))))
+   (->> (d/q '[:find (pull ?e [:aggregate/day
+                               {:aggregate/kids-hashes [:hash/kids-hash :hash/count]}])
+               :in $ ?since ?until ?node-type
+               :where [?e :aggregate/node-type ?node-type]
+               [?e :aggregate/day ?d]
+               [?e :aggregate/kids-hashes]
+               [(>= ?d ?since)]
+               [(>= ?until ?d)]]
+             db since until node-type)
+        (map first)
+        (sort-by :aggregate/day))))
 
 (defn get-online-stats
   ([db since until]
    (get-online-stats db since until :all))
   ([db since until node-type]
-   (sort-by :aggregate/day
-            (d/q '[:find (pull ?e [:aggregate/day
-                                   :aggregate/new
-                                   :aggregate/churned
-                                   :aggregate/resurrected
-                                   :aggregate/retained])
-                   :in $ ?since ?until ?node-type
-                   :where [?e :aggregate/node-type ?node-type]
-                          [?e :aggregate/day ?d]
-                          [(>= ?d ?since)]
-                          [(>= ?until ?d)]
-                          [?e :aggregate/churned]]
-                 db since until node-type))))
+   (->> (d/q '[:find (pull ?e [:aggregate/day
+                               :aggregate/new
+                               :aggregate/churned
+                               :aggregate/resurrected
+                               :aggregate/retained])
+               :in $ ?since ?until ?node-type
+               :where [?e :aggregate/node-type ?node-type]
+               [?e :aggregate/day ?d]
+               [(>= ?d ?since)]
+               [(>= ?until ?d)]
+               [?e :aggregate/churned]]
+             db since until node-type)
+        (map first)
+        (sort-by :aggregate/day))))
 
 (defn update-online-stats
   ([conn db]
@@ -879,23 +912,23 @@ attr by amount, treating a missing value as 1."
                        .toInstant
                        java.util.Date/from)
          seen-yes (if (= node-type :all)
-                    (d/q '[:find (distinct ?u)
-                           :in $ ?since ?until
-                           :where [?p :ping/received ?r]
-                                  [(>= ?r ?since)]
-                                  [(< ?r ?until)]
-                                  [?p :ping/urbit-id ?e]
-                                  [?e :node/urbit-id ?u]
-                           ] db yesterday prev)
-                    (d/q '[:find (distinct ?u)
-                           :in $ ?node-type ?since ?until
-                           :where [?p :ping/received ?r]
-                                  [(>= ?r ?since)]
-                                  [(< ?r ?until)]
-                                  [?p :ping/urbit-id ?e]
-                                  [?e :node/type ?node-type]
-                                  [?e :node/urbit-id ?u]
-                           ] db node-type yesterday prev))
+                    (ffirst (d/q '[:find (distinct ?u)
+                                   :in $ ?since ?until
+                                   :where [?p :ping/received ?r]
+                                   [(>= ?r ?since)]
+                                   [(< ?r ?until)]
+                                   [?p :ping/urbit-id ?e]
+                                   [?e :node/urbit-id ?u]
+                                   ] db yesterday prev))
+                    (ffirst (d/q '[:find (distinct ?u)
+                                   :in $ ?node-type ?since ?until
+                                   :where [?p :ping/received ?r]
+                                   [(>= ?r ?since)]
+                                   [(< ?r ?until)]
+                                   [?p :ping/urbit-id ?e]
+                                   [?e :node/type ?node-type]
+                                   [?e :node/urbit-id ?u]
+                                   ] db node-type yesterday prev)))
          seen-ever (if (= node-type :all)
                      (ffirst (d/q {:query '[:find (distinct ?u)
                                             :in $ ?until
@@ -1069,7 +1102,7 @@ attr by amount, treating a missing value as 1."
         db     (d/db conn)]
     (update-online-stats conn db)
     (update-kids-hashes conn db)
-    (update-aggregate-status conn db)))
+    (pr-str (count (update-aggregate-status conn db)))))
 
 (defn get-aggregate-status* [query-params db]
   (let [node-type (keyword (get query-params :nodeType))
@@ -1083,8 +1116,8 @@ attr by amount, treating a missing value as 1."
      :headers {"Content-Type" "application/json"}
      :body (json/write-str
             (if node-type
-              (get-aggregate-status db since until)
-              (get-aggregate-status db since until node-type))
+              (get-aggregate-status db since until node-type)
+              (get-aggregate-status db since until))
             :value-fn stringify-date)}))
 
 (defn get-kids-hashes* [query-params db]
@@ -1100,7 +1133,7 @@ attr by amount, treating a missing value as 1."
      :body (json/write-str
             (if node-type
               (get-kids-hashes db since until node-type)
-              (get-kids-hashes db since until)))}))
+              (get-kids-hashes db since until)) :value-fn stringify-date)}))
 
 
 (defn get-online-stats* [query-params db]
@@ -1116,7 +1149,7 @@ attr by amount, treating a missing value as 1."
      :body (json/write-str
             (if node-type
               (get-online-stats db since until node-type)
-              (get-online-stats db since until)))}))
+              (get-online-stats db since until)) :value-fn stringify-date)}))
 
 (defn root-handler [req]
   (let [client       (get-client)

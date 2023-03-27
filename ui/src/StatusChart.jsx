@@ -22,7 +22,7 @@ export function StatusChart(props) {
         <CartesianGrid strokeDasharray='3 3' />
         <XAxis
           xAxisId='0'
-          dataKey='date'
+          dataKey='day'
           minTickGap={50}
           tickFormatter={e => {
             if (timeRangeText === 'Year' || timeRangeText === 'All') {

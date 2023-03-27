@@ -25,9 +25,8 @@ export function KidsHashChart(props) {
 
   const { kidsHashes, timeRangeText } = props;
 
-
   const bs = kidsHashes.reduce((acc, e) => {
-    const { date, ...rest} = e;
+    const { day, ...rest} = e;
     Object.keys(rest).forEach(x => acc.add(x));
     return acc;
   }, new Set());
@@ -41,7 +40,7 @@ export function KidsHashChart(props) {
         <CartesianGrid strokeDasharray='3 3' />
         <XAxis
           xAxisId='0'
-          dataKey='date'
+          dataKey='day'
           minTickGap={50}
           tickFormatter={e => {
             if (timeRangeText === 'Year' || timeRangeText === 'All') {

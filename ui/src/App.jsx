@@ -114,10 +114,10 @@ const fetchKidsHashes = (stateSetter, since, nodeType) => {
     .then(res => res.json())
     .then(kidsHashes => {
       const kids = kidsHashes.map(e => {
-        const {date, ...rest} = e;
-        const o = Object.entries(rest).map(([k, v]) => {
-          const s = k.split('.');
-          return [s[s.length-1], v];
+        const { date } = e;
+        const o = e['kids-hashes'].map(x => {
+          const s = x['kids-hash'].split('.');
+          return [s[s.length-1], x.count];
         }).sort((a, b) => a[1] - b[1]).reverse();
 
         return Object.fromEntries(

@@ -102,6 +102,14 @@ attr by amount, treating a missing value as 1."
       .toLocalDate
       .toString))
 
+(defn date->midnight-utc [date]
+  (-> date
+      .toInstant
+      (java.time.ZonedDateTime/ofInstant java.time.ZoneOffset/UTC)
+      (.truncatedTo java.time.temporal.ChronoUnit/DAYS)
+      .toInstant
+      java.util.Date/from))
+
 (def pki-events-query
   '[:find (pull ?e [:pki-event/id
                     {:pki-event/node [:node/urbit-id]}

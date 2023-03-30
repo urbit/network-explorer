@@ -989,68 +989,6 @@ attr by amount, treating a missing value as 1."
                    (map second))]
      (d/transact conn {:tx-data res}))))
 
-(defn get-online-stats-2
- ([db]
-   (get-online-stats-2
-    db
-    :all
-    (java.util.Date/from
-     (.toInstant (.atStartOfDay (java.time.LocalDate/now java.time.ZoneOffset/UTC)
-                                java.time.ZoneOffset/UTC)))))
-  ([db node-type]
-   (get-online-stats-2
-    db
-    node-type
-    (java.util.Date/from
-     (.toInstant (.atStartOfDay (java.time.LocalDate/now java.time.ZoneOffset/UTC)
-                                java.time.ZoneOffset/UTC)))))
-  ([db node-type until]
-   (map second
-        (drop 1
-              (reductions
-               (fn [[stats acc] e]
-                 (let [today (set (map :node/urbit-id e))]
-                   [(-> stats
-                        (assoc :ever (clojure.set/union (:ever stats) today))
-                        (assoc :yesterday today))
-                    {:date (:ping/received (first e))
-                     :new (count (clojure.set/difference today (:ever stats)))
-                     :churned (count (clojure.set/difference (:yesterday stats) today))
-                     :retained (count (clojure.set/intersection (:yesterday stats) today))
-                     :resurrected (count (clojure.set/difference
-                                          (clojure.set/intersection (:ever stats) today)
-                                          (:yesterday stats)))}]))
-               [{:ever #{} :yesterday #{}} {}]
-               (let [q (if (= node-type :all)
-                         (d/q {:query '[:find ?u ?r
-                                        :in $ ?until
-                                        :keys :node/urbit-id :ping/received
-                                        :where [?p :ping/received ?r]
-                                        ;; [(> ?r #inst "2022-09-20")]
-                                        ;; [(< ?r ?until)]
-                                        [?p :ping/urbit-id ?e]
-                                        [?e :node/urbit-id ?u]
-                                        ]
-                               :timeout 60000
-                               :args [db until]})
-                         (d/q {:query '[:find ?u ?r
-                                        :in $ ?node-type ?until
-                                        :keys :node/urbit-id :ping/received
-                                        :where [?e :node/type ?node-type]
-                                        [?e :node/urbit-id ?u]
-                                        [?p :ping/urbit-id ?e]
-                                        [?p :ping/received ?r]
-                                        ;; [(> ?r #inst "2022-09-20")]
-                                        [(< ?r ?until)]
-                                        ]
-                               :timeout 30000
-                               :args [db node-type until]}))]
-                 (->> q
-                      (sort-by :ping/received)
-                      (map (fn [e] (update e :ping/received date->midnight-utc)))
-                      (partition-by :ping/received))))))))
-
-
 (defn update-data [_]
   (let [;; pki-event/id is just line index, historic is the index of the last
         ;; pki event from the previous events.txt file, currently

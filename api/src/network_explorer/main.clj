@@ -1078,6 +1078,11 @@ attr by amount, treating a missing value as 1."
       (d/transact conn {:tx-data txs}))
     (pr-str (count pki-txs))))
 
+(defn update-aggregates [conn db]
+  (update-online-stats conn db)
+  (update-kids-hashes conn db)
+  (pr-str (count (update-aggregate-status conn db))))
+
 (defn update-radar-data [_]
   (let [historic 628892
         client (get-client)
@@ -1092,17 +1097,16 @@ attr by amount, treating a missing value as 1."
                     (drop-last pings)
                     (mapcat radar-data->txs)
                     reverse)]
-    (doseq [tx data]
-      (d/transact conn {:tx-data [tx]}))
-    (pr-str (count data))))
-
-(defn update-aggregates [_]
-  (let [client (get-client)
-        conn   (d/connect client {:db-name "network-explorer-2"})
-        db     (d/db conn)]
-    (update-online-stats conn db)
-    (update-kids-hashes conn db)
-    (pr-str (count (update-aggregate-status conn db)))))
+    (if (empty? data)
+      "nothing to update"
+      (update-aggregates
+       conn
+       (:db/after
+        (loop [txs data]
+          (if (= (count txs) 1)
+            (d/transact conn {:tx-data [(first txs)]})
+            (do (d/transact conn {:tx-data [(first txs)]})
+              (recur (rest txs))))))))))
 
 (defn get-aggregate-status* [query-params db]
   (let [node-type (keyword (get query-params :nodeType))

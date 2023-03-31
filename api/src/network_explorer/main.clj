@@ -486,7 +486,7 @@ attr by amount, treating a missing value as 1."
                                    :reverse true
                                    :limit limit
                                    :offset offset}))))
-  ([limit offset since type db]
+  ([limit offset since node-type db]
    (let [selector [:pki-event/id
                    {:pki-event/node [:node/urbit-id :node/type]}
                    {:pki-event/target-node [:node/urbit-id]}
@@ -497,7 +497,7 @@ attr by amount, treating a missing value as 1."
                    :pki-event/continuity
                    :pki-event/revision]]
      (into [] (comp
-               (filter (fn [e] (= type (:node/type (:pki-event/node e)))))
+               (filter (fn [e] (= node-type (:node/type (:pki-event/node e)))))
                (drop offset)
                (take limit)
                (take-while (fn [e] (.after (:pki-event/time e) since))))
@@ -1039,7 +1039,7 @@ attr by amount, treating a missing value as 1."
       "nothing to update"
       (update-aggregates
        conn
-       (:db/after
+       (:db-after
         (loop [txs data]
           (if (= (count txs) 1)
             (d/transact conn {:tx-data [(first txs)]})

@@ -116,13 +116,17 @@ const fetchKidsHashes = (stateSetter, since, nodeType) => {
       const kids = kidsHashes.map(e => {
         const { day } = e;
         const o = e['kids-hashes'].map(x => {
-          const s = x['kids-hash'].split('.');
-          return [s[s.length-1], x.count];
-        }).sort((a, b) => a[1] - b[1]).reverse();
+          const os = x['urbit-os'] && x['urbit-os'].version;
+          const h = x['kids-hash'].split('.');
+          const s = os ? os : h[h.length-1];
+          return [s, {count: x.count, hash: h[h.length-1]}];
+        }).sort((a, b) => a[1].count - b[1].count).reverse();
 
         return Object.fromEntries(
           o.slice(0, 4).concat([['day', day],
-                                ['others', o.slice(4).reduce((acc, e) => e[1]+acc, 0)]]));
+                                ['others',
+                                 {count: o.slice(4).reduce((acc, e) => e[1].count+acc, 0),
+                                  hash: 'others'}]]));
       });
 
       stateSetter({loading: false, data: kids});

@@ -861,13 +861,15 @@ attr by amount, treating a missing value as 1."
   ([db since until] (get-kids-hashes db since until :all))
   ([db since until node-type]
    (->> (d/q '[:find (pull ?e [:aggregate/day
-                               {:aggregate/kids-hashes [:hash/kids-hash :hash/count]}])
+                               {:aggregate/kids-hashes [:hash/kids-hash
+                                                        :hash/count
+                                                        {:hash/urbit-os [:urbit-os/version]}]}])
                :in $ ?since ?until ?node-type
                :where [?e :aggregate/node-type ?node-type]
-               [?e :aggregate/day ?d]
-               [?e :aggregate/kids-hashes]
-               [(>= ?d ?since)]
-               [(>= ?until ?d)]]
+                      [?e :aggregate/day ?d]
+                      [?e :aggregate/kids-hashes]
+                      [(>= ?d ?since)]
+                      [(>= ?until ?d)]]
              db since until node-type)
         (map first)
         (sort-by :aggregate/day))))
@@ -883,10 +885,10 @@ attr by amount, treating a missing value as 1."
                                :aggregate/retained])
                :in $ ?since ?until ?node-type
                :where [?e :aggregate/node-type ?node-type]
-               [?e :aggregate/day ?d]
-               [(>= ?d ?since)]
-               [(>= ?until ?d)]
-               [?e :aggregate/churned]]
+                      [?e :aggregate/day ?d]
+                      [(>= ?d ?since)]
+                      [(>= ?until ?d)]
+                      [?e :aggregate/churned]]
              db since until node-type)
         (map first)
         (sort-by :aggregate/day))))

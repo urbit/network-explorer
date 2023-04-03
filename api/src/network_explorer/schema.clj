@@ -296,14 +296,18 @@
    {:db/ident :hash/count
     :db/valueType :db.type/long
     :db/cardinality :db.cardinality/one
-    :db/doc "The number of ships responding with a kids hash for the day"}])
+    :db/doc "The number of ships responding with a kids hash for the day"}
+   {:db/ident :hash/urbit-os
+    :db/valueType :db.type/ref
+    :db/cardinality :db.cardinality/one
+    :db/doc "Reference to a urbit-os if available."}])
 
 (def urbit-os-schema
   [{:db/ident :urbit-os/version
     :db/valueType :db.type/string
     :db/cardinality :db.cardinality/one
     :db/unique :db.unique/identity
-    :db/doc "The urbit-os version"}
+    :db/doc "The urbit-os version, may or may not be available for a given hash."}
    {:db/ident :urbit-os/hash
     :db/valueType :db.type/string
     :db/cardinality :db.cardinality/one

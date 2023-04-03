@@ -27,16 +27,33 @@ export function KidsHashChart(props) {
 
   const bs = kidsHashes.reduce((acc, e) => {
     const { day, ...rest} = e;
-    Object.keys(rest).forEach(x => acc.add(x));
+    Object.entries(rest).forEach(([k, v]) =>{
+      acc[k] = v.hash;
+    });
     return acc;
-  }, new Set());
+  }, {});
 
-  const bars = [...bs].map( e => <Bar dataKey={e} fill={stringToColor(e)} stackId='a'/>);
+  const bars = Object.entries(bs).map( ([k, v]) => {
+    return <Bar dataKey={k} fill={stringToColor(v)} stackId='a'/>;
+  });
+
+  let data = [];
+  kidsHashes.forEach(e => {
+    let o = {};
+    for (const p in e) {
+      if (p === 'day') {
+        o[p] = e['day'];
+      } else {
+        o[p] = e[p].count;
+      }
+    }
+    data.push(o);
+  });
 
   return(
     <ResponsiveContainer height='100%'>
       <BarChart
-        data={kidsHashes}>
+        data={data}>
         <CartesianGrid strokeDasharray='3 3' />
         <XAxis
           xAxisId='0'

@@ -810,7 +810,8 @@ attr by amount, treating a missing value as 1."
    (update-kids-hashes conn db :star)
    (update-kids-hashes conn db :planet))
   ([conn db node-type]
-   (let [prev     (ffirst (d/q '[:find (max ?d)
+   (let [os       (into {} (d/q '[:find ?h ?e :where [?e :urbit-os/hash ?h]] db))
+         prev     (ffirst (d/q '[:find (max ?d)
                                  :in $ ?node-type
                                  :where [?e :aggregate/day ?d]
                                         [?e :aggregate/node-type ?node-type]
@@ -847,11 +848,14 @@ attr by amount, treating a missing value as 1."
                              :aggregate/day+node-type [day node-type]
                              :aggregate/kids-hashes
                              (map (fn [[k v]]
-                                    {:hash/kids-hash k
-                                     :hash/count v
-                                     :hash/day day
-                                     :hash/node-type node-type
-                                     :hash/kids-hash+day+node-type [k day node-type]})
+                                    (merge
+                                     {:hash/kids-hash k
+                                      :hash/count v
+                                      :hash/day day
+                                      :hash/node-type node-type
+                                      :hash/kids-hash+day+node-type [k day node-type]}
+                                     (when (get os k)
+                                       {:hash/urbit-os (get os k)})))
                                   (frequencies
                                    (map (comp second last)
                                         (vals (group-by first e)))))}))))]

@@ -611,7 +611,7 @@ function App() {
                           setUrlParam('chart', 'kidsHash');
                           setChart('kidsHash');
                         }}
-                      >Kids Hash Composition</Text>
+                      >OS Version Distribution</Text>
                     </Box>
                     <Icon
                       icon='Info'

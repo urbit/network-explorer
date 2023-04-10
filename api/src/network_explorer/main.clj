@@ -173,6 +173,7 @@ attr by amount, treating a missing value as 1."
                     [:node/spawn-proxy :default nil]
                     [:node/kids-hash :default nil]
                     {:node/sponsor [:node/urbit-id]}
+                    {:node/urbit-os [:urbit-os/version]}
                     {[:node/_sponsor :as :node/kids :default []]
                      [:node/urbit-id :node/continuity :node/revision :node/num-owners]}])
     :in $ [?urbit-id ...] [?type ...]
@@ -191,6 +192,7 @@ attr by amount, treating a missing value as 1."
                     [:node/voting-proxy :default nil]
                     [:node/spawn-proxy :default nil]
                     [:node/kids-hash :default nil]
+                    {:node/urbit-os [:urbit-os/version]}
                     {:node/sponsor [:node/urbit-id {:node/sponsor [:node/urbit-id]}]}
                     {[:node/_sponsor :as :node/kids :default []]
                      [:node/urbit-id :node/continuity :node/revision :node/num-owners]}])

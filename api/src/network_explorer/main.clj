@@ -55,11 +55,13 @@
 
 (defn radar-data->txs [[recvd sent point kids]]
   [{:node/urbit-id point
-    :node/kids-hash kids}
+    :node/kids-hash kids
+    :node/urbit-os {:db/id [:urbit-os/hash kids]}}
    {:ping/sent (parse-pki-time (str/join ".." (take 2 (str/split sent #"\.\."))))
     :ping/received (parse-pki-time (str/join ".." (take 2 (str/split recvd #"\.\."))))
     :ping/kids kids
-    :ping/urbit-id {:db/id [:node/urbit-id point]}}])
+    :ping/urbit-id {:db/id [:node/urbit-id point]}}
+   {:urbit-os/hash kids}])
 
 (defn format-pki-time [inst]
   (-> (java.text.SimpleDateFormat. "yyyy-MM-dd'T'HH:mm:ss.SSSXXX")

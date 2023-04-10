@@ -221,6 +221,22 @@ export function Node(props) {
                   {node['ownership-address']}
                 </Text>
               </Row>
+              {node['urbit-os'] &&
+               <Row mt={3}>
+                 <Text fontSize={0} color='gray' flexBasis='25%' className='fb-50'>
+                   Urbit OS version
+                 </Text>
+                 <Text
+                   fontFamily='Source Code Pro !important'
+                   fontSize={0}
+                   flexBasis='75%'
+                   className='fb-50'
+                   style={{wordBreak:'break-all'}}
+                 >
+                   {node['urbit-os'].version}
+                 </Text>
+               </Row>
+              }
               {node['kids-hash'] !== '0v0' &&
                <Row mt={3}>
                  <Text fontSize={0} color='gray' flexBasis='25%' className='fb-50'>

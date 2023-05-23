@@ -35,6 +35,7 @@ export function OnlineShipsChart(props) {
         <Bar dot={false} name='Retained' dataKey='retained' stroke='#219DFF' fill='#219DFF' stackId='a' />
         <Bar dot={false} name='New' dataKey='new' stroke='#00B171' fill='#00B171' stackId='a' />
         <Bar dot={false} name='Resurrected' dataKey='resurrected' stroke='#DD9C34' fill='#DD9C34' stackId='a'  />
+        <Bar dot={false} name='Missing' dataKey='missing' stroke='gray' fill='gray' stackId='a'  />
       </BarChart>
     </ResponsiveContainer >
   );

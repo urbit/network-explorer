@@ -94,7 +94,25 @@ const fetchOnlineStats = (stateSetter, since, nodeType) => {
   fetch(url)
     .then(res => res.json())
     .then(onlineShips => {
-      onlineShips.forEach(e => e.churned = -e.churned);
+      onlineShips.forEach(e =>{
+        e.churned = -e.churned;
+        if (nodeType === undefined) {
+          switch (e.day) {
+          case "2023-05-05":
+            e.missing = 650;
+            delete e.churned;
+            break;
+          case "2023-05-14":
+            e.missing = 640;
+            delete e.churned;
+            break;
+          case "2023-05-15":
+            e.missing = 640;
+            delete e.churned;
+            break;
+          }
+        }
+      });
       stateSetter({loading: false, data: onlineShips});
     });
 };
@@ -226,6 +244,31 @@ const modalText = {
     <Row mt={2}>
       <Text>
         Churned: Ships that were online yesterday but are offline now.
+      </Text>
+    </Row>
+    <Row mt={2}>
+      <Text>
+        Missing: Data missing because of an incident.
+      </Text>
+    </Row>
+    <Row mt={4}>
+      <Text fontSize={0}>
+        Incidents:
+      </Text>
+    </Row>
+    <Row mt={2}>
+      <Text fontSize={0}>
+        2023-05-05: The radar ship ran out of memory, partial data loss for the day.
+      </Text>
+    </Row>
+    <Row mt={2}>
+      <Text fontSize={0}>
+        2023-05-14: The galaxy ~deg was misconfigured after an upgrade, leading to peer discovery problems for radar.
+      </Text>
+    </Row>
+    <Row mt={2}>
+      <Text fontSize={0}>
+        2023-05-15: The galaxy ~dem was suffering from a regression after an upgrade, causing radar to be unable to contact stars and planets under ~dem.
       </Text>
     </Row>
   </>,

@@ -45,8 +45,12 @@ export function AzimuthEvents(props) {
              </Tr>
            </thead>
            <tbody>
-             {events.length > 0 && events.map(e =>
-               <AzimuthEvent key={e.node['urbit-id'] + e.time + e.type + e.address} {...e}/>)}
+             {events.length > 0 && events.map(e => {
+               const target = e['target-node'] ? e['target-node']['urbit-id'] : undefined;
+               return <AzimuthEvent key={e.node['urbit-id'] + e.time + e.type + target + e.address} {...e}/>;
+             })
+
+             }
            </tbody>
          </Table>
          {(events.length === 0) &&

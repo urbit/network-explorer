@@ -43,7 +43,7 @@ const defaultNodeData = point => {
 
 export function Node(props) {
 
-  const { point } = props.match.params;
+  const { point } = props;
 
   const [node, setNode] = useState(
     {'num-owners': '-',

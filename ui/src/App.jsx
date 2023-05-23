@@ -544,6 +544,7 @@ function App() {
       <Router>
         <Switch>
           <Route path="/:point" render={routeProps => {
+            const point = routeProps.match.params.point;
             return <>
                      <SearchHeader />
                      {cloneElement(menuHeader, {disabled: true})}
@@ -554,7 +555,7 @@ function App() {
                        flex='1'
                        className='bodyContainer'
                      >
-                       <Node {...routeProps} />
+                       <Node point={point} key={point} />
                      </Row>
                    </>;
           }} />

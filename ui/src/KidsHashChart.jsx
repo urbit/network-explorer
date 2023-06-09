@@ -66,7 +66,12 @@ export function KidsHashChart(props) {
             return (new Date(e)).toLocaleString('default', {month: 'short'});
           }}
         />
-        <YAxis type='number' hide={true}  />
+        <YAxis
+          type='number'
+          orientation='right'
+          tick={{fontSize: 10}}
+          tickCount={7}
+          domain={[0, dataMax => Math.ceil(dataMax / 100) * 100,]} />
         <Tooltip />
         { bars }
       </BarChart>

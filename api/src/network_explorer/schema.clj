@@ -224,60 +224,12 @@
    {:db/ident :aggregate/kids-hashes
     :db/valueType :db.type/ref
     :db/cardinality :db.cardinality/many
-    :db/doc "Kids hash counts for the day"}])
+    :db/doc "Kids hash counts for the day"}
+   {:db/ident :aggregate/booted
+    :db/valueType :db.type/long
+    :db/cardinality :db.cardinality/one
+    :db/doc "Cumulative total of ships that have booted at least once"}])
 
-(def aggregate-schema
-  [{:db/ident :aggregate/day
-    :db/valueType :db.type/instant
-    :db/cardinality :db.cardinality/one
-    :db/doc "The day of aggregation, timestamp at midnight UTC"}
-   {:db/ident :aggregate/node-type
-    :db/valueType :db.type/keyword
-    :db/cardinality :db.cardinality/one
-    :db/doc "The node-type of the aggregate, one of :all, :galaxy, :star or :planet"}
-   {:db/ident :aggregate/day+node-type
-    :db/valueType :db.type/tuple
-    :db/tupleAttrs [:aggregate/day :aggregate/node-type]
-    :db/cardinality :db.cardinality/one
-    :db/unique :db.unique/identity
-    :db/doc "Composite of day and node-type for uniqueness constraint"}
-   {:db/ident :aggregate/new
-    :db/valueType :db.type/long
-    :db/cardinality :db.cardinality/one
-    :db/doc "Growth accounting, new ships online on this day"}
-   {:db/ident :aggregate/churned
-    :db/valueType :db.type/long
-    :db/cardinality :db.cardinality/one
-    :db/doc "Growth accounting, ships that were online yesterday but not today"}
-   {:db/ident :aggregate/retained
-    :db/valueType :db.type/long
-    :db/cardinality :db.cardinality/one
-    :db/doc "Growth accounting, ships that were online yesterday and today"}
-   {:db/ident :aggregate/resurrected
-    :db/valueType :db.type/long
-    :db/cardinality :db.cardinality/one
-    :db/doc "Growth accounting, ships that were not online yesterday and are online today"}
-   {:db/ident :aggregate/spawned
-    :db/valueType :db.type/long
-    :db/cardinality :db.cardinality/one
-    :db/doc "Cumulative total of ships that have set their networking keys at least once"}
-   {:db/ident :aggregate/activated
-    :db/valueType :db.type/long
-    :db/cardinality :db.cardinality/one
-    :db/doc "Cumulative total of ships that have set their networking keys at least once"}
-   {:db/ident :aggregate/set-networking-keys
-    :db/valueType :db.type/long
-    :db/cardinality :db.cardinality/one
-    :db/doc "Cumulative total of ships that have set their networking keys at least once"}
-   {:db/ident :aggregate/locked
-    :db/valueType :db.type/long
-    :db/cardinality :db.cardinality/one
-    :db/doc "Cumulative total of locked stars"}
-   {:db/ident :aggregate/kids-hashes
-    :db/valueType :db.type/ref
-    :db/isComponent true
-    :db/cardinality :db.cardinality/many
-    :db/doc "Kids hash counts for the day"}])
 
 (def hash-schema
   [{:db/ident :hash/kids-hash

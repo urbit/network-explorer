@@ -92,6 +92,11 @@ attr by amount, treating a missing value as 1."
             (when-not (= :galaxy (ob/clan urbit-id))
               {:node/sponsor (if s s [:node/urbit-id (ob/sein urbit-id)])}))]))
 
+(defn date->local-date [date]
+  (-> date
+      .toInstant
+      (.atZone java.time.ZoneOffset/UTC)
+      .toLocalDate))
 
 (defn date->day [date]
   (-> date
@@ -795,6 +800,7 @@ attr by amount, treating a missing value as 1."
                                :aggregate/spawned
                                :aggregate/activated
                                :aggregate/set-networking-keys
+                               :aggregate/booted
                                :aggregate/locked
                                :aggregate/online])
                :in $ ?since ?until ?node-type
@@ -912,8 +918,7 @@ attr by amount, treating a missing value as 1."
                              :in $ ?node-type
                              :where [?e :aggregate/node-type ?node-type]
                                     [?e :aggregate/day ?d]
-                                    [?e :aggregate/churned]
-                             ]
+                                    [?e :aggregate/churned]]
                            db node-type))
          yesterday (-> prev
                        .toInstant
@@ -951,11 +956,10 @@ attr by amount, treating a missing value as 1."
                      (ffirst (d/q {:query '[:find (distinct ?u)
                                             :in $ ?node-type ?until
                                             :where [?p :ping/received ?r]
-                                            [(< ?r ?until)]
-                                            [?p :ping/urbit-id ?e]
-                                            [?e :node/urbit-id ?u]
-                                            [?e :node/type ?node-type]
-                                            ]
+                                                   [(< ?r ?until)]
+                                                   [?p :ping/urbit-id ?e]
+                                                   [?e :node/urbit-id ?u]
+                                                   [?e :node/type ?node-type]]
                                    :timeout 30000
                                    :args [db node-type prev]})))
          q  (if (= node-type :all)

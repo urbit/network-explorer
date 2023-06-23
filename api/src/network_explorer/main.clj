@@ -990,6 +990,7 @@ attr by amount, treating a missing value as 1."
                              (assoc :ever (clojure.set/union (:ever stats) today))
                              (assoc :yesterday today))
                          {:aggregate/node-type node-type
+                          :aggregate/booted (count (clojure.set/union (:ever stats) today))
                           :aggregate/day (second (first e))
                           :aggregate/day+node-type [(second (first e)) node-type]
                           :aggregate/new (count (clojure.set/difference today (:ever stats)))

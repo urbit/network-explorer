@@ -9,14 +9,14 @@ import { ResponsiveContainer,
          YAxis,
          Tooltip} from 'recharts';
 
-export function StatusChart(props) {
+export function BootedChart(props) {
 
   const { events, timeRangeText, nodesText } = props;
 
   const showLockedData = nodesText === 'Stars';
 
   return(
-    <ResponsiveContainer height='75%' className='h-40'>
+    <ResponsiveContainer height='100%' className='h-40'>
       <AreaChart
         data={events}>
         <CartesianGrid strokeDasharray='3 3' />
@@ -31,14 +31,15 @@ export function StatusChart(props) {
             return (new Date(e)).toLocaleString('default', {month: 'short'});
           }}
         />
-        <YAxis type='number' hide={true}  />
+        <YAxis
+          type='number'
+          orientation='right'
+          tick={{fontSize: 10}}
+          tickCount={7}
+          domain={[0,
+                   dataMax => Math.ceil(dataMax / 100) * 100,]} />
         <Tooltip />
-        {showLockedData &&
-          <Area dot={false} name='Locked' dataKey='locked' stroke='#2C2C57' fill='#2C2C57' />}
-        <Area dot={false} name='Spawned' dataKey='spawned' stroke='#BF421B' fill='#BF421B' />
-        <Area dot={false} name='Set Networking Keys' dataKey='set-networking-keys' stroke='#219DFF' fill='#219DFF'/>
-        <Area dot={false} name='Booted' dataKey='booted' stroke='#DD9C34' fill='#DD9C34' />
-        <Area dot={false} name='Online' dataKey='online' stroke='#00B171' fill='#00B171'/>
+        <Area dot={false} name='Booted' dataKey='booted' stroke='#00B171' fill='#00B171'/>
       </AreaChart>
     </ResponsiveContainer >
   );

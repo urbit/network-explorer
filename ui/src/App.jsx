@@ -22,6 +22,7 @@ import { AzimuthEvents } from './AzimuthEvents';
 import { AzimuthChart } from './AzimuthChart';
 import { OnlineShipsChart } from './OnlineShipsChart';
 import { KidsHashChart } from './KidsHashChart';
+import { BootedChart } from './BootedChart';
 // import { StarLockupChart } from './StarLockupChart';
 import { StatusChart } from './StatusChart';
 import { StatusTable } from './StatusTable';
@@ -379,7 +380,7 @@ function App() {
 
   const [offset, setOffset] = useState(0);
 
-  const [chart, setChart] = useState(params.get('chart') || 'onlineShips');
+  const [chart, setChart] = useState(params.get('chart') || 'booted');
 
   const {isShowing, toggle} = useModal();
 
@@ -521,6 +522,27 @@ function App() {
             }
           </Box>;
 
+    const bootedChart =
+          <Box flex='1'>
+            {aggregateStatus.loading ?
+             <Center height='100%'>
+               <LoadingSpinner
+                 width='36px'
+                 height='36px'
+                 foreground='rgba(0, 0, 0, 0.6)'
+                 background='rgba(0, 0, 0, 0.2)'
+               />
+             </Center> :
+             <>
+               <BootedChart
+                 events={aggregateStatus.events.filter(e => e.booted !== undefined)}
+                 timeRangeText={timeRangeText}
+                 nodesText={nodesText}
+               />
+             </>
+            }
+          </Box>;
+
 
     // const lockupChart =
     //       <Box flex='1'>
@@ -533,6 +555,7 @@ function App() {
     if (chart === 'onlineShips') visibleChart = onlineShipsChart;
     if (chart === 'addressSpace') visibleChart = addressSpaceChart;
     if (chart === 'kidsHash') visibleChart = kidsHashChart;
+    if (chart === 'booted') visibleChart = bootedChart;
     // if (chart === 'lockup') visibleChart = lockupChart;
 
   return (
@@ -632,6 +655,16 @@ function App() {
                   <Row fontWeight={500} p={3} justifyContent='space-between'>
                     <Box>
                       <Text
+                        fontSize={0}
+                        cursor='pointer'
+                        color={chart === 'booted' ? '' : 'gray'}
+                        onClick={() => {
+                          setUrlParam('chart', 'booted');
+                          setChart('booted');
+                        }}
+                      >Total Booted Ships</Text>
+                      <Text
+                        ml={3}
                         fontSize={0}
                         cursor='pointer'
                         color={chart === 'onlineShips' ? '' : 'gray'}

@@ -113,39 +113,6 @@ export function StatusTable(props) {
             </Text>
           </Td>
         </Tr>
-        <Tr>
-          <Td>
-            <svg style={{verticalAlign: 'middle'}}
-                 width='16'
-                 height='16'
-                 viewBox='0 0 16 16'
-                 fill='none'
-                 xmlns='http://www.w3.org/2000/svg'>
-              <circle cx='8' cy='8' r='8' fill='#DD9C34' />
-            </svg>
-            <Text color='#DD9C34' fontSize={0} ml={1}>Activated</Text>
-          </Td>
-          <Td>
-            <Text fontSize={0}>
-              {display((100 * (last.activated / last.spawned)).toFixed(2))}
-            </Text>
-          </Td>
-          <Td>
-            <Text fontSize={0}>
-              {display(last.activated)}
-            </Text>
-          </Td>
-          <Td>
-            <Text fontSize={0}>
-              {display((100 * ((last.activated / first.activated) - 1)).toFixed(2))}
-            </Text>
-          </Td>
-          <Td>
-            <Text fontSize={0}>
-              {display(last.activated - first.activated)}
-            </Text>
-          </Td>
-        </Tr>
         { showLockedData &&
           <Tr>
             <Td>
@@ -210,6 +177,39 @@ export function StatusTable(props) {
           <Td>
             <Text fontSize={0}>
               {display(last['set-networking-keys'] - first['set-networking-keys'])}
+            </Text>
+          </Td>
+        </Tr>
+        <Tr>
+          <Td>
+            <svg style={{verticalAlign: 'middle'}}
+                 width='16'
+                 height='16'
+                 viewBox='0 0 16 16'
+                 fill='none'
+                 xmlns='http://www.w3.org/2000/svg'>
+              <circle cx='8' cy='8' r='8' fill='#DD9C34' />
+            </svg>
+            <Text color='#DD9C34' fontSize={0} ml={1}>Booted</Text>
+          </Td>
+          <Td>
+            <Text fontSize={0}>
+              {display((100 * (last.booted / last.spawned)).toFixed(2))}
+            </Text>
+          </Td>
+          <Td>
+            <Text fontSize={0}>
+              {display(last.booted)}
+            </Text>
+          </Td>
+          <Td>
+            <Text fontSize={0}>
+              {display((100 * ((last.booted / first.booted) - 1)).toFixed(2))}
+            </Text>
+          </Td>
+          <Td>
+            <Text fontSize={0}>
+              {display(last.booted - first.booted)}
             </Text>
           </Td>
         </Tr>

@@ -287,12 +287,12 @@ const modalText = {
     </Row>
     <Row mt={2}>
       <Text>
-        Activated: Cumulative number of ships activated by date. This is almost always the exact same number as spawned ships because of the way Bridge spawning flows work. Note that all L2 ships are considered activated.
+        Set Networking Keys: Cumulative number of ships that have set their networking keys at least once by date.
       </Text>
     </Row>
     <Row mt={2}>
       <Text>
-        Set Networking Keys: Cumulative number of ships that have set their networking keys at least once by date.
+        Booted: Ships that have been online at least once since ~2022.6.4.
       </Text>
     </Row>
     <Row mt={2}>
@@ -316,6 +316,14 @@ const modalText = {
     <Row mt={2}>
       <Text>
         Note that only the four most common versions are shown, the rest are aggregated under "others."
+      </Text>
+    </Row>
+  </>,
+  'booted':
+  <>
+    <Row>
+      <Text>
+        This chart shows the cumulative total of Urbit ships that have been online at least once since ~2022.6.4.
       </Text>
     </Row>
   </>,

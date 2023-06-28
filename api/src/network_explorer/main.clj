@@ -918,7 +918,8 @@ attr by amount, treating a missing value as 1."
                              :in $ ?node-type
                              :where [?e :aggregate/node-type ?node-type]
                                     [?e :aggregate/day ?d]
-                                    [?e :aggregate/churned]]
+                                    [?e :aggregate/churned]
+                                    [?e :aggregate/booted]]
                            db node-type))
          yesterday (-> prev
                        .toInstant

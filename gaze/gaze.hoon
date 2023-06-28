@@ -104,6 +104,14 @@
         %export
       [export:do this]
     ::
+        %clear-running
+      [~ this(running ~)]
+    ::
+        %request-timestamps
+      =^  cards  state
+        request-timestamps:do
+      [cards this]
+    ::
         %debug
       ~&  latest=(turn (scag 5 seen) head)
       ~&  oldest=(turn (slag (sub (max 5 (lent seen)) 5) seen) head)
@@ -117,6 +125,7 @@
       ~&  time=~(wyt by time)
       ~&  qued=(lent qued)
       ~&  days=(lent days)
+      ~&  running=running
       [~ this]
     ==
   ::

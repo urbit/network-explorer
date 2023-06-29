@@ -8,8 +8,5 @@
                          :timeout-secs 900}
            :update-radar-data {:fn network-explorer.main/update-radar-data
                                :description "Updates the radar data"
-                               :timeout-secs 900}
-           :update-aggregates {:fn network-explorer.main/update-aggregates
-                               :description "Updates precomputes aggregates"
                                :timeout-secs 900}}
  :app-name "network-explorer"}

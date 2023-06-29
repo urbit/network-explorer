@@ -326,6 +326,11 @@ const modalText = {
         This chart shows the cumulative total of Urbit ships that have been online at least once since ~2022.6.4.
       </Text>
     </Row>
+    <Row mt={2}>
+      <Text>
+        Note that this statistic (and all statistics on the network explorer) do not include comets and moons.
+      </Text>
+    </Row>
   </>,
 };
 

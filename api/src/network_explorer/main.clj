@@ -749,48 +749,49 @@ attr by amount, treating a missing value as 1."
                                  [?u :node/type ?node-type]
                                  [(network-explorer.main/date->midnight-utc ?t) ?date-s]]
                         db prev node-type))]
-     (d/transact
-      conn
-      {:tx-data
-       (map merge (->>
-                   (map (fn [{:keys [:aggregate/day :aggregate/spawned]}]
-                          {:aggregate/day day :aggregate/spawned spawned
-                           :aggregate/node-type node-type
-                           :aggregate/day+node-type [day node-type]})
-                        (reductions (fn [acc e]
-                                      (update e :aggregate/spawned
-                                              (fn [x] (+ x (:aggregate/spawned acc)))))
-                                    {:aggregate/spawned s}
-                                    (add-zero-counts-2 online spawned :aggregate/spawned)))
-                   (drop 1))
-            (->>
-             (map (fn [{:keys [:aggregate/day :aggregate/activated]}]
-                    {:aggregate/day day :aggregate/activated activated
+     (:db-after
+      (d/transact
+       conn
+       {:tx-data
+        (map merge (->>
+                    (map (fn [{:keys [:aggregate/day :aggregate/spawned]}]
+                           {:aggregate/day day :aggregate/spawned spawned
+                            :aggregate/node-type node-type
+                            :aggregate/day+node-type [day node-type]})
+                         (reductions (fn [acc e]
+                                       (update e :aggregate/spawned
+                                               (fn [x] (+ x (:aggregate/spawned acc)))))
+                                     {:aggregate/spawned s}
+                                     (add-zero-counts-2 online spawned :aggregate/spawned)))
+                    (drop 1))
+             (->>
+              (map (fn [{:keys [:aggregate/day :aggregate/activated]}]
+                     {:aggregate/day day :aggregate/activated activated
+                      :aggregate/node-type node-type
+                      :aggregate/day+node-type [day node-type]})
+                   (reductions (fn [acc e]
+                                 (update e :aggregate/activated
+                                         (fn [x] (+ x (:aggregate/activated acc)))))
+                               {:aggregate/activated a}
+                               (add-zero-counts-2 online activated :aggregate/activated)))
+              (drop 1))
+             (->>
+              (map (fn [{:keys [:aggregate/day :aggregate/set-networking-keys]}]
+                     {:aggregate/day day :aggregate/set-networking-keys set-networking-keys
+                      :aggregate/node-type node-type
+                      :aggregate/day+node-type [day node-type]})
+                   (reductions (fn [acc e]
+                                 (update e :aggregate/set-networking-keys
+                                         (fn [x]
+                                           (+ x (:aggregate/set-networking-keys acc)))))
+                               {:aggregate/set-networking-keys k}
+                               (add-zero-counts-2 online set-keys :aggregate/set-networking-keys)))
+              (drop 1))
+             (map (fn [{:keys [:aggregate/day :aggregate/online]}]
+                    {:aggregate/day day :aggregate/online online
                      :aggregate/node-type node-type
                      :aggregate/day+node-type [day node-type]})
-                  (reductions (fn [acc e]
-                                (update e :aggregate/activated
-                                        (fn [x] (+ x (:aggregate/activated acc)))))
-                              {:aggregate/activated a}
-                              (add-zero-counts-2 online activated :aggregate/activated)))
-             (drop 1))
-            (->>
-             (map (fn [{:keys [:aggregate/day :aggregate/set-networking-keys]}]
-                    {:aggregate/day day :aggregate/set-networking-keys set-networking-keys
-                     :aggregate/node-type node-type
-                     :aggregate/day+node-type [day node-type]})
-                  (reductions (fn [acc e]
-                                (update e :aggregate/set-networking-keys
-                                        (fn [x]
-                                          (+ x (:aggregate/set-networking-keys acc)))))
-                              {:aggregate/set-networking-keys k}
-                              (add-zero-counts-2 online set-keys :aggregate/set-networking-keys)))
-             (drop 1))
-            (map (fn [{:keys [:aggregate/day :aggregate/online]}]
-                   {:aggregate/day day :aggregate/online online
-                    :aggregate/node-type node-type
-                    :aggregate/day+node-type [day node-type]})
-                 online))}))))
+                  online))})))))
 
 (defn get-aggregate-status
   ([db since until]
@@ -869,7 +870,7 @@ attr by amount, treating a missing value as 1."
                                   (frequencies
                                    (map (comp second last)
                                         (vals (group-by first e)))))}))))]
-     (d/transact conn {:tx-data txs}))))
+     (:db-after (d/transact conn {:tx-data txs})))))
 
 (defn get-kids-hashes
   ([db since until] (get-kids-hashes db since until :all))
@@ -1003,7 +1004,7 @@ attr by amount, treating a missing value as 1."
                     [{:ever (set seen-ever) :yesterday (set seen-yes)}])
                    (drop 1)
                    (map second))]
-     (d/transact conn {:tx-data res}))))
+     (:db-after (d/transact conn {:tx-data res})))))
 
 (defn update-data [_]
   (let [;; pki-event/id is just line index, historic is the index of the last
@@ -1033,9 +1034,9 @@ attr by amount, treating a missing value as 1."
     (pr-str (count pki-txs))))
 
 (defn update-aggregates [conn db]
-  (update-online-stats conn db)
-  (update-kids-hashes conn db)
-  (pr-str (count (update-aggregate-status conn db))))
+  (->> (update-online-stats conn db)
+       (update-kids-hashes conn)
+       (update-aggregate-status conn)))
 
 (defn update-radar-data [_]
   (let [historic 1205712
@@ -1053,14 +1054,15 @@ attr by amount, treating a missing value as 1."
                     reverse)]
     (if (empty? data)
       "nothing to update"
-      (update-aggregates
-       conn
-       (:db-after
-        (loop [txs data]
-          (if (= (count txs) 1)
-            (d/transact conn {:tx-data [(first txs)]})
-            (do (d/transact conn {:tx-data [(first txs)]})
-              (recur (rest txs))))))))))
+      (pr-str
+       (update-aggregates
+        conn
+        (:db-after
+         (loop [txs data]
+           (if (= (count txs) 1)
+             (d/transact conn {:tx-data [(first txs)]})
+             (do (d/transact conn {:tx-data [(first txs)]})
+                 (recur (rest txs)))))))))))
 
 (defn get-aggregate-status* [query-params db]
   (let [node-type (keyword (get query-params :nodeType))

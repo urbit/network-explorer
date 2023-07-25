@@ -1042,7 +1042,7 @@ attr by amount, treating a missing value as 1."
   (let [client (get-client)
         conn   (d/connect client {:db-name "network-explorer-2"})
         db     (d/db conn)]
-    (update-aggregate-status conn db)))
+    (update-aggregates conn db)))
 
 (defn update-radar-data [_]
   (let [historic 1205712

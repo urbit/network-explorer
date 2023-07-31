@@ -636,7 +636,7 @@ attr by amount, treating a missing value as 1."
    (update-aggregate-status conn db :star)
    (update-aggregate-status conn db :planet))
   ([conn db node-type]
-   (let [prev #inst "2023-07-24" #_(ffirst (d/q '[:find (max ?d)
+   (let [prev (ffirst (d/q '[:find (max ?d)
                              :in $ ?node-type
                              :where [?e :aggregate/day ?d]
                                     [?e :aggregate/node-type ?node-type]
@@ -645,7 +645,7 @@ attr by amount, treating a missing value as 1."
                                     [?e :aggregate/set-networking-keys]
                                     [?e :aggregate/online]]
                             db node-type))
-         yesterday #inst "2023-07-23" #_(-> prev
+         yesterday (-> prev
                        .toInstant
                        (java.time.ZonedDateTime/ofInstant java.time.ZoneOffset/UTC)
                        (.minusDays 1)
@@ -822,7 +822,7 @@ attr by amount, treating a missing value as 1."
    (update-kids-hashes conn db :planet))
   ([conn db node-type]
    (let [os       (into {} (d/q '[:find ?h ?e :where [?e :urbit-os/hash ?h]] db))
-         prev     #inst "2023-07-24" #_(ffirst (d/q '[:find (max ?d)
+         prev     (ffirst (d/q '[:find (max ?d)
                                  :in $ ?node-type
                                  :where [?e :aggregate/day ?d]
                                         [?e :aggregate/node-type ?node-type]
@@ -847,7 +847,7 @@ attr by amount, treating a missing value as 1."
          txs (->>  ds
                    (sort-by last)
                    (partition-by (comp date->day last))
-                   #_(map (fn [e]
+                   (map (fn [e]
                           (let [day (-> (last (first e))
                                         .toInstant
                                         (java.time.ZonedDateTime/ofInstant java.time.ZoneOffset/UTC)
@@ -915,14 +915,14 @@ attr by amount, treating a missing value as 1."
    (update-online-stats conn db :star)
    (update-online-stats conn db :planet))
   ([conn db node-type]
-   (let [prev #inst "2023-07-24" #_(ffirst (d/q '[:find (max ?d)
+   (let [prev (ffirst (d/q '[:find (max ?d)
                              :in $ ?node-type
                              :where [?e :aggregate/node-type ?node-type]
                                     [?e :aggregate/day ?d]
                                     [?e :aggregate/churned]
                                     [?e :aggregate/booted]]
                            db node-type))
-         yesterday  #inst "2023-07-23" #_(-> prev
+         yesterday  (-> prev
                        .toInstant
                        (java.time.ZonedDateTime/ofInstant java.time.ZoneOffset/UTC)
                        (.minusDays 1)

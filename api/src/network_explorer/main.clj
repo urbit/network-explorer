@@ -636,7 +636,7 @@ attr by amount, treating a missing value as 1."
    (update-aggregate-status conn db :star)
    (update-aggregate-status conn db :planet))
   ([conn db node-type]
-   (let [prev (ffirst (d/q '[:find (max ?d)
+   (let [prev #inst "2023-08-21" #_(ffirst (d/q '[:find (max ?d)
                              :in $ ?node-type
                              :where [?e :aggregate/day ?d]
                                     [?e :aggregate/node-type ?node-type]
@@ -822,7 +822,7 @@ attr by amount, treating a missing value as 1."
    (update-kids-hashes conn db :planet))
   ([conn db node-type]
    (let [os       (into {} (d/q '[:find ?h ?e :where [?e :urbit-os/hash ?h]] db))
-         prev     (ffirst (d/q '[:find (max ?d)
+         prev     #inst "2023-08-21" #_(ffirst (d/q '[:find (max ?d)
                                  :in $ ?node-type
                                  :where [?e :aggregate/day ?d]
                                         [?e :aggregate/node-type ?node-type]
@@ -915,7 +915,7 @@ attr by amount, treating a missing value as 1."
    (update-online-stats conn db :star)
    (update-online-stats conn db :planet))
   ([conn db node-type]
-   (let [prev (ffirst (d/q '[:find (max ?d)
+   (let [prev #inst "2023-08-21" #_(ffirst (d/q '[:find (max ?d)
                              :in $ ?node-type
                              :where [?e :aggregate/node-type ?node-type]
                                     [?e :aggregate/day ?d]
@@ -1045,7 +1045,7 @@ attr by amount, treating a missing value as 1."
     (update-aggregates conn db)))
 
 (defn update-radar-data [_]
-  (let [historic 2110697
+  (let [historic 2078006
         client (get-client)
         conn   (d/connect client {:db-name "network-explorer-2"})
         db     (d/db conn)

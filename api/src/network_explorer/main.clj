@@ -1006,7 +1006,7 @@ attr by amount, treating a missing value as 1."
                    (map second))]
      (:db-after (d/transact conn {:tx-data res})))))
 
-(defn update-data [_]
+(defn update-data* []
   (let [;; pki-event/id is just line index, historic is the index of the last
         ;; pki event from the previous events.txt file, currently
         ;; https://gaze-exports.s3.us-east-2.amazonaws.com/events-l2.txt
@@ -1033,6 +1033,10 @@ attr by amount, treating a missing value as 1."
       (d/transact conn {:tx-data txs}))
     (pr-str (count pki-txs))))
 
+(defn update-data [_]
+  (future (update-data*))
+  "starting pki data update")
+
 (defn update-aggregates [conn db]
   (->> (update-online-stats conn db)
        (update-kids-hashes conn)
@@ -1044,7 +1048,7 @@ attr by amount, treating a missing value as 1."
         db     (d/db conn)]
     (update-aggregates conn db)))
 
-(defn update-radar-data [_]
+(defn update-radar-data* []
   (let [historic 2228875
         client (get-client)
         conn   (d/connect client {:db-name "network-explorer-2"})
@@ -1069,6 +1073,11 @@ attr by amount, treating a missing value as 1."
              (d/transact conn {:tx-data [(first txs)]})
              (do (d/transact conn {:tx-data [(first txs)]})
                  (recur (rest txs)))))))))))
+
+(defn update-radar-data [_]
+  (future (update-radar-data*))
+  "starting radar data update")
+
 
 (defn get-aggregate-status* [query-params db]
   (let [node-type (keyword (get query-params :nodeType))

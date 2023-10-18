@@ -16,7 +16,7 @@ export function BootedChart(props) {
   const showLockedData = nodesText === 'Stars';
 
   return(
-    <ResponsiveContainer height='100%' className='h-40'>
+    <ResponsiveContainer height='100%'>
       <AreaChart
         data={events}>
         <CartesianGrid strokeDasharray='3 3' />

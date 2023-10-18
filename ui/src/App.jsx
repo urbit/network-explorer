@@ -111,6 +111,10 @@ const fetchOnlineStats = (stateSetter, since, nodeType) => {
             e.missing = 640;
             delete e.churned;
             break;
+          case "2023-10-16":
+            e.missing = 3700;
+            delete e.churned;
+            break;
           }
         }
       });
@@ -270,6 +274,11 @@ const modalText = {
     <Row mt={2}>
       <Text fontSize={0}>
         2023-05-15: The galaxy ~dem was suffering from a regression after an upgrade, causing radar to be unable to contact stars and planets under ~dem.
+      </Text>
+    </Row>
+    <Row mt={2}>
+      <Text fontSize={0}>
+        2023-10-16: The radar ship was having memory trouble, leading to data loss for the day.
       </Text>
     </Row>
   </>,

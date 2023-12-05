@@ -648,7 +648,7 @@ attr by amount, treating a missing value as 1."
          yesterday (-> prev
                        .toInstant
                        (java.time.ZonedDateTime/ofInstant java.time.ZoneOffset/UTC)
-                       (.minusDays 2)
+                       (.minusDays 1)
                        .toInstant
                        java.util.Date/from)
          [s a k] (first (d/q '[:find ?s ?a ?k
@@ -925,7 +925,7 @@ attr by amount, treating a missing value as 1."
          yesterday  (-> prev
                        .toInstant
                        (java.time.ZonedDateTime/ofInstant java.time.ZoneOffset/UTC)
-                       (.minusDays 2)
+                       (.minusDays 1)
                        .toInstant
                        java.util.Date/from)
          seen-yes (if (= node-type :all)

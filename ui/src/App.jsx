@@ -115,6 +115,13 @@ const fetchOnlineStats = (stateSetter, since, nodeType) => {
             e.missing = 3700;
             delete e.churned;
             break;
+          case "2024-06-20":
+            e.missing = 850;
+            break;
+          case "2024-06-23":
+            e.missing = 4000;
+            delete e.churned;
+            break;
           }
         }
       });
@@ -279,6 +286,11 @@ const modalText = {
     <Row mt={2}>
       <Text fontSize={0}>
         2023-10-16: The radar ship was having memory trouble, leading to data loss for the day.
+      </Text>
+    </Row>
+    <Row mt={2}>
+      <Text fontSize={0}>
+        2024-06-20: The radar was having memory trouble but did not crash, therefore not triggering the monitoring alerts. Unfortunately this happened during Lake Summit, leading to data loss for 4 days.
       </Text>
     </Row>
   </>,

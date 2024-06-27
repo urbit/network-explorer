@@ -452,7 +452,14 @@ attr by amount, treating a missing value as 1."
                                  (get-nodes urbit-ids limit offset types db)))}))))
 
 (defn get-node [urbit-id db]
-  (first (get-nodes [urbit-id] 1 0 [] db)))
+  (merge (first (d/q '[:find (max ?r)
+                       :keys node/online
+                       :in $ ?urbit-id
+                       :where [?u :node/urbit-id ?urbit-id]
+                              [?e :ping/urbit-id ?u]
+                              [?e :ping/received ?r]]
+                     db urbit-id))
+   (first (get-nodes [urbit-id] 1 0 [] db))))
 
 (defn get-node* [query-params db]
   (let [urbit-id (get query-params :urbit-id)]
@@ -470,6 +477,7 @@ attr by amount, treating a missing value as 1."
     :ping/time      (format-pki-time value)
     :ping/response  (format-pki-time value)
     :aggregate/day  (date->day value)
+    :node/online    (format-pki-time value)
     value))
 
 (defn get-pki-events [urbit-id since db]
